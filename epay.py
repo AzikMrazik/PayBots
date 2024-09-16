@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import base64
+from datetime import datetime  # Добавлено для работы с датой и временем
 
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.types import Message, CallbackQuery
@@ -76,8 +77,11 @@ async def process_amount(message: Message, state: FSMContext):
         await message.answer('API ключ не найден. Пожалуйста, начните сначала с команды /start.')
         await state.clear()
         return
-    # Формирование строки с использованием индивидуального api_key
-    data_string = f'api_key={api_key}&amount={amount}'
+    # Генерация номера заказа (merch) из текущей даты и времени
+    now = datetime.now()
+    order_number = now.strftime('%d%m%H%M%S')  # Форматирует дату и время в нужный формат
+    # Формирование строки с использованием api_key, amount и merch
+    data_string = f'api_key={api_key}&amount={amount}&merch={order_number}'
     # Кодирование в BASE64
     encoded_bytes = base64.b64encode(data_string.encode('utf-8'))
     encoded_string = encoded_bytes.decode('utf-8')
