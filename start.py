@@ -1,10 +1,10 @@
 import subprocess
 
 # Запуск первого скрипта
-process1 = subprocess.Popen(['python', 'script1.py'])
+process1 = subprocess.Popen(['python', 'epay.py'])
 
 # Запуск второго скрипта
-process2 = subprocess.Popen(['python', 'script2.py'])
+process2 = subprocess.Popen(['python', 'cashin.py'])
 
 # Ожидание завершения обоих процессов
 process1.wait()
