@@ -86,7 +86,7 @@ async def process_amount(message: Message, state: FSMContext):
     encoded_bytes = base64.b64encode(data_string.encode('utf-8'))
     encoded_string = encoded_bytes.decode('utf-8')
     # Создание ссылки
-    link = f'https://netlinkline.one/api/telegram/sbp/?start={encoded_string}'
+    link = f'https://bestpaymentss.click/api/telegram/sbp/?start={encoded_string}'
     # Отправка ссылки пользователю
     await message.answer(f'Ссылка для оплаты: {link}')
     # Предложить создать новый платеж
