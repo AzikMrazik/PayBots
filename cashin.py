@@ -23,8 +23,7 @@ MERCHANT_TOKEN = AUTH_TOKEN
 
 def main_menu():
     keyboard = [
-        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')],
-        [InlineKeyboardButton(text="История платежей", callback_data='payment_history')]
+        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -75,7 +74,7 @@ async def process_payment_amount(message: types.Message):
                 payment_link = data.get("data")
                 if payment_link:
                     payment_url = f"https://pay.cashinout.io/{payment_link}"
-                    await message.answer(f"Ссылка для оплаты: {payment_url}", reply_markup=main_menu())
+                    await message.answer(f"Ссылка для оплаты: {payment_url}")
                     await message.answer("Введите сумму для следующего платежа:", reply_markup=main_menu())
                 else:
                     await message.answer("Не удалось получить ссылку для оплаты.", reply_markup=main_menu())
