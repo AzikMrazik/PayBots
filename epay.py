@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 logging.basicConfig(level=logging.INFO)
 
-API_TOKEN = '7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG0'  # Замените на токен вашего бота
+API_TOKEN = '7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG00'  # Замените на токен вашего бота
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
