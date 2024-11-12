@@ -8,7 +8,7 @@ import aiohttp
 from datetime import datetime
 import os
 
-API_TOKEN = "7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG0"
+API_TOKEN = "7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG0Т"
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
