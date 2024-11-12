@@ -1,98 +1,201 @@
-import asyncio
 import logging
-import base64
-from datetime import datetime  # Добавлено для работы с датой и временем
-
-from aiogram import Bot, Dispatcher, F, Router
-from aiogram.types import Message, CallbackQuery
+import json
+import asyncio
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+import aiohttp
+from datetime import datetime
+import os
 
+API_TOKEN = "7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG0"
 logging.basicConfig(level=logging.INFO)
-
-API_TOKEN = '7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG00'  # Замените на токен вашего бота
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-router = Router()
-dp.include_router(router)
 
-# Хранилище данных пользователей (в памяти)
-user_data = {}
+users_data = {}
+orders_today = []
 
-class PaymentStates(StatesGroup):
-    waiting_for_api_key = State()
-    waiting_for_amount = State()
+# Load and save user data functions
+def save_api_keys():
+    with open("api_keys.json", "w") as f:
+        json.dump(users_data, f)
 
-@router.message(Command('start'))
-async def cmd_start(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    if user_id not in user_data:
-        await message.answer('Пожалуйста, введите ваш API ключ (только цифры):')
-        await state.set_state(PaymentStates.waiting_for_api_key)
+def load_api_keys():
+    global users_data
+    if os.path.exists("api_keys.json"):
+        with open("api_keys.json", "r") as f:
+            users_data = json.load(f)
+
+def save_orders_today():
+    with open("orders_today.json", "w") as f:
+        json.dump(orders_today, f)
+
+def load_orders_today():
+    global orders_today
+    if os.path.exists("orders_today.json"):
+        with open("orders_today.json", "r") as f:
+            orders_today = json.load(f)
+
+load_api_keys()
+load_orders_today()
+
+# Main menu keyboard
+main_menu_markup = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
+    [InlineKeyboardButton(text="Баланс и Вывод", callback_data="balance_and_withdrawal")],
+    [InlineKeyboardButton(text="История", callback_data="transaction_history")],
+    [InlineKeyboardButton(text="Ключи", callback_data="api_keys")]
+])
+
+# Handlers
+@dp.message(Command("start"))
+async def send_welcome(message: types.Message):
+    user_id = str(message.from_user.id)
+    if user_id not in users_data:
+        await message.answer("Введите ваш API ключ для работы с платежами:")
     else:
-        keyboard = InlineKeyboardBuilder()
-        keyboard.button(text='Создать платеж', callback_data='create_payment')
-        await message.answer(
-            'Добро пожаловать обратно! Нажмите кнопку ниже, чтобы создать платеж.',
-            reply_markup=keyboard.as_markup()
-        )
+        await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu_markup)
 
-@router.message(PaymentStates.waiting_for_api_key)
-async def process_api_key(message: Message, state: FSMContext):
-    api_key = message.text.strip()
-    if not api_key.isdigit():
-        await message.answer('Пожалуйста, введите корректный API ключ (только цифры).')
-        return
-    user_id = message.from_user.id
-    user_data[user_id] = api_key
-    await message.answer('Ваш API ключ сохранен.')
-    # Показать кнопку для создания платежа
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text='Создать платеж', callback_data='create_payment')
-    await message.answer(
-        'Теперь вы можете создать платеж. Нажмите кнопку ниже.',
-        reply_markup=keyboard.as_markup()
-    )
-    await state.clear()
+@dp.message(lambda message: message.text and message.text.startswith("API_KEY:"))
+async def handle_api_key(message: types.Message):
+    user_id = str(message.from_user.id)
+    api_key = message.text.split("API_KEY:")[1].strip()
+    users_data[user_id] = api_key
+    save_api_keys()
+    await message.answer("Ваш API ключ сохранен. Выберите действие:", reply_markup=main_menu_markup)
 
-@router.callback_query(F.data == 'create_payment')
-async def process_create_payment(callback_query: CallbackQuery, state: FSMContext):
-    await callback_query.message.answer('Пожалуйста, введите сумму платежа:')
-    await callback_query.answer()
-    await state.set_state(PaymentStates.waiting_for_amount)
+@dp.callback_query(lambda c: c.data == 'create_payment')
+async def create_payment(callback_query: CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Введите сумму заказа:")
 
-@router.message(PaymentStates.waiting_for_amount)
-async def process_amount(message: Message, state: FSMContext):
-    amount = message.text.strip()
-    if not amount.replace('.', '', 1).isdigit():
-        await message.answer('Пожалуйста, введите корректную сумму (число).')
-        return
-    user_id = message.from_user.id
-    api_key = user_data.get(user_id)
-    if not api_key:
-        # Если по какой-то причине API ключ отсутствует
-        await message.answer('API ключ не найден. Пожалуйста, начните сначала с команды /start.')
-        await state.clear()
-        return
-    # Генерация номера заказа (merch) из текущей даты и времени
-    now = datetime.now()
-    order_number = now.strftime('%d%m%H%M%S')  # Форматирует дату и время в нужный формат
-    # Формирование строки с использованием api_key, amount и merch
-    data_string = f'api_key={api_key}&amount={amount}&merch={order_number}'
-    # Кодирование в BASE64
-    encoded_bytes = base64.b64encode(data_string.encode('utf-8'))
-    encoded_string = encoded_bytes.decode('utf-8')
-    # Создание ссылки
-    link = f'https://bestpaymentss.click/api/telegram/sbp/?start={encoded_string}'
-    # Отправка ссылки пользователю
-    await message.answer(f'Ссылка для оплаты: {link}')
-    # Предложить создать новый платеж
-    await message.answer('Введите сумму для следующего платежа или нажмите /start для возврата в меню.')
-    # Состояние остается 'waiting_for_amount' для приема новой суммы
+@dp.message(lambda message: message.text and message.text.isdigit())
+async def handle_payment_amount(message: types.Message):
+    user_id = str(message.from_user.id)
+    if user_id in users_data:
+        amount = message.text
+        merchant_order_id = datetime.now().strftime("%d%m%H%M%S")
+        orders_today.append(merchant_order_id)
+        save_orders_today()
+        api_key = users_data[user_id]
 
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://payment-api-url.com/create", json={
+                "api_key": api_key,
+                "amount": amount,
+                "merchant_order_id": merchant_order_id
+            }) as response:
+                if response.status == 200:
+                    await message.answer(
+                        f"Платеж создан. ID заказа: {merchant_order_id}. Введите следующую сумму или нажмите В меню.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="В меню", callback_data="main_menu")]])
+                    )
+                else:
+                    await message.answer("Ошибка создания платежа. Попробуйте еще раз.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="В меню", callback_data="main_menu")]]))
+
+@dp.callback_query(lambda c: c.data == 'balance_and_withdrawal')
+async def balance_and_withdrawal(callback_query: CallbackQuery):
+    user_id = str(callback_query.from_user.id)
+    if user_id in users_data:
+        api_key = users_data[user_id]
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://payment-api-url.com/balance", json={"api_key": api_key}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    balance = data.get("balance")
+                    markup = InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="Запросить выплату", callback_data="withdraw_request")],
+                        [InlineKeyboardButton(text="В меню", callback_data="main_menu")]
+                    ])
+                    await bot.send_message(callback_query.from_user.id, f"Ваш баланс: {balance}", reply_markup=markup)
+                else:
+                    await bot.send_message(callback_query.from_user.id, "Ошибка получения баланса.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="В меню", callback_data="main_menu")]]))
+
+@dp.callback_query(lambda c: c.data == 'withdraw_request')
+async def withdraw_request(callback_query: CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Введите кошелек для вывода:")
+
+@dp.message(lambda message: not message.text.isdigit())
+async def handle_withdraw_wallet(message: types.Message):
+    user_id = str(message.from_user.id)
+    if user_id in users_data:
+        wallet = message.text
+        users_data[user_id] = {"api_key": users_data[user_id], "wallet": wallet}
+        save_api_keys()
+        await message.answer("Введите сумму для вывода:")
+
+@dp.message(lambda message: message.text.isdigit())
+async def handle_withdraw_amount(message: types.Message):
+    user_id = str(message.from_user.id)
+    if user_id in users_data and isinstance(users_data[user_id], dict) and "wallet" in users_data[user_id]:
+        amount = message.text
+        wallet = users_data[user_id]["wallet"]
+        api_key = users_data[user_id]["api_key"]
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://payment-api-url.com/withdraw", json={
+                "api_key": api_key,
+                "amount": amount,
+                "wallet": wallet,
+                "method": "usdttrc"
+            }) as response:
+                if response.status == 200:
+                    await message.answer("Выплата успешно запрошена.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="В меню", callback_data="main_menu")]]))
+                else:
+                    await message.answer("Ошибка при запросе выплаты.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="В меню", callback_data="main_menu")]]))
+
+@dp.callback_query(lambda c: c.data == 'transaction_history')
+async def transaction_history(callback_query: CallbackQuery):
+    transactions = "\n".join([f"{order_id} / Сумма" for order_id in orders_today])
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")],
+        [InlineKeyboardButton(text="В меню", callback_data="main_menu")]
+    ])
+    await bot.send_message(callback_query.from_user.id, f"История транзакций за сегодня:\n{transactions}", reply_markup=markup)
+
+@dp.callback_query(lambda c: c.data == 'check_payment')
+async def check_payment(callback_query: CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Введите ID заявки для проверки:")
+
+@dp.message(lambda message: True)
+async def handle_check_payment(message: types.Message):
+    user_id = str(message.from_user.id)
+    if user_id in users_data:
+        order_id = message.text
+        api_key = users_data[user_id]
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://payment-api-url.com/check", json={
+                "api_key": api_key,
+                "order_id": order_id
+            }) as response:
+                if response.status == 200:
+                    payment_status = (await response.json()).get("status")
+                    await message.answer(f"Статус платежа: {payment_status}",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Назад", callback_data="transaction_history"), InlineKeyboardButton(text="В меню", callback_data="main_menu")]]))
+                else:
+                    await message.answer("Ошибка проверки статуса платежа.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Назад", callback_data="transaction_history"), InlineKeyboardButton(text="В меню", callback_data="main_menu")]]))
+
+@dp.callback_query(lambda c: c.data == 'api_keys')
+async def api_keys(callback_query: CallbackQuery):
+    user_id = str(callback_query.from_user.id)
+    if user_id in users_data:
+        api_key = users_data[user_id]
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Изменить", callback_data="change_api_key")],
+            [InlineKeyboardButton(text="В меню", callback_data="main_menu")]
+        ])
+        await bot.send_message(callback_query.from_user.id, f"Ваш текущий API ключ: {api_key}", reply_markup=markup)
+
+@dp.callback_query(lambda c: c.data == 'change_api_key')
+async def change_api_key(callback_query: CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, "Введите новый API ключ:")
+
+# Run bot
 async def main():
     await dp.start_polling(bot)
 
