@@ -53,7 +53,7 @@ async def handle_message(message: Message):
             logger.info(f"Найден BIN: {bin_code}, название банка: {bank_name}")
             try:
                 await asyncio.sleep(0.5)  # Задержка для надежной отправки
-                await message.reply(f"Название банка: {bank_name}")
+                await message.reply(f"{bank_name}")
                 logger.info("Сообщение отправлено успешно.")
             except Exception as e:
                 logger.error(f"Ошибка при отправке сообщения: {e}")
