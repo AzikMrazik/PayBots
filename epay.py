@@ -63,7 +63,7 @@ async def handle_message(message: Message):
             logger.info("BIN-код не найден в базе данных.")
             try:
                 await asyncio.sleep(0.5)
-                await message.reply("Банк с данным BIN-кодом не найден в базе.")
+                await message.reply("Банк с данным BIN-кодом не найден в базе./n @azikmrazik")
                 logger.info("Сообщение об отсутствии BIN-кода в базе отправлено успешно.")
             except Exception as e:
                 logger.error(f"Ошибка при отправке сообщения об отсутствии BIN-кода: {e}")
