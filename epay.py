@@ -25,8 +25,8 @@ GROUP_ID = -1002486163462
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
     try:
-        bin_module = importlib.import_module("BIN")  # Замените путь, если файл лежит в другом месте
-        logger.info("BIN.py успешно загружен.")
+        bin_module = importlib.import_module("bin")  # Замените путь, если файл лежит в другом месте
+        logger.info("bin.py успешно загружен.")
         return bin_module.bin_database
     except ModuleNotFoundError:
         logger.error("Файл BIN.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
