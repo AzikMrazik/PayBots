@@ -1,6 +1,8 @@
 import aiohttp
 import hmac
 import hashlib
+import os
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -8,9 +10,11 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 
-API_TOKEN = '7129177083:AAGU5AXirCTFe5efM9cglYm28HY8YUHk8D4'
+load_dotenv()
+
+API_TOKEN = os.getenv('API_TOKEN_CASHIN')
 BASE_URL = "https://api.cashinout.io"
-AUTH_TOKEN = 'b0552c9a422ac7e0d9b1ca32a45a68f5'
+AUTH_TOKEN = os.getenv('AUTH_TOKEN_CASHIN')
 router = Router()
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -18,7 +22,7 @@ dp.include_router(router)
 
 WUD_ID = 0
 USDT_ID = 5
-REDIRECT_URL = "https://t.me/seller_shops"
+REDIRECT_URL = "https://telegram.org/"
 MERCHANT_TOKEN = AUTH_TOKEN
 
 def main_menu():
