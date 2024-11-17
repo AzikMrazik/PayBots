@@ -15,7 +15,7 @@ load_dotenv(dotenv_path='/root/paybots/api.env')
 print("Переменные окружения:")
 print(os.environ)
 
-API_TOKEN_NP = os.getenv('api.env')
+API_TOKEN_NP = os.getenv('API_TOKEN_NP')
 API_TOKEN = API_TOKEN_NP
 
 merchant_id = os.getenv('MERCHANT_ID_NP')
