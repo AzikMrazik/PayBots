@@ -10,7 +10,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router
 
-load_dotenv()
+load_dotenv(dotenv_path='/root/paybots/api.env')
 
 print("Переменные окружения:")
 print(os.environ)
