@@ -13,6 +13,8 @@ load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv('API_TOKEN_EPAY')
 
+print(f"Ваш токен: {API_TOKEN}")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
