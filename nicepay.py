@@ -1,6 +1,8 @@
 import asyncio
 import json
 import aiohttp
+import os
+from dotenv import load_dotenv
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -8,15 +10,19 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router
 
-API_TOKEN = "7670819334:AAFGcCfkbgyVtdb6UU7uma6chahQmTVvEWE"
+load_dotenv()
 
-merchant_id = "66e5c260e524dd4cd9faf3f4"
-secret = "gL2Zw-YHaD4-5wZGl-Yl4Nl-0MPFc"
+API_TOKEN = os.getenv('API_TOKEN_NP')
+
+merchant_id = os.getenv('MERCHANT_ID_NP')
+secret = os.getenv('SECRET_NP')
 description = "test desc"
 customer = "user@gmail.com"  # Убедитесь, что это корректный email или идентификатор пользователя
-success_url = "https://t.me/seller_shops"
+success_url = "https://telegram.org/"
 fail_url = success_url
 currency = "RUB"
+
+print(f"Ваш токен: {API_TOKEN}, {merchant_id}, {secret}")
 
 # Инициализация бота и диспетчера с FSM (Finite State Machine)
 bot = Bot(token=API_TOKEN)
