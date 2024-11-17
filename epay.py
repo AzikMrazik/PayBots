@@ -27,6 +27,8 @@ dp.include_router(router)
 CHANNEL_ID = os.getenv('CHANNEL_ID_EPAY')
 GROUP_ID = os.getenv('GROUP_ID_EPAY')
 
+print(f"Ваш токен: {CHANNEL_ID}, {GROUP_ID}")
+
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
     try:
