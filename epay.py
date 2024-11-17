@@ -1,7 +1,6 @@
 import logging
 import re
 import importlib
-import sys
 import os
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
@@ -9,12 +8,17 @@ from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
 
+# Загружаем переменные окружения
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv('API_TOKEN_EPAY')
+CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))  # Преобразуем в число
+GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))  # Преобразуем в число
 
 print(f"Ваш токен: {API_TOKEN}")
+print(f"Ваши ID: {CHANNEL_ID}, {GROUP_ID}")
 
+# Настраиваем логирование
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -23,17 +27,11 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-# ID канала и группы
-CHANNEL_ID = os.getenv('CHANNEL_ID_EPAY')
-GROUP_ID = os.getenv('GROUP_ID_EPAY')
-
-print(f"Ваш токен: {CHANNEL_ID}, {GROUP_ID}")
-
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
     try:
-        bin_module = importlib.import_module("bin")  # Замените путь, если файл лежит в другом месте
-        logger.info("bin.py успешно загружен.")
+        bin_module = importlib.import_module("BINs")  # Переименуйте файл, если требуется
+        logger.info("BINs.py успешно загружен.")
         return bin_module.bin_database
     except ModuleNotFoundError:
         logger.error("Файл BIN.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
