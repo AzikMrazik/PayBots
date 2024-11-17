@@ -12,7 +12,8 @@ from aiogram import Router
 
 load_dotenv()
 
-API_TOKEN = os.getenv('API_TOKEN_NP')
+API_TOKEN_NP = os.getenv('api.env')
+API_TOKEN = API_TOKEN_NP
 
 merchant_id = os.getenv('MERCHANT_ID_NP')
 secret = os.getenv('SECRET_NP')
