@@ -9,7 +9,7 @@ from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
 
-load_dotenv()
+load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv('API_TOKEN_EPAY')
 
