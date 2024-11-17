@@ -15,9 +15,6 @@ API_TOKEN = os.getenv('API_TOKEN_EPAY')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))  # Преобразуем в число
 GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))  # Преобразуем в число
 
-print(f"Ваш токен: {API_TOKEN}")
-print(f"Ваши ID: {CHANNEL_ID}, {GROUP_ID}")
-
 # Настраиваем логирование
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
