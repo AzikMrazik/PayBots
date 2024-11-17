@@ -2,14 +2,17 @@ import logging
 import re
 import importlib
 import sys
+import os
+from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
 
-API_TOKEN = '7354054366:AAHDb7f5ggIJJMESBRscwVkw12oX2dRzfG0'
+load_dotenv()
 
-# Настраиваем логирование
+API_TOKEN = os.getenv('API_TOKEN_EPAY')
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -19,8 +22,8 @@ router = Router()
 dp.include_router(router)
 
 # ID канала и группы
-CHANNEL_ID = -1002415709971
-GROUP_ID = -1002486163462
+CHANNEL_ID = os.getenv('CHANNEL_ID_EPAY')
+GROUP_ID = os.getenv('GROUP_ID_EPAY')
 
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
