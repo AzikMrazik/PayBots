@@ -12,9 +12,6 @@ from aiogram import Router
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
-print("Переменные окружения:")
-print(os.environ)
-
 API_TOKEN_NP = os.getenv('API_TOKEN_NP')
 API_TOKEN = API_TOKEN_NP
 
@@ -25,8 +22,6 @@ customer = "user@gmail.com"  # Убедитесь, что это коррект�
 success_url = "https://telegram.org/"
 fail_url = success_url
 currency = "RUB"
-
-print(f"Ваш токен: {API_TOKEN}, {merchant_id}, {secret}")
 
 # Инициализация бота и диспетчера с FSM (Finite State Machine)
 bot = Bot(token=API_TOKEN)
