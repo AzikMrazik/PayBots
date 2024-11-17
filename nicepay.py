@@ -12,6 +12,9 @@ from aiogram import Router
 
 load_dotenv()
 
+print("Переменные окружения:")
+print(os.environ)
+
 API_TOKEN_NP = os.getenv('api.env')
 API_TOKEN = API_TOKEN_NP
 
