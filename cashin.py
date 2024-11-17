@@ -10,7 +10,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 
-load_dotenv()
+load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv('API_TOKEN_CASHIN')
 BASE_URL = "https://api.cashinout.io"
