@@ -70,7 +70,7 @@ async def handle_channel_post(message: Message):
         bin_data = load_bin_data()  # Загружаем BIN-данные при каждом сообщении
         bin_code = extract_bin(message.text)
         if bin_code:
-            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе. @azikmrazik")
             try:
                 # Отправка сообщения только в группу
                 await bot.send_message(GROUP_ID, bank_name)
