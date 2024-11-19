@@ -5,7 +5,7 @@ from sqlite3 import OperationalError
 
 # Настройка логирования
 logging.basicConfig(
-    level=logging.INFO,  # Уровень логирования
+    level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -33,19 +33,19 @@ async def forward_message(client, message):
             logger.debug(f"Сообщение из другого чата: {message.chat.id}")
     except OperationalError as e:
         logger.error(f"База данных заблокирована: {e}")
-        await asyncio.sleep(1)  # Ждем 1 секунду и повторяем
+        await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"Ошибка при пересылке сообщения: {e}")
 
 async def main():
     try:
-        if not app.is_connected:
-            await app.start()
+        await app.start()
         logger.info("Клиент запущен и готов к работе.")
         await asyncio.Event().wait()  # Ожидание
     except OperationalError as e:
         logger.critical(f"База данных заблокирована: {e}. Перезапуск...")
-        await asyncio.sleep(1)  # Ждем перед повторным запуском
+    except asyncio.CancelledError:
+        logger.warning("Завершение работы...")
     except Exception as e:
         logger.critical(f"Критическая ошибка: {e}")
     finally:
@@ -54,4 +54,11 @@ async def main():
             logger.info("Клиент остановлен корректно.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        logger.info("Остановка по Ctrl+C")
+    finally:
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
