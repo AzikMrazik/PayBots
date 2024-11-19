@@ -1,9 +1,11 @@
 import asyncio
 import logging
-from pyrogram import Client, filters
+from pyrogram import Client
+from sqlite3 import OperationalError
 
+# Настройка логирования
 logging.basicConfig(
-    level=logging.INFO,  # Уровень логирования (DEBUG для подробных логов)
+    level=logging.INFO,  # Уровень логирования
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -29,6 +31,9 @@ async def forward_message(client, message):
             logger.info(f"Сообщение переслано: {message.text}")
         else:
             logger.debug(f"Сообщение из другого чата: {message.chat.id}")
+    except OperationalError as e:
+        logger.error(f"База данных заблокирована: {e}")
+        await asyncio.sleep(1)  # Ждем 1 секунду и повторяем
     except Exception as e:
         logger.error(f"Ошибка при пересылке сообщения: {e}")
 
@@ -38,6 +43,9 @@ async def main():
             await app.start()
         logger.info("Клиент запущен и готов к работе.")
         await asyncio.Event().wait()  # Ожидание
+    except OperationalError as e:
+        logger.critical(f"База данных заблокирована: {e}. Перезапуск...")
+        await asyncio.sleep(1)  # Ждем перед повторным запуском
     except Exception as e:
         logger.critical(f"Критическая ошибка: {e}")
     finally:
