@@ -23,7 +23,7 @@ session_name = "boter"  # Имя сессии
 source_chat_id = int(os.getenv('SOURCE_CHAT_ID')) # ID группы (источник)
 target_channel_id = int(os.getenv('TARGET_CHANNEL_ID'))  # ID канала (назначение)
 
-print({api_id},{api_hash},{source_chat_id},{target_channel_id})
+print({api_id},{api_hash},{type(source_chat_id)},{type(target_channel_id)})
 
 
 # Инициализация клиента
