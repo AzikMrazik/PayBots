@@ -24,7 +24,8 @@ async def forward_message(client, message):
 async def main():
     await app.start()
     print("Клиент запущен. Ожидание сообщений...")
-    await app.idle()
+    # Используем asyncio.Event вместо idle()
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
