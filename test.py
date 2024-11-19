@@ -20,25 +20,28 @@ target_channel_id = -1002415709971  # ID канала (назначение)
 # Инициализация клиента
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
 
-@app.on_message(filters.chat(source_chat_id))
 async def forward_message(client, message):
     try:
-        logger.info(f"Получено сообщение: {message.text}")
-        await client.forward_messages(chat_id=target_channel_id, from_chat_id=message.chat.id, message_ids=message.id)
-        logger.info(f"Сообщение переслано: {message.text}")
+        # Проверяем, что сообщение пришло из нужной группы
+        if message.chat.id == source_chat_id:
+            # Пересылаем сообщение
+            await client.forward_messages(chat_id=target_channel_id, from_chat_id=message.chat.id, message_ids=message.id)
+            logging.info(f"Сообщение переслано: {message.text}")
+        else:
+            logging.debug(f"Сообщение из другого чата: {message.chat.id}")
     except Exception as e:
-        logger.error(f"Ошибка при пересылке сообщения: {e}")
+        logging.error(f"Ошибка при пересылке сообщения: {e}")
 
 async def main():
     try:
         await app.start()
-        logger.info("Клиент запущен и готов к работе.")
+        logging.info("Клиент запущен и готов к работе.")
         await asyncio.Event().wait()  # Бесконечное ожидание
     except Exception as e:
-        logger.critical(f"Критическая ошибка: {e}")
+        logging.critical(f"Критическая ошибка: {e}")
     finally:
         await app.stop()
-        logger.info("Клиент остановлен.")
+        logging.info("Клиент остановлен.")
 
 if __name__ == "__main__":
     asyncio.run(main())
