@@ -21,7 +21,7 @@ session_name = "boter"  # Имя сессии
 
 # ID чатов
 source_chat_id = int(os.getenv('SOURCE_CHAT_ID')) # ID группы (источник)
-target_channel_id = int(os.getenv('SOURCE_CHANNEL_ID'))  # ID канала (назначение)
+target_channel_id = int(os.getenv('TARGET_CHANNEL_ID'))  # ID канала (назначение)
 
 print({api_id},{api_hash},{source_chat_id},{target_channel_id})
 
@@ -34,13 +34,11 @@ async def forward_message(client, message):
     try:
         # Проверяем, что сообщение пришло из нужной группы
         if message.chat.id == source_chat_id:
+            logger.info(f"Пересылка сообщения из {message.chat.id} в {target_channel_id}")
             await client.forward_messages(chat_id=target_channel_id, from_chat_id=message.chat.id, message_ids=message.id)
             logger.info(f"Сообщение переслано: {message.text}")
         else:
             logger.debug(f"Сообщение из другого чата: {message.chat.id}")
-    except OperationalError as e:
-        logger.error(f"База данных заблокирована: {e}")
-        await asyncio.sleep(1)
     except Exception as e:
         logger.error(f"Ошибка при пересылке сообщения: {e}")
 
