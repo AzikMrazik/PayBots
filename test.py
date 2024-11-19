@@ -1,5 +1,12 @@
 import asyncio
+import logging
 from pyrogram import Client, filters
+
+logging.basicConfig(
+    level=logging.DEBUG,  # Уровень логирования (DEBUG для подробных логов)
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 # Ваши данные
 api_id = 27482634  # Замените на ваш API ID
@@ -16,16 +23,22 @@ app = Client(session_name, api_id=api_id, api_hash=api_hash)
 @app.on_message(filters.chat(source_chat_id))
 async def forward_message(client, message):
     try:
+        logger.info(f"Получено сообщение: {message.text}")
         await client.forward_messages(chat_id=target_channel_id, from_chat_id=message.chat.id, message_ids=message.id)
-        print(f"Сообщение переслано: {message.text}")
+        logger.info(f"Сообщение переслано: {message.text}")
     except Exception as e:
-        print(f"Ошибка при пересылке: {e}")
+        logger.error(f"Ошибка при пересылке сообщения: {e}")
 
 async def main():
-    await app.start()
-    print("Клиент запущен. Ожидание сообщений...")
-    # Используем asyncio.Event вместо idle()
-    await asyncio.Event().wait()
+    try:
+        await app.start()
+        logger.info("Клиент запущен и готов к работе.")
+        await asyncio.Event().wait()  # Бесконечное ожидание
+    except Exception as e:
+        logger.critical(f"Критическая ошибка: {e}")
+    finally:
+        await app.stop()
+        logger.info("Клиент остановлен.")
 
 if __name__ == "__main__":
     asyncio.run(main())
