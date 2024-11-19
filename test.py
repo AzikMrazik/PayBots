@@ -20,7 +20,7 @@ target_channel_id = -1002415709971  # ID канала (назначение)
 # Инициализация клиента
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
 
-@app.on_message()
+@app.on_message(filters.chat(source_chat_id))
 async def forward_message(client, message):
     try:
         logger.info(f"Получено сообщение: {message.text}")
