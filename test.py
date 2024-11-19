@@ -1,7 +1,11 @@
 import asyncio
 import logging
+import os
+from dotenv import load_dotenv
 from pyrogram import Client
 from sqlite3 import OperationalError
+
+load_dotenv(dotenv_path='/root/paybots/api.env')
 
 # Настройка логирования
 logging.basicConfig(
@@ -11,13 +15,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Ваши данные
-api_id = 27482634  # Замените на ваш API ID
-api_hash = "92944e4f562f1566af62e033a2e94864"  # Замените на ваш API Hash
+api_id = int(os.getenv('API_ID'))  # Замените на ваш API ID
+api_hash = os.getenv('API_HASH') # Замените на ваш API Hash
 session_name = "boter"  # Имя сессии
 
 # ID чатов
-source_chat_id = -1002486163462 # ID группы (источник)
-target_channel_id = -1002415709971  # ID канала (назначение)
+source_chat_id = os.getenv('SOURCE_CHAT_ID') # ID группы (источник)
+target_channel_id = os.getenv('SOURCE_CHANNEL_ID')  # ID канала (назначение)
 
 # Инициализация клиента
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
