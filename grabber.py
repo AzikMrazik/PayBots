@@ -20,8 +20,8 @@ api_hash = os.getenv('API_HASH') # Замените на ваш API Hash
 session_name = "boter"  # Имя сессии
 
 # ID чатов
-source_chat_id = os.getenv('SOURCE_CHAT_ID') # ID группы (источник)
-target_channel_id = os.getenv('SOURCE_CHANNEL_ID')  # ID канала (назначение)
+source_chat_id = int(os.getenv('SOURCE_CHAT_ID')) # ID группы (источник)
+target_channel_id = int(os.getenv('SOURCE_CHANNEL_ID'))  # ID канала (назначение)
 
 print({api_id},{api_hash},{source_chat_id},{target_channel_id})
 
