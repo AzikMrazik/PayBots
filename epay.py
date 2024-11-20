@@ -98,8 +98,13 @@ async def handle_message(message: types.Message):
             bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
             await message.reply(bank_name)
         if message.chat.id == CHANNEL_ID:
-            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
-            await bot.send_message(GROUP_ID, "\n".join(results))
+            if len(bins) > 1:
+                results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
+                await bot.send_message(GROUP_ID, "\n".join(results))
+            else:
+                bin_code = next(iter(bins))
+                bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+                await bot.send_message(GROUP_ID, bank_name)
         git_pull()
 
 @router.channel_post()
@@ -108,8 +113,13 @@ async def handle_channel_post(message: types.Message):
         bin_data = load_bin_data()
         bins = extract_bins(message.text)
         if bins:
-            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
-            await bot.send_message(GROUP_ID, "\n".join(results))
+            if len(bins) > 1:
+                results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
+                await bot.send_message(GROUP_ID, "\n".join(results))
+            else:
+                bin_code = next(iter(bins))
+                bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+                await bot.send_message(GROUP_ID, bank_name)
             git_pull()
 
 if __name__ == '__main__':
