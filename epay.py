@@ -51,7 +51,7 @@ def load_bin_data():
         return {}
 
 def extract_bin(text):
-    cleaned_text = re.sub(r"[^\d]", "", text)
+    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
     numbers = re.findall(r"\b\d{6,16}\b", cleaned_text)
     for number in numbers:
         return number[:6]
@@ -73,19 +73,15 @@ async def send_broadcast(message: Message, command: CommandObject):
         return
     text = command.args
     failed_chats = []
-    logger.info(f"Начало рассылки: {text}")
     for chat_id in visited_chats:
         try:
             await bot.send_message(chat_id, text)
-            logger.info(f"Сообщение отправлено в чат {chat_id}")
-        except Exception as e:
-            logger.error(f"Ошибка при отправке в чат {chat_id}: {e}")
+        except Exception:
             failed_chats.append(chat_id)
     if failed_chats:
         await message.reply(f"Рассылка завершена, но не удалось отправить сообщения в {len(failed_chats)} чатов.")
     else:
         await message.reply("Рассылка успешно завершена.")
-    logger.info("Рассылка завершена.")
 
 @router.message()
 async def handle_message(message: Message):
