@@ -4,12 +4,10 @@ import importlib
 import os
 import subprocess
 from dotenv import load_dotenv
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
-from aiogram.dispatcher.fsm.context import FSMContext
-from aiogram.dispatcher.fsm.state import State, StatesGroup
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
@@ -66,7 +64,7 @@ async def handle_message(message: Message):
             await bot.send_message(GROUP_ID, bank_name)
         git_pull()
 
-@router.message(lambda message: message.from_user.id in ADMINS, commands="send")
+@router.message(F.from_user.id.in_(ADMINS), F.text.startswith("/send "))
 async def send_broadcast(message: Message):
     text = message.text.partition(" ")[2]
     if text:
