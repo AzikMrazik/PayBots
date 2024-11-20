@@ -17,7 +17,7 @@ CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
 GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
 ADMINS = [831055006]
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=API_TOKEN)
