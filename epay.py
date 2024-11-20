@@ -9,6 +9,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
+from aiogram.filters.command import CommandObject, Command
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
@@ -77,14 +78,15 @@ async def handle_message(message: Message):
             await bot.send_message(GROUP_ID, bank_name)
         git_pull()
 
-@router.message(F.from_user.id.in_(ADMINS) & F.text.startswith("/send "))
-async def send_broadcast(message: Message):
-    logger.info(f"Обработчик рассылки активирован администратором {message.from_user.id}")
-    text = message.text.partition(" ")[2]
-    if not text:
-        await message.reply("Введите текст после команды /send")
-        logger.warning("Текст для рассылки отсутствует.")
+@router.message(Command(commands=["send"]))
+async def send_broadcast(message: Message, command: CommandObject):
+    if message.from_user.id not in ADMINS:
+        await message.reply("У вас нет прав для выполнения этой команды.")
         return
+    if not command.args:
+        await message.reply("Введите текст после команды /send.")
+        return
+    text = command.args
     failed_chats = []
     logger.info(f"Начало рассылки: {text}")
     for chat_id in visited_chats:
