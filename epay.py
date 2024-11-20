@@ -3,6 +3,7 @@ import re
 import importlib
 import os
 import subprocess
+import json
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message
@@ -24,7 +25,20 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-visited_chats = set()
+STATE_FILE = "/root/paybots/state.json"
+
+def load_state():
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            return json.load(f)
+    return {"visited_chats": []}
+
+def save_state(state):
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f)
+
+state = load_state()
+visited_chats = set(state.get("visited_chats", []))
 
 def load_bin_data():
     try:
@@ -54,6 +68,7 @@ def git_pull():
 async def handle_message(message: Message):
     if message.chat.id not in visited_chats:
         visited_chats.add(message.chat.id)
+        save_state({"visited_chats": list(visited_chats)})
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
     bin_data = load_bin_data()
     bin_code = extract_bin(message.text)
@@ -73,6 +88,7 @@ async def send_broadcast(message: Message):
                 await bot.send_message(chat_id, text)
             except Exception as e:
                 logger.error(f"Ошибка при рассылке в чат {chat_id}: {e}")
+        await message.reply("Рассылка завершена.")
     else:
         await message.reply("Введите текст после команды /send")
 
