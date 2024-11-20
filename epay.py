@@ -51,10 +51,11 @@ def load_bin_data():
         return {}
 
 def extract_bin(text):
-    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
-    numbers = re.findall(r"\b\d{6,16}\b", cleaned_text)
+    cleaned_text = re.sub(r"[^\d]", "", text.replace("\n", " "))
+    numbers = re.findall(r"\d{6,16}", cleaned_text)
     for number in numbers:
-        return number[:6]
+        if len(number) >= 6:
+            return number[:6]
     return None
 
 def git_pull():
