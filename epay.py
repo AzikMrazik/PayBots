@@ -2,24 +2,22 @@ import logging
 import re
 import importlib
 import os
-import json
 import subprocess
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
-from aiogram.filters import Command
+from aiogram.dispatcher.fsm.context import FSMContext
+from aiogram.dispatcher.fsm.state import State, StatesGroup
 
-# Загружаем переменные окружения
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv('API_TOKEN_EPAY')
+CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
+GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
+ADMINS = [831055006]
 
-# Список ID администраторов
-ADMIN_IDS = [831055006, 5583033210]  # Ваши ID
-
-# Настраиваем логирование
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -28,85 +26,57 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-# Путь к файлу для хранения списка чатов
-CHAT_STORAGE_PATH = '/root/paybots/chat_list.json'
+visited_chats = set()
 
-# Определение функции load_bin_data
 def load_bin_data():
-    """
-    Загружает данные из BINs.py.
-    """
     try:
-        bin_module = importlib.import_module("BINs")  # Убедитесь, что файл называется BINs.py
+        bin_module = importlib.import_module("BINs")
         logger.info("BINs.py успешно загружен.")
         return bin_module.bin_database
-    except ModuleNotFoundError:
-        logger.error("Файл BIN.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
-        return {}
     except Exception as e:
         logger.error(f"Ошибка при загрузке BIN.py: {e}")
         return {}
 
-# Остальной код
-def save_chat(chat_id):
-    """
-    Сохраняет ID чата в локальном JSON-файле.
-    """
+def extract_bin(text):
+    cleaned_text = re.sub(r"[^\d]", "", text)
+    numbers = re.findall(r"\b\d{6,16}\b", cleaned_text)
+    for number in numbers:
+        bin_candidate = number[:6]
+        logger.info(f"Найден BIN: {bin_candidate}")
+        return bin_candidate
+    return None
+
+def git_pull():
     try:
-        if not os.path.exists(CHAT_STORAGE_PATH):
-            with open(CHAT_STORAGE_PATH, 'w') as f:
-                json.dump([], f)
+        subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
-        with open(CHAT_STORAGE_PATH, 'r') as f:
-            chats = json.load(f)
-
-        if chat_id not in chats:
-            chats.append(chat_id)
-            with open(CHAT_STORAGE_PATH, 'w') as f:
-                json.dump(chats, f)
-            logger.info(f"Добавлен новый чат: {chat_id}")
-    except Exception as e:
-        logger.error(f"Ошибка при сохранении чата: {e}")
-
-def load_chats():
-    """
-    Загружает список ID чатов из локального JSON-файла.
-    """
-    try:
-        if not os.path.exists(CHAT_STORAGE_PATH):
-            return []
-        with open(CHAT_STORAGE_PATH, 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Ошибка при загрузке чатов: {e}")
-        return []
-
-# Все функции и обработчики определяются ниже
 @router.message()
 async def handle_message(message: Message):
-    """
-    Основной обработчик сообщений.
-    """
-    logger.info(f"Получено сообщение из чата {message.chat.id}")
-    logger.info(f"Текст сообщения: {message.text}")
-
-    # Сохраняем ID чата для рассылки
-    save_chat(message.chat.id)
-
-    # Проверка, что текст в сообщении присутствует
-    if message.text is None:
-        logger.info("Сообщение не содержит текст, пропуск обработки.")
-        return
-
+    if message.chat.id not in visited_chats:
+        visited_chats.add(message.chat.id)
+        await message.reply("Привет! Я готов помочь вам с определением BIN.")
+    bin_data = load_bin_data()
     bin_code = extract_bin(message.text)
     if bin_code:
-        bank_name = load_bin_data().get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
-        try:
-            await message.reply(bank_name)
-            logger.info("Сообщение о банке отправлено.")
-            git_pull()  # Выполняем git pull после отправки сообщения
-        except Exception as e:
-            logger.error(f"Ошибка при отправке сообщения: {e}")
+        bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+        await message.reply(bank_name)
+        if message.chat.id == CHANNEL_ID:
+            await bot.send_message(GROUP_ID, bank_name)
+        git_pull()
+
+@router.message(lambda message: message.from_user.id in ADMINS, commands="send")
+async def send_broadcast(message: Message):
+    text = message.text.partition(" ")[2]
+    if text:
+        for chat_id in visited_chats:
+            try:
+                await bot.send_message(chat_id, text)
+            except Exception as e:
+                logger.error(f"Ошибка при рассылке в чат {chat_id}: {e}")
+    else:
+        await message.reply("Введите текст после команды /send")
 
 if __name__ == '__main__':
     logger.info("Бот запущен и готов к работе.")
