@@ -27,15 +27,21 @@ dp.include_router(router)
 
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
+    """
+    Загрузка или перезагрузка BIN данных из BINs.py.
+    """
     try:
-        bin_module = importlib.import_module("BINs")  # Убедитесь, что файл называется BINs.py
+        if "BINs" in globals():
+            importlib.reload(globals()["BINs"])  # Принудительная перезагрузка модуля
+        else:
+            globals()["BINs"] = importlib.import_module("BINs")  # Импортируем модуль
         logger.info("BINs.py успешно загружен.")
-        return bin_module.bin_database
+        return globals()["BINs"].bin_database
     except ModuleNotFoundError:
-        logger.error("Файл BIN.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
+        logger.error("Файл BINs.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
         return {}
     except Exception as e:
-        logger.error(f"Ошибка при загрузке BIN.py: {e}")
+        logger.error(f"Ошибка при загрузке BINs.py: {e}")
         return {}
 
 def extract_bin(text):
@@ -83,7 +89,8 @@ async def handle_channel_post(message: Message):
     # Проверка сообщений из канала
     if message.chat.id == CHANNEL_ID:
         logger.info("Сообщение поступило из целевого канала.")
-        bin_data = load_bin_data()  # Загружаем BIN-данные при каждом сообщении
+        git_pull()  # Выполняем git pull перед загрузкой данных
+        bin_data = load_bin_data()  # Загружаем BIN-данные после обновления
         bin_code = extract_bin(message.text)
         if bin_code:
             bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе. @azikmrazik")
@@ -91,7 +98,6 @@ async def handle_channel_post(message: Message):
                 # Отправка сообщения только в группу
                 await bot.send_message(GROUP_ID, bank_name)
                 logger.info("Сообщение о банке отправлено в группу.")
-                git_pull()  # Выполняем git pull после отправки сообщения
             except Exception as e:
                 logger.error(f"Ошибка при отправке сообщения в группу: {e}")
         else:
