@@ -51,12 +51,21 @@ def load_bin_data():
         return {}
 
 def extract_bin(text):
-    cleaned_text = re.sub(r"[^\d]", "", text.replace("\n", " "))
-    numbers = re.findall(r"\d{6,16}", cleaned_text)
+    logger.info(f"Исходный текст для поиска BIN: {text}")
+    # Удаляем лишние символы и оставляем только цифры, пробелы и переносы строк
+    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
+    logger.info(f"Очищенный текст для поиска BIN: {cleaned_text}")
+    # Ищем все числа длиной от 6 до 16 символов
+    numbers = re.findall(r"\b\d{6,16}\b", cleaned_text)
+    logger.info(f"Найденные числа: {numbers}")
     for number in numbers:
         if len(number) >= 6:
-            return number[:6]
+            bin_code = number[:6]
+            logger.info(f"Определен BIN: {bin_code}")
+            return bin_code
+    logger.info("BIN не найден.")
     return None
+
 
 def git_pull():
     try:
