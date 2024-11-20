@@ -17,7 +17,7 @@ CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
 GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
 ADMINS = [831055006]
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=API_TOKEN)
@@ -80,15 +80,30 @@ async def handle_message(message: Message):
 @router.message(F.from_user.id.in_(ADMINS), F.text.startswith("/send "))
 async def send_broadcast(message: Message):
     text = message.text.partition(" ")[2]
-    if text:
-        for chat_id in visited_chats:
-            try:
-                await bot.send_message(chat_id, text)
-            except Exception as e:
-                logger.error(f"Ошибка при рассылке в чат {chat_id}: {e}")
-        await message.reply("Рассылка завершена.")
-    else:
+    if not text:
         await message.reply("Введите текст после команды /send")
+        return
+    failed_chats = []
+    for chat_id in visited_chats:
+        try:
+            await bot.send_message(chat_id, text)
+        except Exception as e:
+            logger.error(f"Ошибка при рассылке в чат {chat_id}: {e}")
+            failed_chats.append(chat_id)
+    if failed_chats:
+        await message.reply(f"Рассылка завершена, но не удалось отправить сообщения в {len(failed_chats)} чатов.")
+    else:
+        await message.reply("Рассылка успешно завершена.")
+
+@router.channel_post()
+async def handle_channel_post(message: Message):
+    if message.chat.id == CHANNEL_ID:
+        bin_data = load_bin_data()
+        bin_code = extract_bin(message.text)
+        if bin_code:
+            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+            await bot.send_message(GROUP_ID, bank_name)
+            git_pull()
 
 if __name__ == '__main__':
     dp.run_polling(bot)
