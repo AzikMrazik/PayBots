@@ -2,6 +2,7 @@ import logging
 import re
 import importlib
 import os
+import subprocess
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
@@ -27,7 +28,7 @@ dp.include_router(router)
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
     try:
-        bin_module = importlib.import_module("BINs")  # Переименуйте файл, если требуется
+        bin_module = importlib.import_module("BINs")  # Убедитесь, что файл называется BINs.py
         logger.info("BINs.py успешно загружен.")
         return bin_module.bin_database
     except ModuleNotFoundError:
@@ -54,6 +55,21 @@ def extract_bin(text):
     logger.info("BIN-код не найден после проверки диапазона.")
     return None
 
+def git_pull():
+    """
+    Выполняет команду git pull в папке /root/paybots/
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", "/root/paybots/", "pull"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        logger.info(f"Git pull выполнен успешно:\n{result.stdout}")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
+
 @router.channel_post()
 async def handle_channel_post(message: Message):
     logger.info(f"Получено сообщение из канала {message.chat.id}")
@@ -75,6 +91,7 @@ async def handle_channel_post(message: Message):
                 # Отправка сообщения только в группу
                 await bot.send_message(GROUP_ID, bank_name)
                 logger.info("Сообщение о банке отправлено в группу.")
+                git_pull()  # Выполняем git pull после отправки сообщения
             except Exception as e:
                 logger.error(f"Ошибка при отправке сообщения в группу: {e}")
         else:
