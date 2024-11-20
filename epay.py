@@ -63,21 +63,6 @@ def git_pull():
     except subprocess.CalledProcessError as e:
         logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
-@router.message()
-async def handle_message(message: Message):
-    if message.chat.id not in visited_chats:
-        visited_chats.add(message.chat.id)
-        save_state({"visited_chats": list(visited_chats)})
-        await message.reply("Привет! Я готов помочь вам с определением BIN.")
-    bin_data = load_bin_data()
-    bin_code = extract_bin(message.text)
-    if bin_code:
-        bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
-        await message.reply(bank_name)
-        if message.chat.id == CHANNEL_ID:
-            await bot.send_message(GROUP_ID, bank_name)
-        git_pull()
-
 @router.message(Command(commands=["send"]))
 async def send_broadcast(message: Message, command: CommandObject):
     if message.from_user.id not in ADMINS:
@@ -101,6 +86,23 @@ async def send_broadcast(message: Message, command: CommandObject):
     else:
         await message.reply("Рассылка успешно завершена.")
     logger.info("Рассылка завершена.")
+
+@router.message()
+async def handle_message(message: Message):
+    if message.text.startswith("/send"):
+        return
+    if message.chat.id not in visited_chats:
+        visited_chats.add(message.chat.id)
+        save_state({"visited_chats": list(visited_chats)})
+        await message.reply("Привет! Я готов помочь вам с определением BIN.")
+    bin_data = load_bin_data()
+    bin_code = extract_bin(message.text)
+    if bin_code:
+        bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+        await message.reply(bank_name)
+        if message.chat.id == CHANNEL_ID:
+            await bot.send_message(GROUP_ID, bank_name)
+        git_pull()
 
 @router.channel_post()
 async def handle_channel_post(message: Message):
