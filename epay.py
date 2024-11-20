@@ -1,3 +1,36 @@
+def extract_bins(text):
+    logger.info(f"Исходный текст для поиска BIN: {text}")
+    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
+    logger.info(f"Очищенный текст для поиска BIN: {cleaned_text}")
+    # Ищем только числа длиной ровно 6 (BIN) или 16 (полный номер карты)
+    numbers = re.findall(r"\b\d{6}(?:\d{10})?\b", cleaned_text)
+    logger.info(f"Найденные числа: {numbers}")
+    bins = {number[:6] for number in numbers if len(number) in [6, 16]}
+    logger.info(f"Определенные BIN: {bins}")
+    return bins if bins else None
+
+@router.message()
+async def handle_message(message: Message):
+    if message.text.startswith("/send"):
+        return
+    if message.chat.id not in visited_chats:
+        visited_chats.add(message.chat.id)
+        save_state({"visited_chats": list(visited_chats)})
+        await message.reply("Привет! Я готов помочь вам с определением BIN.")
+    bin_data = load_bin_data()
+    bins = extract_bins(message.text)
+    if bins:
+        if len(bins) > 1:
+            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
+            await message.reply("\n".join(results))
+        else:
+            bin_code = next(iter(bins))
+            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+            await message.reply(bank_name)
+        if message.chat.id == CHANNEL_ID:
+            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
+            await bot.send_message(GROUP_ID, "\n".join(results))
+        git_pull()
 import logging
 import re
 import importlib
@@ -50,21 +83,16 @@ def load_bin_data():
         logger.error(f"Ошибка при загрузке BIN.py: {e}")
         return {}
 
-def extract_bin(text):
+def extract_bins(text):
     logger.info(f"Исходный текст для поиска BIN: {text}")
-    # Удаляем лишние символы и оставляем только цифры, пробелы и переносы строк
     cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
     logger.info(f"Очищенный текст для поиска BIN: {cleaned_text}")
-    # Ищем все числа длиной от 6 до 16 символов
-    numbers = re.findall(r"\b\d{6,16}\b", cleaned_text)
+    # Ищем только числа длиной ровно 6 (BIN) или 16 (полный номер карты)
+    numbers = re.findall(r"\b\d{6}(?:\d{10})?\b", cleaned_text)
     logger.info(f"Найденные числа: {numbers}")
-    for number in numbers:
-        if len(number) >= 6:
-            bin_code = number[:6]
-            logger.info(f"Определен BIN: {bin_code}")
-            return bin_code
-    logger.info("BIN не найден.")
-    return None
+    bins = {number[:6] for number in numbers if len(number) in [6, 16]}
+    logger.info(f"Определенные BIN: {bins}")
+    return bins if bins else None
 
 
 def git_pull():
@@ -102,12 +130,18 @@ async def handle_message(message: Message):
         save_state({"visited_chats": list(visited_chats)})
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
     bin_data = load_bin_data()
-    bin_code = extract_bin(message.text)
-    if bin_code:
-        bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
-        await message.reply(bank_name)
+    bins = extract_bins(message.text)
+    if bins:
+        if len(bins) > 1:
+            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
+            await message.reply("\n".join(results))
+        else:
+            bin_code = next(iter(bins))
+            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+            await message.reply(bank_name)
         if message.chat.id == CHANNEL_ID:
-            await bot.send_message(GROUP_ID, bank_name)
+            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
+            await bot.send_message(GROUP_ID, "\n".join(results))
         git_pull()
 
 @router.channel_post()
