@@ -13,8 +13,6 @@ from aiogram.dispatcher.router import Router
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv('API_TOKEN_EPAY')
-CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))  # Преобразуем в число
-GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))  # Преобразуем в число
 
 # Настраиваем логирование
 logging.basicConfig(level=logging.INFO)
@@ -27,21 +25,15 @@ dp.include_router(router)
 
 # Импортируем BIN-данные из внешнего файла
 def load_bin_data():
-    """
-    Загрузка или перезагрузка BIN данных из BINs.py.
-    """
     try:
-        if "BINs" in globals():
-            importlib.reload(globals()["BINs"])  # Принудительная перезагрузка модуля
-        else:
-            globals()["BINs"] = importlib.import_module("BINs")  # Импортируем модуль
+        bin_module = importlib.import_module("BINs")  # Убедитесь, что файл называется BINs.py
         logger.info("BINs.py успешно загружен.")
-        return globals()["BINs"].bin_database
+        return bin_module.bin_database
     except ModuleNotFoundError:
-        logger.error("Файл BINs.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
+        logger.error("Файл BIN.py не найден. Проверьте, находится ли он в той же директории, что и бот.")
         return {}
     except Exception as e:
-        logger.error(f"Ошибка при загрузке BINs.py: {e}")
+        logger.error(f"Ошибка при загрузке BIN.py: {e}")
         return {}
 
 def extract_bin(text):
@@ -76,9 +68,9 @@ def git_pull():
     except subprocess.CalledProcessError as e:
         logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
-@router.channel_post()
-async def handle_channel_post(message: Message):
-    logger.info(f"Получено сообщение из канала {message.chat.id}")
+@router.message()
+async def handle_message(message: Message):
+    logger.info(f"Получено сообщение из чата {message.chat.id}")
     logger.info(f"Текст сообщения: {message.text}")
 
     # Проверка, что текст в сообщении присутствует
@@ -86,22 +78,17 @@ async def handle_channel_post(message: Message):
         logger.info("Сообщение не содержит текст, пропуск обработки.")
         return
 
-    # Проверка сообщений из канала
-    if message.chat.id == CHANNEL_ID:
-        logger.info("Сообщение поступило из целевого канала.")
-        git_pull()  # Выполняем git pull перед загрузкой данных
-        bin_data = load_bin_data()  # Загружаем BIN-данные после обновления
-        bin_code = extract_bin(message.text)
-        if bin_code:
-            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе. @azikmrazik")
-            try:
-                # Отправка сообщения только в группу
-                await bot.send_message(GROUP_ID, bank_name)
-                logger.info("Сообщение о банке отправлено в группу.")
-            except Exception as e:
-                logger.error(f"Ошибка при отправке сообщения в группу: {e}")
-        else:
-            logger.info("BIN-код не найден в тексте сообщения.")
+    bin_data = load_bin_data()  # Загружаем BIN-данные при каждом сообщении
+    bin_code = extract_bin(message.text)
+    if bin_code:
+        bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
+        try:
+            # Отправка ответа пользователю или в чат
+            await message.reply(bank_name)
+            logger.info("Сообщение о банке отправлено.")
+            git_pull()  # Выполняем git pull после отправки сообщения
+        except Exception as e:
+            logger.error(f"Ошибка при отправке сообщения: {e}")
 
 if __name__ == '__main__':
     logger.info("Бот запущен и готов к работе.")
