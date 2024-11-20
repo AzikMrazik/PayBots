@@ -77,23 +77,28 @@ async def handle_message(message: Message):
             await bot.send_message(GROUP_ID, bank_name)
         git_pull()
 
-@router.message(F.from_user.id.in_(ADMINS), F.text.startswith("/send "))
+@router.message(F.from_user.id.in_(ADMINS) & F.text.startswith("/send "))
 async def send_broadcast(message: Message):
+    logger.info(f"Обработчик рассылки активирован администратором {message.from_user.id}")
     text = message.text.partition(" ")[2]
     if not text:
         await message.reply("Введите текст после команды /send")
+        logger.warning("Текст для рассылки отсутствует.")
         return
     failed_chats = []
+    logger.info(f"Начало рассылки: {text}")
     for chat_id in visited_chats:
         try:
             await bot.send_message(chat_id, text)
+            logger.info(f"Сообщение отправлено в чат {chat_id}")
         except Exception as e:
-            logger.error(f"Ошибка при рассылке в чат {chat_id}: {e}")
+            logger.error(f"Ошибка при отправке в чат {chat_id}: {e}")
             failed_chats.append(chat_id)
     if failed_chats:
         await message.reply(f"Рассылка завершена, но не удалось отправить сообщения в {len(failed_chats)} чатов.")
     else:
         await message.reply("Рассылка успешно завершена.")
+    logger.info("Рассылка завершена.")
 
 @router.channel_post()
 async def handle_channel_post(message: Message):
