@@ -42,8 +42,8 @@ visited_chats = set(state.get("visited_chats", []))
 
 def load_bin_data():
     try:
+        importlib.invalidate_caches()
         bin_module = importlib.import_module("BINs")
-        logger.info("BINs.py успешно загружен.")
         return bin_module.bin_database
     except Exception as e:
         logger.error(f"Ошибка при загрузке BIN.py: {e}")
@@ -53,9 +53,7 @@ def extract_bin(text):
     cleaned_text = re.sub(r"[^\d]", "", text)
     numbers = re.findall(r"\b\d{6,16}\b", cleaned_text)
     for number in numbers:
-        bin_candidate = number[:6]
-        logger.info(f"Найден BIN: {bin_candidate}")
-        return bin_candidate
+        return number[:6]
     return None
 
 def git_pull():
@@ -93,5 +91,4 @@ async def send_broadcast(message: Message):
         await message.reply("Введите текст после команды /send")
 
 if __name__ == '__main__':
-    logger.info("Бот запущен и готов к работе.")
     dp.run_polling(bot)
