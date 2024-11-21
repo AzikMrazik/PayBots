@@ -72,7 +72,11 @@ async def process_payment_creation(message: types.Message):
             }
             data["signature"] = generate_signature(data, MERCHANT_TOKEN)
 
-            headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+            headers = {
+                "Authorization": f"Bearer {AUTH_TOKEN}",  # Убедимся, что токен передан корректно
+                "Content-Type": "application/json",
+            }
+
             logger.debug(f"Отправка запроса на создание платежа: {data}")
 
             async with session.post(f"{BASE_URL}/merchant/createOneTimeInvoice", json=data, headers=headers) as response:
@@ -82,7 +86,7 @@ async def process_payment_creation(message: types.Message):
                     payment_url = result.get("url", "Не удалось получить URL")
                     await message.answer(f"Платёж создан! Перейдите по ссылке для оплаты: {payment_url}")
                 else:
-                    error_message = result.get("message", "Неизвестная ошибка")
+                    error_message = result.get("error", {}).get("tag", "Неизвестная ошибка")
                     await message.answer(f"Ошибка при создании платежа: {error_message}")
     except Exception as e:
         logger.error(f"Системная ошибка: {e}")
@@ -93,7 +97,11 @@ async def process_payment_creation(message: types.Message):
 async def payment_history_handler(callback_query: types.CallbackQuery):
     try:
         async with aiohttp.ClientSession() as session:
-            headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+            headers = {
+                "Authorization": f"Bearer {AUTH_TOKEN}",
+                "Content-Type": "application/json",
+            }
+
             async with session.get(f"{BASE_URL}/merchant/invoices", headers=headers) as response:
                 result = await response.json()
                 logger.debug(f"Ответ API для истории платежей: {result}")
@@ -105,7 +113,7 @@ async def payment_history_handler(callback_query: types.CallbackQuery):
                     else:
                         await callback_query.message.answer("Нет доступных записей.")
                 else:
-                    error_message = result.get("message", "Неизвестная ошибка")
+                    error_message = result.get("error", {}).get("tag", "Неизвестная ошибка")
                     await callback_query.message.answer(f"Ошибка при получении истории: {error_message}")
     except Exception as e:
         logger.error(f"Системная ошибка: {e}")
@@ -129,7 +137,11 @@ async def process_withdraw_request(message: types.Message):
             }
             data["signature"] = generate_signature(data, MERCHANT_TOKEN)
 
-            headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+            headers = {
+                "Authorization": f"Bearer {AUTH_TOKEN}",
+                "Content-Type": "application/json",
+            }
+
             logger.debug(f"Отправка запроса на вывод: {data}")
 
             async with session.post(f"{BASE_URL}/withdraw", json=data, headers=headers) as response:
@@ -138,7 +150,7 @@ async def process_withdraw_request(message: types.Message):
                 if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
                     await message.answer("Запрос на вывод создан успешно!")
                 else:
-                    error_message = result.get("message", "Неизвестная ошибка")
+                    error_message = result.get("error", {}).get("tag", "Неизвестная ошибка")
                     await message.answer(f"Ошибка при создании запроса на вывод: {error_message}")
     except Exception as e:
         logger.error(f"Системная ошибка: {e}")
