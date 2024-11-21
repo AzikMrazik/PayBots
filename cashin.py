@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_TOKEN = os.getenv("BOT_API_TOKEN")
+API_TOKEN = os.getenv("API_TOKEN_CASHIN")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN_CASHIN")
 MERCHANT_TOKEN = AUTH_TOKEN
 BASE_URL = "https://api.cashinout.io"
