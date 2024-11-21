@@ -1,126 +1,133 @@
-import logging
-import re
-import importlib
+import aiohttp
+import hmac
+import hashlib
 import os
-import subprocess
-import json
-from dotenv import load_dotenv
-from aiogram import Bot, Dispatcher, types
+from aiohttp.web import Application, Response, run_app
+from aiogram import Bot, Dispatcher, types, Router
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.dispatcher.router import Router
+from dotenv import load_dotenv
 
-load_dotenv(dotenv_path='/root/paybots/api.env')
+load_dotenv()
 
-API_TOKEN = os.getenv('API_TOKEN_EPAY')
-CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
-GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
-ADMINS = list(map(int, os.getenv('ADMINS').split(',')))
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+API_TOKEN = os.getenv("BOT_API_TOKEN")
+AUTH_TOKEN = os.getenv("AUTH_TOKEN_CASHIN")
+MERCHANT_TOKEN = AUTH_TOKEN
+BASE_URL = "https://api.cashinout.io"
 
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
+dp = Dispatcher()
 router = Router()
 dp.include_router(router)
 
-STATE_FILE = "/root/paybots/state.json"
 
-def load_state():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {"visited_chats": []}
+def generate_signature(data: dict, secret: str) -> str:
+    sorted_params = sorted(data.items())
+    message = "\n".join(f"{k}={v}" for k, v in sorted_params)
+    return hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
 
-def save_state(state):
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f)
 
-state = load_state()
-visited_chats = set(state.get("visited_chats", []))
+def verify_signature(data: dict, secret: str) -> bool:
+    received_signature = data.pop("signature", None)
+    expected_signature = generate_signature(data, secret)
+    return hmac.compare_digest(received_signature, expected_signature)
 
-def load_bin_data():
-    try:
-        importlib.invalidate_caches()
-        bin_module = importlib.import_module("BINs")
-        return bin_module.bin_database
-    except Exception as e:
-        logger.error(f"Ошибка при загрузке BIN.py: {e}")
-        return {}
 
-def extract_bins(text):
-    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
-    numbers = re.findall(r"\b\d{6}(?:\d{10})?\b", cleaned_text)
-    bins = {number[:6] for number in numbers if len(number) in [6, 16]}
-    return bins if bins else None
+def main_menu():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Создать платёж", callback_data="create_payment")],
+            [InlineKeyboardButton(text="История", callback_data="payment_history")],
+            [InlineKeyboardButton(text="Вывод", callback_data="withdraw_funds")],
+        ]
+    )
 
-def git_pull():
-    try:
-        subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
-@router.message(Command("send"))
-async def send_broadcast(message: types.Message):
-    if message.from_user.id not in ADMINS:
-        await message.reply("У вас нет прав для выполнения этой команды.")
-        return
-    text = message.text.partition(" ")[2]
-    if not text:
-        await message.reply("Введите текст после команды /send.")
-        return
-    failed_chats = []
-    for chat_id in visited_chats:
-        try:
-            await bot.send_message(chat_id, text)
-        except Exception:
-            failed_chats.append(chat_id)
-    if failed_chats:
-        await message.reply(f"Рассылка завершена, но не удалось отправить сообщения в {len(failed_chats)} чатов.")
-    else:
-        await message.reply("Рассылка успешно завершена.")
+@router.message(Command(commands=["start"]))
+async def start_handler(message: types.Message):
+    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu())
 
-@router.message()
-async def handle_message(message: types.Message):
-    if message.chat.id not in visited_chats:
-        visited_chats.add(message.chat.id)
-        save_state({"visited_chats": list(visited_chats)})
-        await message.reply("Привет! Я готов помочь вам с определением BIN.")
-    bin_data = load_bin_data()
-    bins = extract_bins(message.text)
-    if bins:
-        if len(bins) > 1:
-            results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
-            await message.reply("\n".join(results))
-        else:
-            bin_code = next(iter(bins))
-            bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
-            await message.reply(bank_name)
-        if message.chat.id == CHANNEL_ID:
-            if len(bins) > 1:
-                results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
-                await bot.send_message(GROUP_ID, "\n".join(results))
+
+@router.callback_query(lambda c: c.data == "create_payment")
+async def create_payment_handler(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Введите сумму для платежа:")
+    router.message.register(process_payment_creation)
+
+
+async def process_payment_creation(message: types.Message):
+    amount = message.text
+    async with aiohttp.ClientSession() as session:
+        data = {
+            "amount": amount,
+            "currencies": [5],
+            "durationSeconds": 86400,
+            "callbackUrl": "https://yourserver.com/callback",
+            "redirectUrl": "https://yourwebsite.com/success",
+        }
+        data["signature"] = generate_signature(data, MERCHANT_TOKEN)
+
+        async with session.post(f"{BASE_URL}/merchant/createOneTimeInvoice", json=data) as response:
+            result = await response.json()
+            if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
+                payment_url = result.get("url", "Не удалось получить URL")
+                await message.answer(f"Платёж создан! Перейдите по ссылке для оплаты: {payment_url}")
             else:
-                bin_code = next(iter(bins))
-                bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
-                await bot.send_message(GROUP_ID, bank_name)
-        git_pull()
+                await message.answer("Ошибка при создании платежа.")
 
-@router.channel_post()
-async def handle_channel_post(message: types.Message):
-    if message.chat.id == CHANNEL_ID:
-        bin_data = load_bin_data()
-        bins = extract_bins(message.text)
-        if bins:
-            if len(bins) > 1:
-                results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
-                await bot.send_message(GROUP_ID, "\n".join(results))
+
+@router.callback_query(lambda c: c.data == "payment_history")
+async def payment_history_handler(callback_query: types.CallbackQuery):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{BASE_URL}/merchant/invoices", headers={"Authorization": f"Bearer {AUTH_TOKEN}"}) as response:
+            result = await response.json()
+            if response.status == 200:
+                invoices = result.get("data", [])
+                if invoices:
+                    history = "\n".join(f"ID: {inv['id']}, Статус: {inv['status']}" for inv in invoices)
+                    await callback_query.message.answer(f"История платежей:\n{history}")
+                else:
+                    await callback_query.message.answer("Нет доступных записей.")
             else:
-                bin_code = next(iter(bins))
-                bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
-                await bot.send_message(GROUP_ID, bank_name)
-            git_pull()
+                await callback_query.message.answer("Ошибка при получении истории.")
 
-if __name__ == '__main__':
+
+@router.callback_query(lambda c: c.data == "withdraw_funds")
+async def withdraw_funds_handler(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Введите сумму для вывода:")
+    router.message.register(process_withdraw_request)
+
+
+async def process_withdraw_request(message: types.Message):
+    amount = message.text
+    async with aiohttp.ClientSession() as session:
+        data = {
+            "amount": amount,
+            "currency": 5,
+            "callbackUrl": "https://t.me/tsamerchantbot",
+        }
+        data["signature"] = generate_signature(data, MERCHANT_TOKEN)
+
+        async with session.post(f"{BASE_URL}/withdraw", json=data) as response:
+            result = await response.json()
+            if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
+                await message.answer("Запрос на вывод создан успешно!")
+            else:
+                await message.answer("Ошибка при создании запроса на вывод.")
+
+
+async def handle_callback(request):
+    data = await request.json()
+    if verify_signature(data, MERCHANT_TOKEN):
+        payment_id = data.get("invoiceId")
+        status = data.get("status")
+        await bot.send_message(chat_id=123456789, text=f"Платёж {payment_id} обновлён. Статус: {status}")
+        return Response(text="OK")
+    return Response(status=400, text="Invalid signature")
+
+
+app = Application()
+app.router.add_post("/callback", handle_callback)
+
+if __name__ == "__main__":
     dp.run_polling(bot)
+    run_app(app, port=8080)
