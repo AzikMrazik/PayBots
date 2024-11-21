@@ -8,9 +8,9 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=_'/root/paybots/api.env')
+load_dotenv(dotenv_path="/root/paybots/api.env")  # Вернул правильный путь
 
-API_TOKEN = os.getenv("API_TOKEN_TEST")
+API_TOKEN = os.getenv("API_TOKEN_TEST")  # Использую переменные из оригинального кода
 AUTH_TOKEN = os.getenv("AUTH_TOKEN_CASHIN")
 MERCHANT_TOKEN = AUTH_TOKEN
 BASE_URL = "https://api.cashinout.io"
@@ -56,39 +56,45 @@ async def create_payment_handler(callback_query: types.CallbackQuery):
 
 async def process_payment_creation(message: types.Message):
     amount = message.text
-    async with aiohttp.ClientSession() as session:
-        data = {
-            "amount": amount,
-            "currencies": [5],
-            "durationSeconds": 86400,
-            "callbackUrl": "https://t.me/amtest0170_bot",
-            "redirectUrl": "https://yourwebsite.com/success",
-        }
-        data["signature"] = generate_signature(data, MERCHANT_TOKEN)
+    try:
+        async with aiohttp.ClientSession() as session:
+            data = {
+                "amount": amount,
+                "currencies": [5],
+                "durationSeconds": 86400,
+                "callbackUrl": "https://t.me/amtest0170_bot",  # Вернул оригинальный callbackUrl
+                "redirectUrl": "https://yourwebsite.com/success",
+            }
+            data["signature"] = generate_signature(data, MERCHANT_TOKEN)
 
-        async with session.post(f"{BASE_URL}/merchant/createOneTimeInvoice", json=data) as response:
-            result = await response.json()
-            if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
-                payment_url = result.get("url", "Не удалось получить URL")
-                await message.answer(f"Платёж создан! Перейдите по ссылке для оплаты: {payment_url}")
-            else:
-                await message.answer("Ошибка при создании платежа.")
+            async with session.post(f"{BASE_URL}/merchant/createOneTimeInvoice", json=data) as response:
+                result = await response.json()
+                if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
+                    payment_url = result.get("url", "Не удалось получить URL")
+                    await message.answer(f"Платёж создан! Перейдите по ссылке для оплаты: {payment_url}")
+                else:
+                    await message.answer(f"Ошибка при создании платежа: {result.get('message', 'Неизвестная ошибка')}")
+    except Exception as e:
+        await message.answer(f"Системная ошибка: {e}")
 
 
 @router.callback_query(lambda c: c.data == "payment_history")
 async def payment_history_handler(callback_query: types.CallbackQuery):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{BASE_URL}/merchant/invoices", headers={"Authorization": f"Bearer {AUTH_TOKEN}"}) as response:
-            result = await response.json()
-            if response.status == 200:
-                invoices = result.get("data", [])
-                if invoices:
-                    history = "\n".join(f"ID: {inv['id']}, Статус: {inv['status']}" for inv in invoices)
-                    await callback_query.message.answer(f"История платежей:\n{history}")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{BASE_URL}/merchant/invoices", headers={"Authorization": f"Bearer {AUTH_TOKEN}"}) as response:
+                result = await response.json()
+                if response.status == 200:
+                    invoices = result.get("data", [])
+                    if invoices:
+                        history = "\n".join(f"ID: {inv['id']}, Статус: {inv['status']}" for inv in invoices)
+                        await callback_query.message.answer(f"История платежей:\n{history}")
+                    else:
+                        await callback_query.message.answer("Нет доступных записей.")
                 else:
-                    await callback_query.message.answer("Нет доступных записей.")
-            else:
-                await callback_query.message.answer("Ошибка при получении истории.")
+                    await callback_query.message.answer(f"Ошибка при получении истории: {result.get('message', 'Неизвестная ошибка')}")
+    except Exception as e:
+        await callback_query.message.answer(f"Системная ошибка: {e}")
 
 
 @router.callback_query(lambda c: c.data == "withdraw_funds")
@@ -99,30 +105,36 @@ async def withdraw_funds_handler(callback_query: types.CallbackQuery):
 
 async def process_withdraw_request(message: types.Message):
     amount = message.text
-    async with aiohttp.ClientSession() as session:
-        data = {
-            "amount": amount,
-            "currency": 5,
-            "callbackUrl": "https://t.me/amtest0170_bot",
-        }
-        data["signature"] = generate_signature(data, MERCHANT_TOKEN)
+    try:
+        async with aiohttp.ClientSession() as session:
+            data = {
+                "amount": amount,
+                "currency": 5,
+                "callbackUrl": "https://t.me/amtest0170_bot",  # Вернул оригинальный callbackUrl
+            }
+            data["signature"] = generate_signature(data, MERCHANT_TOKEN)
 
-        async with session.post(f"{BASE_URL}/withdraw", json=data) as response:
-            result = await response.json()
-            if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
-                await message.answer("Запрос на вывод создан успешно!")
-            else:
-                await message.answer("Ошибка при создании запроса на вывод.")
+            async with session.post(f"{BASE_URL}/withdraw", json=data) as response:
+                result = await response.json()
+                if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
+                    await message.answer("Запрос на вывод создан успешно!")
+                else:
+                    await message.answer(f"Ошибка при создании запроса на вывод: {result.get('message', 'Неизвестная ошибка')}")
+    except Exception as e:
+        await message.answer(f"Системная ошибка: {e}")
 
 
 async def handle_callback(request):
-    data = await request.json()
-    if verify_signature(data, MERCHANT_TOKEN):
-        payment_id = data.get("invoiceId")
-        status = data.get("status")
-        await bot.send_message(chat_id=123456789, text=f"Платёж {payment_id} обновлён. Статус: {status}")
-        return Response(text="OK")
-    return Response(status=400, text="Invalid signature")
+    try:
+        data = await request.json()
+        if verify_signature(data, MERCHANT_TOKEN):
+            payment_id = data.get("invoiceId")
+            status = data.get("status")
+            await bot.send_message(chat_id=123456789, text=f"Платёж {payment_id} обновлён. Статус: {status}")
+            return Response(text="OK")
+        return Response(status=400, text="Invalid signature")
+    except Exception as e:
+        return Response(status=500, text=f"Error: {e}")
 
 
 app = Application()
