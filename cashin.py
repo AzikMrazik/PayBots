@@ -2,132 +2,110 @@ import aiohttp
 import hmac
 import hashlib
 import os
-from aiohttp.web import Application, Response, run_app
-from aiogram import Bot, Dispatcher, types, Router
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.filters import Command
 from dotenv import load_dotenv
+from aiogram import Bot, Dispatcher, types, Router, F
+from aiogram.filters import Command
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.memory import MemoryStorage
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
-API_TOKEN = os.getenv("API_TOKEN_CASHIN")
-AUTH_TOKEN = os.getenv("AUTH_TOKEN_CASHIN")
-MERCHANT_TOKEN = AUTH_TOKEN
+API_TOKEN = os.getenv('API_TOKEN_CASHIN')
 BASE_URL = "https://api.cashinout.io"
-
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+AUTH_TOKEN = os.getenv('AUTH_TOKEN_CASHIN')
 router = Router()
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(router)
 
-
-def generate_signature(data: dict, secret: str) -> str:
-    sorted_params = sorted(data.items())
-    message = "\n".join(f"{k}={v}" for k, v in sorted_params)
-    return hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
-
-
-def verify_signature(data: dict, secret: str) -> bool:
-    received_signature = data.pop("signature", None)
-    expected_signature = generate_signature(data, secret)
-    return hmac.compare_digest(received_signature, expected_signature)
-
+WUD_ID = 0
+USDT_ID = 5
+REDIRECT_URL = "https://telegram.org/"
+MERCHANT_TOKEN = AUTH_TOKEN
 
 def main_menu():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Создать платёж", callback_data="create_payment")],
-            [InlineKeyboardButton(text="История", callback_data="payment_history")],
-            [InlineKeyboardButton(text="Вывод", callback_data="withdraw_funds")],
-        ]
-    )
+    keyboard = [
+        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+def generate_signature(data: dict, merchant_token: str) -> str:
+    if "signature" in data:
+        del data["signature"]
+    sorted_params = sorted(data.items())
+    check_string = "\n".join([f"{k}={v}" for k, v in sorted_params])
+    signature = hmac.new(
+        merchant_token.encode('utf-8'),
+        check_string.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    return signature
 
-@router.message(Command(commands=["start"]))
-async def start_handler(message: types.Message):
+def verify_signature(data: dict, merchant_token: str) -> bool:
+    received_signature = data.get("signature", "")
+    if not received_signature:
+        return True
+    expected_signature = generate_signature(data, merchant_token)
+    return hmac.compare_digest(received_signature, expected_signature)
+
+@router.message(Command(commands=['start']))
+async def send_welcome(message: types.Message):
     await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu())
 
+@router.callback_query(lambda c: c.data == 'create_payment')
+async def create_payment(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Введите сумму для создания платежа:")
+    router.message.register(process_payment_amount, F.text)
 
-@router.callback_query(lambda c: c.data == "create_payment")
-async def create_payment_handler(callback_query: types.CallbackQuery):
-    await callback_query.message.answer("Введите сумму для платежа:")
-    router.message.register(process_payment_creation)
-
-
-async def process_payment_creation(message: types.Message):
+async def process_payment_amount(message: types.Message):
     amount = message.text
     async with aiohttp.ClientSession() as session:
-        data = {
-            "amount": amount,
-            "currencies": [5],
-            "durationSeconds": 86400,
-            "callbackUrl": "https://yourserver.com/callback",
-            "redirectUrl": "https://yourwebsite.com/success",
-        }
-        data["signature"] = generate_signature(data, MERCHANT_TOKEN)
-
-        async with session.post(f"{BASE_URL}/merchant/createOneTimeInvoice", json=data) as response:
-            result = await response.json()
-            if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
-                payment_url = result.get("url", "Не удалось получить URL")
-                await message.answer(f"Платёж создан! Перейдите по ссылке для оплаты: {payment_url}")
-            else:
-                await message.answer("Ошибка при создании платежа.")
-
-
-@router.callback_query(lambda c: c.data == "payment_history")
-async def payment_history_handler(callback_query: types.CallbackQuery):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{BASE_URL}/merchant/invoices", headers={"Authorization": f"Bearer {AUTH_TOKEN}"}) as response:
-            result = await response.json()
-            if response.status == 200:
-                invoices = result.get("data", [])
-                if invoices:
-                    history = "\n".join(f"ID: {inv['id']}, Статус: {inv['status']}" for inv in invoices)
-                    await callback_query.message.answer(f"История платежей:\n{history}")
+        async with session.post(
+            f"{BASE_URL}/merchant/createOneTimeInvoice",
+            headers={"Authorization": AUTH_TOKEN},
+            json={
+                "amount": amount,
+                "currency": WUD_ID,
+                "currencies": [WUD_ID],
+                "durationSeconds": 86400,
+                "redirectUrl": REDIRECT_URL
+            }
+        ) as resp:
+            data = await resp.json()
+            if verify_signature(data, MERCHANT_TOKEN):
+                payment_link = data.get("data")
+                if payment_link:
+                    payment_url = f"https://pay.cashinout.io/{payment_link}"
+                    await message.answer(f"Ссылка для оплаты: {payment_url}")
+                    await message.answer("Введите сумму для следующего платежа:", reply_markup=main_menu())
                 else:
-                    await callback_query.message.answer("Нет доступных записей.")
+                    await message.answer("Не удалось получить ссылку для оплаты.", reply_markup=main_menu())
             else:
-                await callback_query.message.answer("Ошибка при получении истории.")
+                await message.answer("Ошибка: неподтвержденная подпись данных.", reply_markup=main_menu())
 
-
-@router.callback_query(lambda c: c.data == "withdraw_funds")
-async def withdraw_funds_handler(callback_query: types.CallbackQuery):
-    await callback_query.message.answer("Введите сумму для вывода:")
-    router.message.register(process_withdraw_request)
-
-
-async def process_withdraw_request(message: types.Message):
-    amount = message.text
+@router.callback_query(lambda c: c.data == 'payment_history')
+async def payment_history(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Получаю историю платежей...")
     async with aiohttp.ClientSession() as session:
-        data = {
-            "amount": amount,
-            "currency": 5,
-            "callbackUrl": "https://yourserver.com/callback",
-        }
-        data["signature"] = generate_signature(data, MERCHANT_TOKEN)
-
-        async with session.post(f"{BASE_URL}/withdraw", json=data) as response:
-            result = await response.json()
-            if response.status == 200 and verify_signature(result, MERCHANT_TOKEN):
-                await message.answer("Запрос на вывод создан успешно!")
+        async with session.get(
+            f"{BASE_URL}/merchant/invoices?offset=0&limit=10&filters={{}}",
+            headers={"Authorization": AUTH_TOKEN}
+        ) as resp:
+            data = await resp.json()
+            if verify_signature(data, MERCHANT_TOKEN):
+                payments = data.get('data', {}).get('entries', [])
+                if not payments:
+                    await callback_query.message.answer("История платежей пуста.", reply_markup=main_menu())
+                else:
+                    history_message = "История платежей за последние 24 часа:\n\n"
+                    for idx, payment in enumerate(payments, 1):
+                        payment_url = f"https://pay.cashinout.io/{payment['id']}"
+                        history_message += f"{idx}. Статус: {payment['status']}, Сумма: {payment['amount']} RUB, Ссылка: {payment_url}\n"
+                    await callback_query.message.answer(history_message, reply_markup=main_menu())
             else:
-                await message.answer("Ошибка при создании запроса на вывод.")
+                await callback_query.message.answer("Ошибка: неподтвержденная подпись данных.", reply_markup=main_menu())
 
-
-async def handle_callback(request):
-    data = await request.json()
-    if verify_signature(data, MERCHANT_TOKEN):
-        payment_id = data.get("invoiceId")
-        status = data.get("status")
-        await bot.send_message(chat_id=123456789, text=f"Платёж {payment_id} обновлён. Статус: {status}")
-        return Response(text="OK")
-    return Response(status=400, text="Invalid signature")
-
-
-app = Application()
-app.router.add_post("/callback", handle_callback)
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     dp.run_polling(bot)
-    run_app(app, port=8080)
