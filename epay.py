@@ -77,8 +77,8 @@ async def send_broadcast(message: types.Message):
 
 def extract_bins(text):
     cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
-    numbers = re.findall(r"\b\d{6}\b|\b\d{16}\b", cleaned_text)
-    bins = {number[:6] for number in numbers}
+    numbers = re.findall(r"\b\d+\b", cleaned_text)
+    bins = {number[:6] for number in numbers if len(number) == 6 or len(number) == 16}
     return bins if bins else None
 
 @router.message()
