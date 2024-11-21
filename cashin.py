@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv("API_TOKEN_CASHIN")
 AUTH_TOKEN = os.getenv("AUTH_TOKEN_CASHIN")
