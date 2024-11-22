@@ -51,7 +51,8 @@ def load_bin_data():
 
 def git_pull():
     try:
-        subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
+        subprocess.run(["git pull"], capture_output=True, text=True, check=True)
+        print(f'git pulled')
     except subprocess.CalledProcessError as e:
         logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
