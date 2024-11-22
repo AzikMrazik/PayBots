@@ -25,7 +25,7 @@ source_chat_id = int(os.getenv('SOURCE_CHAT_ID'))
 target_channel_id = int(os.getenv('TARGET_CHANNEL_ID'))
 
 # ID пользователя для фильтрации
-user_id_filter = int(os.getenv('SOURCE_CHAT_ID'))
+user_id_filter = int(os.getenv('USER_ID_FILTER'))
 
 # Слова для фильтрации, загружаем из .env и разделяем на список
 filter_words = os.getenv('FILTER_WORDS', '').split(',')
