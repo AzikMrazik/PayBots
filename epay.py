@@ -48,18 +48,21 @@ def load_bin_data():
     except Exception as e:
         logger.error(f"Ошибка при загрузке BIN.py: {e}")
         return {}
-        
+
+def git_pull():
+    try:
+        result = subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
+        logger.info(f"Результат git pull:\n{result.stdout}")
+        importlib.invalidate_caches()
+        globals()["bin_data"] = load_bin_data()
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
+
 def extract_bins(text):
     cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
     numbers = re.findall(r"\b\d+\b", cleaned_text)
     bins = {number[:6] for number in numbers if len(number) == 6 or len(number) == 16}
     return bins if bins else None
-
-def git_pull():
-    try:
-        subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
 @router.message(Command("send"))
 async def send_broadcast(message: types.Message):
@@ -87,7 +90,6 @@ async def handle_message(message: types.Message):
         visited_chats.add(message.chat.id)
         save_state({"visited_chats": list(visited_chats)})
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
-    bin_data = load_bin_data()
     bins = extract_bins(message.text)
     if bins:
         if len(bins) > 1:
@@ -110,7 +112,6 @@ async def handle_message(message: types.Message):
 @router.channel_post()
 async def handle_channel_post(message: types.Message):
     if message.chat.id == CHANNEL_ID:
-        bin_data = load_bin_data()
         bins = extract_bins(message.text)
         if bins:
             if len(bins) > 1:
@@ -123,4 +124,5 @@ async def handle_channel_post(message: types.Message):
             git_pull()
 
 if __name__ == '__main__':
+    bin_data = load_bin_data()
     dp.run_polling(bot)
