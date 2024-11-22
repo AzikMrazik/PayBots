@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from pyrogram import Client
 from sqlite3 import OperationalError
 
+# Загрузка переменных окружения
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
 # Настройка логирования
@@ -15,19 +16,23 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Загрузка данных
-api_id = int(os.getenv('API_ID'))  # Замените на ваш API ID
-api_hash = os.getenv('API_HASH')  # Замените на ваш API Hash
-session_name = "boter"  # Имя сессии
+api_id = int(os.getenv('API_ID'))
+api_hash = os.getenv('API_HASH')
+session_name = "boter"
 
 # ID чатов
-source_chat_id = int(os.getenv('SOURCE_CHAT_ID'))  # ID группы (источник)
-target_channel_id = int(os.getenv('TARGET_CHANNEL_ID'))  # ID канала (назначение)
+source_chat_id = int(os.getenv('SOURCE_CHAT_ID'))
+target_channel_id = int(os.getenv('TARGET_CHANNEL_ID'))
 
 # ID пользователя для фильтрации
-user_id_filter = 6987651297  # ID пользователя, чьи сообщения нужно пересылать
+user_id_filter = int(os.getenv('SOURCE_CHAT_ID'))
+
+# Слова для фильтрации, загружаем из .env и разделяем на список
+filter_words = os.getenv('FILTER_WORDS', '').split(',')
 
 # Проверка данных
 logger.info(f"API_ID: {api_id}, API_HASH: {api_hash}, SOURCE_CHAT_ID: {source_chat_id}, TARGET_CHANNEL_ID: {target_channel_id}")
+logger.info(f"Слова для фильтрации: {filter_words}")
 
 # Инициализация клиента
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
@@ -39,6 +44,12 @@ async def forward_message(client, message):
         if message.chat.id == source_chat_id:
             # Проверяем, что сообщение отправлено указанным пользователем
             if message.from_user and message.from_user.id == user_id_filter:
+                # Проверка на наличие слов из фильтра
+                if any(word.lower() in message.text.lower() for word in filter_words if word):
+                    logger.info(f"Сообщение содержит запрещенные слова и не будет переслано: {message.text}")
+                    return
+                
+                # Пересылаем сообщение
                 logger.info(f"Пересылка сообщения от {message.from_user.id} из {message.chat.id} в {target_channel_id}")
                 await client.forward_messages(chat_id=target_channel_id, from_chat_id=message.chat.id, message_ids=message.id)
                 logger.info(f"Сообщение переслано: {message.text}")
