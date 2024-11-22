@@ -48,11 +48,16 @@ def load_bin_data():
     except Exception as e:
         logger.error(f"Ошибка при загрузке BIN.py: {e}")
         return {}
+        
+def extract_bins(text):
+    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
+    numbers = re.findall(r"\b\d+\b", cleaned_text)
+    bins = {number[:6] for number in numbers if len(number) == 6 or len(number) == 16}
+    return bins if bins else None
 
 def git_pull():
     try:
-        subprocess.run(["git pull"], capture_output=True, text=True, check=True)
-        print(f'git pulled')
+        subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
         logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
@@ -75,12 +80,6 @@ async def send_broadcast(message: types.Message):
         await message.reply(f"Рассылка завершена, но не удалось отправить сообщения в {len(failed_chats)} чатов.")
     else:
         await message.reply("Рассылка успешно завершена.")
-
-def extract_bins(text):
-    cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
-    numbers = re.findall(r"\b\d+\b", cleaned_text)
-    bins = {number[:6] for number in numbers if len(number) == 6 or len(number) == 16}
-    return bins if bins else None
 
 @router.message()
 async def handle_message(message: types.Message):
@@ -125,4 +124,3 @@ async def handle_channel_post(message: types.Message):
 
 if __name__ == '__main__':
     dp.run_polling(bot)
-
