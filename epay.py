@@ -49,19 +49,28 @@ def load_bin_data():
         logger.error(f"Ошибка при загрузке BIN.py: {e}")
         return {}
 
+def reload_bin_data():
+    try:
+        importlib.invalidate_caches()
+        bin_module = importlib.import_module("BINs")
+        importlib.reload(bin_module)
+        return bin_module.bin_database
+    except Exception as e:
+        logger.error(f"Ошибка при перезагрузке BIN.py: {e}")
+        return {}
+
 def git_pull():
     try:
         result = subprocess.run(["git", "-C", "/root/paybots/", "pull"], capture_output=True, text=True, check=True)
         logger.info(f"Результат git pull:\n{result.stdout}")
-        importlib.invalidate_caches()
-        globals()["bin_data"] = load_bin_data()
+        globals()["bin_data"] = reload_bin_data()
     except subprocess.CalledProcessError as e:
         logger.error(f"Ошибка при выполнении git pull:\n{e.stderr}")
 
 def extract_bins(text):
     cleaned_text = re.sub(r"[^\d\s]", "", text.replace("\n", " "))
-    numbers = re.findall(r"\b\d+\b", cleaned_text)
-    bins = {number[:6] for number in numbers if len(number) == 6 or len(number) == 16}
+    numbers = re.findall(r"\b\d{6}(?:\d{10})?\b", cleaned_text)
+    bins = {number[:6] for number in numbers if len(number) in [6, 16]}
     return bins if bins else None
 
 @router.message(Command("send"))
