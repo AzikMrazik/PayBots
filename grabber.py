@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from dotenv import load_dotenv
-from pyrogram import Client
+from pyrogram import Client, errors
 from sqlite3 import OperationalError
 
 # Загрузка переменных окружения
@@ -31,11 +31,29 @@ user_id_filter = int(os.getenv('USER_ID_FILTER'))
 filter_words = os.getenv('FILTER_WORDS', '').split(',')
 
 # Проверка данных
-logger.info(f"API_ID: {api_id}, API_HASH: {api_hash}, SOURCE_CHAT_ID: {source_chat_id}, TARGET_CHANNEL_ID: {target_channel_id}")
+logger.info(f"API_ID: {api_id}, SOURCE_CHAT_ID: {source_chat_id}, TARGET_CHANNEL_ID: {target_channel_id}")
 logger.info(f"Слова для фильтрации: {filter_words}")
 
 # Инициализация клиента
 app = Client(session_name, api_id=api_id, api_hash=api_hash)
+
+async def send_message_safely(client, chat_id, text):
+    """Безопасная отправка сообщения с несколькими попытками"""
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            await client.send_message(chat_id, text)
+            logger.info(f"Сообщение успешно отправлено в чат {chat_id}")
+            return True
+        except errors.FloodWait as e:
+            logger.warning(f"Flood wait: waiting for {e.value} seconds")
+            await asyncio.sleep(e.value)
+        except Exception as e:
+            logger.error(f"Ошибка при отправке сообщения (попытка {attempt + 1}): {e}")
+            await asyncio.sleep(2)  # Небольшая задержка между попытками
+    
+    logger.error(f"Не удалось отправить сообщение в чат {chat_id} после {max_retries} попыток")
+    return False
 
 @app.on_message()
 async def forward_message(client, message):
@@ -50,28 +68,47 @@ async def forward_message(client, message):
                     return
                 
                 try:
-                    # Пересылаем сообщение с дополнительной обработкой ошибок
+                    # Расширенная попытка пересылки с обработкой различных сценариев
                     logger.info(f"Попытка пересылки сообщения от {message.from_user.id} из {message.chat.id} в {target_channel_id}")
                     
-                    # Пытаемся переслать сообщение
-                    await client.forward_messages(
-                        chat_id=target_channel_id, 
-                        from_chat_id=message.chat.id, 
-                        message_ids=message.id
-                    )
-                    logger.info(f"Сообщение успешно переслано: {message.text}")
+                    # Пытаемся переслать сообщение с расширенной обработкой ошибок
+                    try:
+                        await client.forward_messages(
+                            chat_id=target_channel_id, 
+                            from_chat_id=message.chat.id, 
+                            message_ids=message.id
+                        )
+                        logger.info(f"Сообщение успешно переслано: {message.text}")
+                    except errors.FloodWait as flood_error:
+                        # Обработка флуд-контроля
+                        wait_time = flood_error.value
+                        logger.warning(f"Флуд-контроль. Ожидание {wait_time} секунд.")
+                        await asyncio.sleep(wait_time)
+                        # Повторная попытка пересылки
+                        await client.forward_messages(
+                            chat_id=target_channel_id, 
+                            from_chat_id=message.chat.id, 
+                            message_ids=message.id
+                        )
+                    except errors.PeerIdInvalid:
+                        # Если не удается переслать, пробуем отправить как копию
+                        logger.warning("Не удалось переслать. Попытка отправить как копию.")
+                        await send_message_safely(client, target_channel_id, message.text)
+                    except Exception as forward_error:
+                        logger.error(f"Критическая ошибка при пересылке: {forward_error}")
+                        # Последняя попытка - отправить текст сообщения
+                        await send_message_safely(client, target_channel_id, message.text)
                 
-                except Exception as forward_error:
-                    logger.error(f"Ошибка при пересылке сообщения: {forward_error}")
-                    # Можно добавить дополнительную логику восстановления или уведомления
+                except Exception as unexpected_error:
+                    logger.error(f"Неожиданная ошибка: {unexpected_error}")
             
             else:
                 logger.debug(f"Сообщение от другого пользователя: {message.from_user.id if message.from_user else 'Неизвестно'}")
         else:
             logger.debug(f"Сообщение из другого чата: {message.chat.id}")
     
-    except Exception as e:
-        logger.error(f"Неожиданная ошибка при обработке сообщения: {e}")
+    except Exception as global_error:
+        logger.error(f"Глобальная ошибка при обработке сообщения: {global_error}")
 
 async def main():
     try:
