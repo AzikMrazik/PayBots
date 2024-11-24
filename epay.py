@@ -4,11 +4,13 @@ import importlib
 import os
 import subprocess
 import shelve
+import json
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
+import fcntl
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
@@ -16,7 +18,8 @@ API_TOKEN = os.getenv('API_TOKEN_EPAY')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
 GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
 ADMINS = list(map(int, os.getenv('ADMINS').split(',')))
-STATE_FILE = "/root/paybots/epay_state"
+STATE_FILE = "/root/paybots/epay_state.json"
+BACKUP_STATE_FILE = "/root/paybots/epay_state_backup.json"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,18 +29,36 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
+def atomic_write(filename, data):
+    try:
+        temp_filename = filename + '.tmp'
+        with open(temp_filename, 'w') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            json.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        os.replace(temp_filename, filename)
+    except Exception as e:
+        logger.error(f"Ошибка при атомарной записи: {e}")
+
 def load_visited_chats():
     try:
-        with shelve.open(STATE_FILE) as db:
-            return set(db.get('visited_chats', set()))
+        if os.path.exists(STATE_FILE):
+            with open(STATE_FILE, 'r') as f:
+                return set(json.load(f))
+        elif os.path.exists(BACKUP_STATE_FILE):
+            with open(BACKUP_STATE_FILE, 'r') as f:
+                return set(json.load(f))
+        return set()
     except Exception as e:
         logger.error(f"Ошибка загрузки посещенных чатов: {e}")
         return set()
 
 def save_visited_chats(visited_chats):
     try:
-        with shelve.open(STATE_FILE) as db:
-            db['visited_chats'] = list(visited_chats)
+        atomic_write(STATE_FILE, list(visited_chats))
+        atomic_write(BACKUP_STATE_FILE, list(visited_chats))
     except Exception as e:
         logger.error(f"Ошибка сохранения посещенных чатов: {e}")
 
