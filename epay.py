@@ -3,14 +3,12 @@ import re
 import importlib
 import os
 import subprocess
-import shelve
 import json
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.dispatcher.router import Router
-import fcntl
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
@@ -29,19 +27,6 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-def atomic_write(filename, data):
-    try:
-        temp_filename = filename + '.tmp'
-        with open(temp_filename, 'w') as f:
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-            json.dump(data, f)
-            f.flush()
-            os.fsync(f.fileno())
-            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-        os.replace(temp_filename, filename)
-    except Exception as e:
-        logger.error(f"Ошибка при атомарной записи: {e}")
-
 def load_visited_chats():
     try:
         if os.path.exists(STATE_FILE):
@@ -57,8 +42,10 @@ def load_visited_chats():
 
 def save_visited_chats(visited_chats):
     try:
-        atomic_write(STATE_FILE, list(visited_chats))
-        atomic_write(BACKUP_STATE_FILE, list(visited_chats))
+        with open(STATE_FILE, 'w') as f:
+            json.dump(list(visited_chats), f)
+        with open(BACKUP_STATE_FILE, 'w') as f:
+            json.dump(list(visited_chats), f)
     except Exception as e:
         logger.error(f"Ошибка сохранения посещенных чатов: {e}")
 
@@ -121,12 +108,11 @@ async def send_broadcast(message: types.Message):
 async def handle_message(message: types.Message):
     chat_id = message.chat.id
     
-    # Проверяем, нужно ли отправлять приветствие
     if chat_id not in visited_chats:
         visited_chats.add(chat_id)
         save_visited_chats(visited_chats)
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
-        return  # Важно: выходим после приветствия
+        return
     
     bins = extract_bins(message.text)
     if bins:
