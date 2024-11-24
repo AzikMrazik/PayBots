@@ -120,10 +120,13 @@ async def send_broadcast(message: types.Message):
 @router.message()
 async def handle_message(message: types.Message):
     chat_id = message.chat.id
+    
+    # Проверяем, нужно ли отправлять приветствие
     if chat_id not in visited_chats:
         visited_chats.add(chat_id)
         save_visited_chats(visited_chats)
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
+        return  # Важно: выходим после приветствия
     
     bins = extract_bins(message.text)
     if bins:
@@ -143,7 +146,7 @@ async def handle_message(message: types.Message):
                 bin_code = next(iter(bins))
                 bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
                 await bot.send_message(GROUP_ID, bank_name)
-        git_pull()
+            git_pull()
 
 @router.channel_post()
 async def handle_channel_post(message: types.Message):
