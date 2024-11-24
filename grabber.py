@@ -53,14 +53,7 @@ async def forward_message(client, message):
                     # Пересылаем сообщение с дополнительной обработкой ошибок
                     logger.info(f"Попытка пересылки сообщения от {message.from_user.id} из {message.chat.id} в {target_channel_id}")
                     
-                    # Проверяем существование чата перед пересылкой
-                    try:
-                        await client.get_chat(target_channel_id)
-                    except Exception as chat_error:
-                        logger.error(f"Не удалось получить информацию о чате: {chat_error}")
-                        return
-                    
-                    # Пытаемся переслать сообщение с повторной попыткой
+                    # Пытаемся переслать сообщение
                     await client.forward_messages(
                         chat_id=target_channel_id, 
                         from_chat_id=message.chat.id, 
@@ -69,7 +62,7 @@ async def forward_message(client, message):
                     logger.info(f"Сообщение успешно переслано: {message.text}")
                 
                 except Exception as forward_error:
-                    logger.error(f"Детальная ошибка при пересылке: {forward_error}")
+                    logger.error(f"Ошибка при пересылке сообщения: {forward_error}")
                     # Можно добавить дополнительную логику восстановления или уведомления
             
             else:
