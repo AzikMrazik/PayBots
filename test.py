@@ -208,9 +208,11 @@ async def handle_message(message: types.Message):
                 if message.chat.id == CHANNEL_ID:
                     await forward_to_group(bins, bin_data)
             else:
-                await message.reply("Не удалось извлечь BIN из введенного номера.")
+                # Не выводим сообщение, если BIN не извлечен
+                pass
         else:
-            await message.reply("Введен некорректный номер карты. Пожалуйста, введите 6 или 16 цифр, можно с пробелами.")
+            # Не выводим сообщение, если номер карты некорректный
+            pass
 
     except Exception as e:
         logging.error(f"Ошибка при обработке сообщения: {e}")
