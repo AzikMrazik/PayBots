@@ -18,7 +18,7 @@ API_TOKEN = os.getenv('API_TOKEN_EPAY')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
 GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
 ADMINS = list(map(int, os.getenv('ADMINS').split(',')))
-STATE_FILE = "/root/paybots/epay_state.json"
+STATE_FILE = "/root/paybots/chat_list.json"
 BACKUP_STATE_FILE = "/root/paybots/epay_state_backup.json"
 
 logging.basicConfig(level=logging.INFO)
