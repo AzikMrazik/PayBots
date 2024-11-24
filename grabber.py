@@ -49,16 +49,36 @@ async def forward_message(client, message):
                     logger.info(f"Сообщение содержит запрещенные слова и не будет переслано: {message.text}")
                     return
                 
-                # Пересылаем сообщение
-                logger.info(f"Пересылка сообщения от {message.from_user.id} из {message.chat.id} в {target_channel_id}")
-                await client.forward_messages(chat_id=target_channel_id, from_chat_id=message.chat.id, message_ids=message.id)
-                logger.info(f"Сообщение переслано: {message.text}")
+                try:
+                    # Пересылаем сообщение с дополнительной обработкой ошибок
+                    logger.info(f"Попытка пересылки сообщения от {message.from_user.id} из {message.chat.id} в {target_channel_id}")
+                    
+                    # Проверяем существование чата перед пересылкой
+                    try:
+                        await client.get_chat(target_channel_id)
+                    except Exception as chat_error:
+                        logger.error(f"Не удалось получить информацию о чате: {chat_error}")
+                        return
+                    
+                    # Пытаемся переслать сообщение с повторной попыткой
+                    await client.forward_messages(
+                        chat_id=target_channel_id, 
+                        from_chat_id=message.chat.id, 
+                        message_ids=message.id
+                    )
+                    logger.info(f"Сообщение успешно переслано: {message.text}")
+                
+                except Exception as forward_error:
+                    logger.error(f"Детальная ошибка при пересылке: {forward_error}")
+                    # Можно добавить дополнительную логику восстановления или уведомления
+            
             else:
                 logger.debug(f"Сообщение от другого пользователя: {message.from_user.id if message.from_user else 'Неизвестно'}")
         else:
             logger.debug(f"Сообщение из другого чата: {message.chat.id}")
+    
     except Exception as e:
-        logger.error(f"Ошибка при пересылке сообщения: {e}")
+        logger.error(f"Неожиданная ошибка при обработке сообщения: {e}")
 
 async def main():
     try:
