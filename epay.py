@@ -3,7 +3,6 @@ import re
 import importlib
 import os
 import subprocess
-import json
 import shelve
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
@@ -27,22 +26,22 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-def load_state():
+def load_visited_chats():
     try:
         with shelve.open(STATE_FILE) as db:
             return set(db.get('visited_chats', set()))
     except Exception as e:
-        logger.error(f"Error loading state: {e}")
+        logger.error(f"Ошибка загрузки посещенных чатов: {e}")
         return set()
 
-def save_state(visited_chats):
+def save_visited_chats(visited_chats):
     try:
         with shelve.open(STATE_FILE) as db:
             db['visited_chats'] = list(visited_chats)
     except Exception as e:
-        logger.error(f"Error saving state: {e}")
+        logger.error(f"Ошибка сохранения посещенных чатов: {e}")
 
-visited_chats = load_state()
+visited_chats = load_visited_chats()
 
 def load_bin_data():
     try:
@@ -99,10 +98,12 @@ async def send_broadcast(message: types.Message):
 
 @router.message()
 async def handle_message(message: types.Message):
-    if message.chat.id not in visited_chats:
-        visited_chats.add(message.chat.id)
-        save_state(visited_chats)
+    chat_id = message.chat.id
+    if chat_id not in visited_chats:
+        visited_chats.add(chat_id)
+        save_visited_chats(visited_chats)
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
+    
     bins = extract_bins(message.text)
     if bins:
         if len(bins) > 1:
@@ -112,7 +113,8 @@ async def handle_message(message: types.Message):
             bin_code = next(iter(bins))
             bank_name = bin_data.get(bin_code, "Банк с данным BIN-кодом не найден в базе.")
             await message.reply(bank_name)
-        if message.chat.id == CHANNEL_ID:
+        
+        if chat_id == CHANNEL_ID:
             if len(bins) > 1:
                 results = [f"{bin_code} - {bin_data.get(bin_code, 'Банк не найден')}" for bin_code in bins]
                 await bot.send_message(GROUP_ID, "\n".join(results))
