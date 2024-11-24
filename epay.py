@@ -4,6 +4,7 @@ import importlib
 import os
 import subprocess
 import json
+import shelve
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -16,6 +17,7 @@ API_TOKEN = os.getenv('API_TOKEN_EPAY')
 CHANNEL_ID = int(os.getenv('CHANNEL_ID_EPAY'))
 GROUP_ID = int(os.getenv('GROUP_ID_EPAY'))
 ADMINS = list(map(int, os.getenv('ADMINS').split(',')))
+STATE_FILE = "/root/paybots/epay_state"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -25,20 +27,22 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-STATE_FILE = "/root/paybots/state.json"
-
 def load_state():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {"visited_chats": []}
+    try:
+        with shelve.open(STATE_FILE) as db:
+            return set(db.get('visited_chats', set()))
+    except Exception as e:
+        logger.error(f"Error loading state: {e}")
+        return set()
 
-def save_state(state):
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f)
+def save_state(visited_chats):
+    try:
+        with shelve.open(STATE_FILE) as db:
+            db['visited_chats'] = list(visited_chats)
+    except Exception as e:
+        logger.error(f"Error saving state: {e}")
 
-state = load_state()
-visited_chats = set(state.get("visited_chats", []))
+visited_chats = load_state()
 
 def load_bin_data():
     try:
@@ -97,7 +101,7 @@ async def send_broadcast(message: types.Message):
 async def handle_message(message: types.Message):
     if message.chat.id not in visited_chats:
         visited_chats.add(message.chat.id)
-        save_state({"visited_chats": list(visited_chats)})
+        save_state(visited_chats)
         await message.reply("Привет! Я готов помочь вам с определением BIN.")
     bins = extract_bins(message.text)
     if bins:
