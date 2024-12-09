@@ -8,6 +8,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
 import os
 import asyncio
+from bs4 import BeautifulSoup
 
 # Загрузка конфигурации
 load_dotenv(dotenv_path='/root/paybots/api.env')
@@ -77,20 +78,20 @@ async def process_payment(callback_query: CallbackQuery):
     # Отправка POST-запроса
     response = requests.post(PAYMENT_URL, data=data)
 
-    # Проверка длины ответа
     if response.status_code == 200:
-        response_text = response.text
-        if len(response_text) > 4000:  # Telegram ограничивает сообщения ~4096 символами
-            # Логирование полного ответа
-            logging.info(f"Полный ответ сервера: {response_text}")
-            # Отправка пользователю сокращённого ответа
-            await callback_query.message.answer("Ответ сервера слишком длинный. Полный ответ записан в логах.")
+        # Проверка, если ответ в формате HTML
+        if response.text.startswith("<!DOCTYPE html>"):
+            soup = BeautifulSoup(response.text, "html.parser")
+            error_message = soup.find("p", class_="errorText")
+            if error_message:
+                await callback_query.message.answer(f"Ошибка: {error_message.text.strip()}")
+            else:
+                await callback_query.message.answer("Неизвестная ошибка. Проверьте данные.")
         else:
-            await callback_query.message.answer(f"Ответ сервера: {response_text}")
+            await callback_query.message.answer(f"Ответ сервера: {response.text}")
     else:
         await callback_query.message.answer(f"Ошибка: {response.status_code}. Ответ сервера: {response.reason}")
 
-    # Спросить сумму для следующего платежа
     await callback_query.message.answer("Введите сумму следующего платежа:")
 
 async def main():
