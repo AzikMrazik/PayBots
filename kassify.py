@@ -53,7 +53,7 @@ async def get_sum(message: Message):
 
     await message.answer("Выберите систему оплаты:", reply_markup=keyboard.as_markup())
 
-@dp.callback_query(lambda call: call.data in payment_methods)
+@dp.callback_query_handler(lambda call: call.data in payment_methods)
 async def process_payment(callback_query: CallbackQuery):
     user_id = generate_id()
     order_id = generate_id()
@@ -77,11 +77,18 @@ async def process_payment(callback_query: CallbackQuery):
     # Отправка POST-запроса
     response = requests.post(PAYMENT_URL, data=data)
 
-    # Ответ пользователю
+    # Проверка длины ответа
     if response.status_code == 200:
-        await callback_query.message.answer(f"Ответ сервера: {response.text}")
+        response_text = response.text
+        if len(response_text) > 4000:  # Telegram ограничивает сообщения ~4096 символами
+            # Логирование полного ответа
+            logging.info(f"Полный ответ сервера: {response_text}")
+            # Отправка пользователю сокращённого ответа
+            await callback_query.message.answer("Ответ сервера слишком длинный. Полный ответ записан в логах.")
+        else:
+            await callback_query.message.answer(f"Ответ сервера: {response_text}")
     else:
-        await callback_query.message.answer(f"Ошибка: {response.status_code}")
+        await callback_query.message.answer(f"Ошибка: {response.status_code}. Ответ сервера: {response.reason}")
 
     # Спросить сумму для следующего платежа
     await callback_query.message.answer("Введите сумму следующего платежа:")
