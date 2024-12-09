@@ -72,13 +72,13 @@ async def process_payment(callback_query: CallbackQuery):
                 await callback_query.message.answer(f"Ошибка: {error_message.text.strip()}")
             else:
                 log_file = io.BytesIO(response_text.encode())
-                log_file.name = "response.html"
-                await callback_query.message.answer_document(InputFile(log_file))
+                log_file.seek(0)
+                await callback_query.message.answer_document(InputFile(log_file, "response.html"))
         else:
             if len(response_text) > 4000:
                 log_file = io.BytesIO(response_text.encode())
-                log_file.name = "response.txt"
-                await callback_query.message.answer_document(InputFile(log_file))
+                log_file.seek(0)
+                await callback_query.message.answer_document(InputFile(log_file, "response.txt"))
             else:
                 await callback_query.message.answer(f"Ответ сервера: {response_text}")
     else:
