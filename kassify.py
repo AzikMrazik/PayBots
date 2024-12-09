@@ -1,6 +1,8 @@
 import logging
 import random
 import requests
+import io
+from aiogram.types import InputFile
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram.filters import Command
@@ -69,10 +71,12 @@ async def process_payment(callback_query: CallbackQuery):
             if error_message:
                 await callback_query.message.answer(f"Ошибка: {error_message.text.strip()}")
             else:
-                await callback_query.message.answer_document(('response.html', response_text.encode()))
+                log_file = io.StringIO(response_text)
+                await callback_query.message.answer_document(InputFile(log_file, filename="response.html"))
         else:
             if len(response_text) > 4000:
-                await callback_query.message.answer_document(('response.txt', response_text.encode()))
+                log_file = io.StringIO(response_text)
+                await callback_query.message.answer_document(InputFile(log_file, filename="response.txt"))
             else:
                 await callback_query.message.answer(f"Ответ сервера: {response_text}")
     else:
