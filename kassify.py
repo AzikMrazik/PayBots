@@ -77,17 +77,18 @@ async def process_payment(callback_query: CallbackQuery):
 
     # Отправка POST-запроса
     response = requests.post(PAYMENT_URL, data=data)
+    response_text = response.text
 
     if response.status_code == 200:
         # Проверка, если ответ в формате HTML
-        if response.text.startswith("<!DOCTYPE html>"):
-            soup = BeautifulSoup(response.text, "html.parser")
+        if response_text.startswith("<!DOCTYPE html>"):
+            soup = BeautifulSoup(response_text, "html.parser")
             error_message = soup.find("p", class_="errorText")
             if error_message:
                 await callback_query.message.answer(f"Ошибка: {error_message.text.strip()}")
             else:
                 await callback_query.message.answer("Неизвестная ошибка. Проверьте данные.")
-         else:
+        else:
             if len(response_text) > 4000:
                 logging.info(f"Полный ответ сервера: {response_text}")
                 await callback_query.message.answer("Ответ сервера слишком длинный. Полный текст записан в логах.")
