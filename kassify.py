@@ -9,7 +9,7 @@ import os
 
 # Загрузка конфигурации
 load_dotenv(dotenv_path='/root/paybots/api.env')
-API_TOKEN = os.getenv('API_BOT_KASSIFY')
+API_TOKEN = os.getenv('API_TOKEN_KASSIFY')
 MERCHANT_ID = os.getenv('MERCHANT_ID_KASSIFY')
 KEY_SHOP = os.getenv('KEY_SHOP_KASSIFY')
 
