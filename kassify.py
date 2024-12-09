@@ -53,7 +53,7 @@ async def get_sum(message: Message):
 
     await message.answer("Выберите систему оплаты:", reply_markup=keyboard.as_markup())
 
-@dp.callback_query_handler(lambda call: call.data in payment_methods)
+@dp.callback_query(lambda call: call.data in payment_methods)
 async def process_payment(callback_query: CallbackQuery):
     user_id = generate_id()
     order_id = generate_id()
