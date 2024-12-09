@@ -1,11 +1,13 @@
 import logging
 import random
 import requests
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils import executor
+from aiogram import Bot, Dispatcher
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.filters import Command
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
 import os
+import asyncio
 
 # Загрузка конфигурации
 load_dotenv(dotenv_path='/root/paybots/api.env')
@@ -18,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
 # URL для отправки платежа
 PAYMENT_URL = "https://kassify.com/sci/"
@@ -27,28 +29,32 @@ PAYMENT_URL = "https://kassify.com/sci/"
 def generate_id():
     return str(random.randint(1000000, 9999999))
 
-# Inline-кнопки для выбора платежной системы
-payment_methods = ["epaycoreRUB", "yoomoney", "yoomoney_HIYP", "P2P_pay"]
-payment_keyboard = InlineKeyboardMarkup(row_width=2)
-for method in payment_methods:
-    payment_keyboard.add(InlineKeyboardButton(method, callback_data=method))
-
 # Хранение данных пользователя
 user_data = {}
 
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
+# Inline-кнопки для выбора платежной системы
+payment_methods = ["epaycoreRUB", "yoomoney", "yoomoney_HIYP", "P2P_pay"]
+
+@dp.message(Command("start"))
+async def start(message: Message):
     await message.answer("Введите сумму платежа (без копеек):")
     user_data[message.chat.id] = {}
 
-@dp.message_handler(lambda message: message.text.isdigit())
-async def get_sum(message: types.Message):
+@dp.message(lambda msg: msg.text.isdigit())
+async def get_sum(message: Message):
     amount = message.text + ".00"
     user_data[message.chat.id]['amount'] = amount
-    await message.answer("Выберите систему оплаты:", reply_markup=payment_keyboard)
 
-@dp.callback_query_handler(lambda callback: callback.data in payment_methods)
-async def process_payment(callback_query: types.CallbackQuery):
+    # Создание клавиатуры с платёжными методами
+    keyboard = InlineKeyboardBuilder()
+    for method in payment_methods:
+        keyboard.add(InlineKeyboardButton(text=method, callback_data=method))
+    keyboard.adjust(2)
+
+    await message.answer("Выберите систему оплаты:", reply_markup=keyboard.as_markup())
+
+@dp.callback_query(lambda call: call.data in payment_methods)
+async def process_payment(callback_query: CallbackQuery):
     user_id = generate_id()
     order_id = generate_id()
     payment_system = callback_query.data
@@ -56,7 +62,7 @@ async def process_payment(callback_query: types.CallbackQuery):
 
     # Формирование подписи
     hash_string = f"{MERCHANT_ID}:{amount}:{KEY_SHOP}:{order_id}"
-    signature = requests.utils.quote(hash_string)  # md5 форматирование строки
+    signature = requests.utils.quote(hash_string)
 
     # Формирование данных для запроса
     data = {
@@ -80,6 +86,8 @@ async def process_payment(callback_query: types.CallbackQuery):
     # Спросить сумму для следующего платежа
     await callback_query.message.answer("Введите сумму следующего платежа:")
 
-# Запуск бота
+async def main():
+    await dp.start_polling(bot)
+
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
