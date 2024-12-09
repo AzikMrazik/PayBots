@@ -17,7 +17,7 @@ MERCHANT_ID = os.getenv('MERCHANT_ID_KASSIFY')
 KEY_SHOP = os.getenv('KEY_SHOP_KASSIFY')
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='bot.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN)
@@ -82,15 +82,19 @@ async def process_payment(callback_query: CallbackQuery):
     if response.status_code == 200:
         # Проверка, если ответ в формате HTML
         if response_text.startswith("<!DOCTYPE html>"):
+            # Логирование полного HTML-ответа
+            logging.info(f"Полный ответ сервера (HTML):\n{response_text}")
+            # Парсинг HTML для извлечения ошибок
             soup = BeautifulSoup(response_text, "html.parser")
             error_message = soup.find("p", class_="errorText")
             if error_message:
                 await callback_query.message.answer(f"Ошибка: {error_message.text.strip()}")
             else:
-                await callback_query.message.answer("Неизвестная ошибка. Проверьте данные.")
+                await callback_query.message.answer("Ответ сервера содержит HTML, но ошибка не найдена.")
         else:
+            # Логирование ответа, если он текстовый, но длинный
             if len(response_text) > 4000:
-                logging.info(f"Полный ответ сервера: {response_text}")
+                logging.info(f"Полный текстовый ответ сервера: {response_text}")
                 await callback_query.message.answer("Ответ сервера слишком длинный. Полный текст записан в логах.")
             else:
                 await callback_query.message.answer(f"Ответ сервера: {response_text}")
