@@ -87,11 +87,17 @@ async def process_payment(callback_query: CallbackQuery):
                 await callback_query.message.answer(f"Ошибка: {error_message.text.strip()}")
             else:
                 await callback_query.message.answer("Неизвестная ошибка. Проверьте данные.")
-        else:
-            await callback_query.message.answer(f"Ответ сервера: {response.text}")
+                else:
+            # Ограничить длину текста для Telegram
+            if len(response_text) > 4000:
+                logging.info(f"Полный ответ сервера: {response_text}")
+                await callback_query.message.answer("Ответ сервера слишком длинный. Полный текст записан в логах.")
+            else:
+                await callback_query.message.answer(f"Ответ сервера: {response_text}")
     else:
         await callback_query.message.answer(f"Ошибка: {response.status_code}. Ответ сервера: {response.reason}")
 
+    # Спросить сумму для следующего платежа
     await callback_query.message.answer("Введите сумму следующего платежа:")
 
 async def main():
