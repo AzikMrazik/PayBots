@@ -29,7 +29,7 @@ def generate_id():
 
 user_data = {}
 
-payment_methods = ["card_RUB", "yoomoney", "paypal"]
+payment_methods = ["card_RUB", "card_RUB_MANUAL"]
 
 @dp.message(Command("start"))
 async def start(message: Message):
