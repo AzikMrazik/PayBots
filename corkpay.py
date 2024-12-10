@@ -7,7 +7,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils.i18n import load_dotenv
+from dotenv import load_dotenv
 import os
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
