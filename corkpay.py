@@ -20,20 +20,13 @@ CALLBACK_URL = "https://t.me/"
 def create_payment_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")]
-        ]
-    )
-
-def create_check_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
             [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")]
         ]
     )
 
 @router.message(F.text == "/start")
 async def start_command(message: Message):
-    await message.answer("Введите сумму для оплаты:", reply_markup=create_payment_keyboard())
+    await message.answer("Введите сумму для оплаты:")
 
 @router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
 async def create_payment(message: Message):
@@ -48,7 +41,6 @@ async def create_payment(message: Message):
             "merchant_order": merchant_order,
             "callback_url": CALLBACK_URL,
         }
-
         response = requests.post("https://oeiblas.shop/h2h/p2p", json=payload)
         if response.status_code == 200:
             response_data = response.json()
@@ -60,7 +52,10 @@ async def create_payment(message: Message):
                     reply_markup=create_payment_keyboard(),
                 )
             else:
-                await message.answer("Реквизиты не найдены. Попробуйте проверить платеж.")
+                await message.answer(
+                    "Реквизиты не найдены. Попробуйте снова:",
+                    reply_markup=create_payment_keyboard(),
+                )
         else:
             await message.answer(f"Ошибка HTTP при создании платежа: {response.status_code}")
     except ValueError:
@@ -70,16 +65,13 @@ async def create_payment(message: Message):
 
 @router.callback_query(F.data == "check_payment")
 async def check_payment(callback_query: CallbackQuery):
-    try:
-        await bot.send_message(callback_query.from_user.id, "Введите SIGN для проверки:")
-    except Exception as e:
-        await bot.send_message(callback_query.from_user.id, f"Ошибка: {e}")
+    await bot.send_message(callback_query.from_user.id, "Введите сумму для платежа:")
 
-@router.message(F.text.regexp(r"^[A-Za-z0-9]+$"))
+@router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
 async def verify_payment(message: Message):
     try:
-        sign = message.text.strip()
-        payload = {"sign": sign}
+        amount = message.text.strip()
+        payload = {"amount": amount}
         response = requests.post("https://corkpay.cc/api/apiOrderStatus", json=payload)
         if response.status_code == 200:
             response_data = response.json()
@@ -88,8 +80,7 @@ async def verify_payment(message: Message):
                     f"Платеж подтвержден!\nКарта: {response_data.get('card')}\nВведите сумму для следующего платежа:"
                 )
             else:
-                reason = response_data.get("reason", "Неизвестная ошибка")
-                await message.answer(f"Ошибка проверки платежа: {reason}\nПопробуйте еще раз.")
+                await message.answer(f"Ошибка проверки платежа: {response_data.get('reason', 'Неизвестная ошибка')}")
         else:
             await message.answer(f"Ошибка HTTP при проверке платежа: {response.status_code}")
     except Exception as e:
