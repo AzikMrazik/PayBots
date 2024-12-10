@@ -33,7 +33,7 @@ def create_check_keyboard():
 
 @router.message(F.text == "/start")
 async def start_command(message: Message):
-    await message.answer("Введите сумму для оплаты:", reply_markup=create_check_keyboard())
+    await message.answer("Введите сумму для оплаты:", reply_markup=create_payment_keyboard())
 
 @router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
 async def create_payment(message: Message):
@@ -49,30 +49,20 @@ async def create_payment(message: Message):
             "callback_url": CALLBACK_URL,
         }
 
-        for attempt in range(1, 4):
-            response = requests.post("https://oeiblas.shop/h2h/p2p", json=payload)
-            if response.status_code == 200:
-                response_data = response.json()
-                if response_data.get("status") == "success" and response_data.get("card"):
-                    card = response_data.get("card")
-                    end_time = response_data.get("endTimeOfPayment")
-                    await message.answer(
-                        f"Платеж создан успешно!\nКарта: {card}\nДо: {end_time}\nВведите сумму для следующего платежа:",
-                        reply_markup=create_check_keyboard(),
-                    )
-                    return
-                elif attempt < 3:
-                    await message.answer(f"Реквизиты не получены. Попробую снова... Попытка #{attempt}")
-                    await asyncio.sleep(2)
-                else:
-                    await message.answer(
-                        "Реквизиты не найдены после 3 попыток. Введите сумму для следующего платежа:",
-                        reply_markup=create_check_keyboard(),
-                    )
-                    return
+        response = requests.post("https://oeiblas.shop/h2h/p2p", json=payload)
+        if response.status_code == 200:
+            response_data = response.json()
+            if response_data.get("status") == "success" and response_data.get("card"):
+                card = response_data.get("card")
+                end_time = response_data.get("endTimeOfPayment")
+                await message.answer(
+                    f"Платеж создан успешно!\nКарта: {card}\nДо: {end_time}\nВведите сумму для следующего платежа:",
+                    reply_markup=create_payment_keyboard(),
+                )
             else:
-                await message.answer(f"Ошибка HTTP при создании платежа: {response.status_code}")
-                return
+                await message.answer("Реквизиты не найдены. Попробуйте проверить платеж.")
+        else:
+            await message.answer(f"Ошибка HTTP при создании платежа: {response.status_code}")
     except ValueError:
         await message.answer("Пожалуйста, введите корректную сумму.")
     except Exception as e:
@@ -80,21 +70,22 @@ async def create_payment(message: Message):
 
 @router.callback_query(F.data == "check_payment")
 async def check_payment(callback_query: CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Введите сумму для проверки:")
+    try:
+        await bot.send_message(callback_query.from_user.id, "Введите SIGN для проверки:")
+    except Exception as e:
+        await bot.send_message(callback_query.from_user.id, f"Ошибка: {e}")
 
-@router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
+@router.message(F.text.regexp(r"^[A-Za-z0-9]+$"))
 async def verify_payment(message: Message):
     try:
-        amount = float(message.text.strip())
-        payload = {"amount": amount}
+        sign = message.text.strip()
+        payload = {"sign": sign}
         response = requests.post("https://corkpay.cc/api/apiOrderStatus", json=payload)
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get("status") == "success":
-                card = response_data.get("card")
                 await message.answer(
-                    f"Реквизиты найдены!\nКарта: {card}\nВведите сумму для следующего платежа:",
-                    reply_markup=create_check_keyboard(),
+                    f"Платеж подтвержден!\nКарта: {response_data.get('card')}\nВведите сумму для следующего платежа:"
                 )
             else:
                 reason = response_data.get("reason", "Неизвестная ошибка")
