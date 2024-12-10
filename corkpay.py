@@ -3,8 +3,6 @@ import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram import F
 from dotenv import load_dotenv
 import os
 
@@ -39,18 +37,16 @@ def check_payment(sign):
 
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
-    await ask_amount(message.chat.id)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
+        [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")],
+    ])
+    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=keyboard)
 
-async def ask_amount(chat_id):
-    keyboard = InlineKeyboardBuilder()
-    keyboard.button(text="Создать платеж", callback_data="create_payment")
-    keyboard.button(text="Проверить платеж", callback_data="check_payment")
-    await bot.send_message(chat_id, "Введите сумму для оплаты:", reply_markup=keyboard.as_markup())
-
-@dp.callback_query(F.data == "create_payment")
+@dp.callback_query(lambda callback: callback.data == "create_payment")
 async def handle_create_payment(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.message.chat.id, "Введите сумму для нового платежа:")
-    @dp.message(F.text.regexp(r"^\d+(\.\d{1,2})?$"))
+    @dp.message(lambda message: message.text.replace('.', '', 1).isdigit())
     async def process_amount(message: types.Message):
         amount = float(message.text)
         payment_response = create_payment(amount)
@@ -60,19 +56,19 @@ async def handle_create_payment(callback_query: types.CallbackQuery):
             sign = payment_response.get("sign")
             await bot.send_message(
                 message.chat.id,
-                f"Платеж создан успешно:\nКарта: {card}\nСрок оплаты (UNIX): {end_time}\nSign: {sign}\nВведите следующую сумму:",
+                f"Платеж создан успешно:\nКарта: {card}\nСрок оплаты (UNIX): {end_time}\nSign: {sign}\nВведите следующую сумму или выберите действие:"
             )
         else:
             await bot.send_message(
                 message.chat.id,
                 f"Ошибка создания платежа: {payment_response.get('reason')}\nПопробуйте снова."
             )
-        await ask_amount(message.chat.id)
+        dp.message_handlers.unregister(process_amount)
 
-@dp.callback_query(F.data == "check_payment")
+@dp.callback_query(lambda callback: callback.data == "check_payment")
 async def handle_check_payment(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.message.chat.id, "Введите Sign для проверки платежа:")
-    @dp.message()
+    @dp.message(lambda message: True)
     async def process_sign(message: types.Message):
         sign = message.text
         check_response = check_payment(sign)
@@ -86,7 +82,7 @@ async def handle_check_payment(callback_query: types.CallbackQuery):
                 message.chat.id,
                 f"Ошибка проверки платежа: {check_response.get('reason')}\nПопробуйте снова."
             )
-        await ask_amount(message.chat.id)
+        dp.message_handlers.unregister(process_sign)
 
 if __name__ == "__main__":
     dp.run_polling(bot)
