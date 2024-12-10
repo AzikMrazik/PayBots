@@ -1,115 +1,96 @@
-import asyncio
-from aiogram import Bot, Dispatcher, F, Router
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, CallbackQuery
 import time
 import requests
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import Command
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.utils.i18n import load_dotenv
 import os
-from dotenv import load_dotenv
 
 load_dotenv(dotenv_path='/root/paybots/api.env')
-API_TOKEN = os.getenv("API_TOKEN_CORKPAY")
-MERCHANT_TOKEN = os.getenv("MERCHANT_TOKEN_CORKPAY")
-MERCHANT_ID = os.getenv("MERCHANT_ID_CORKPAY")
+
+API_TOKEN = os.getenv('API_TOKEN_CORKPAY')
+MERCHANT_TOKEN = os.getenv('MERCHANT_TOKEN_CORKPAY')
+MERCHANT_ID = os.getenv('MERCHANT_ID_CORKPAY')
 
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
-router = Router()
+dp = Dispatcher(storage=MemoryStorage())
 
-CALLBACK_URL = "https://t.me/"
+class PaymentState(StatesGroup):
+    waiting_for_amount = State()
+    waiting_for_sign = State()
 
-def create_payment_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")]
-        ]
-    )
+async def create_payment(amount: str):
+    url = "https://oeiblas.shop/h2h/p2p"
+    merchant_order = str(int(time.time()))
+    data = {
+        "merchant_id": MERCHANT_ID,
+        "merchant_token": MERCHANT_TOKEN,
+        "ip": merchant_order,
+        "amount": amount,
+        "merchant_order": merchant_order,
+        "callback_url": "https://t.me/"
+    }
+    response = requests.post(url, json=data)
+    return response.json()
 
-def create_check_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")]
-        ]
-    )
+async def check_payment(sign: str):
+    url = "https://corkpay.cc/api/apiOrderStatus"
+    data = {
+        "merchant_token": MERCHANT_TOKEN,
+        "sign": sign
+    }
+    response = requests.post(url, json=data)
+    return response.json()
 
-@router.message(F.text == "/start")
-async def start_command(message: Message):
-    await message.answer("Введите сумму для оплаты:", reply_markup=create_check_keyboard())
+@dp.message(Command("start"))
+async def start_command(message: types.Message, state: FSMContext):
+    await message.answer("Введите сумму для оплаты:")
+    await state.set_state(PaymentState.waiting_for_amount)
 
-@router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
-async def create_payment(message: Message):
+@dp.message(PaymentState.waiting_for_amount)
+async def handle_amount(message: types.Message, state: FSMContext):
+    amount = message.text
     try:
-        amount = float(message.text.strip())
-        merchant_order = str(int(time.time()))
-        payload = {
-            "merchant_id": MERCHANT_ID,
-            "merchant_token": MERCHANT_TOKEN,
-            "ip": merchant_order,
-            "amount": f"{amount:.2f}",
-            "merchant_order": merchant_order,
-            "callback_url": CALLBACK_URL,
-        }
-
-        attempt = 1
-        max_attempts = 3
-
-        while attempt <= max_attempts:
-            response = requests.post("https://oeiblas.shop/h2h/p2p", json=payload)
-            if response.status_code == 200:
-                response_data = response.json()
-                if response_data.get("status") == "success" and response_data.get("card"):
-                    card = response_data.get("card")
-                    end_time = response_data.get("endTimeOfPayment")
-                    await message.answer(
-                        f"Платеж создан успешно!\nКарта: {card}\nДо: {end_time}\nВведите сумму для следующего платежа:",
-                        reply_markup=create_check_keyboard(),
-                    )
-                    return
-                elif attempt < max_attempts:
-                    await message.answer(f"Реквизиты не получены. Попробую снова... Попытка #{attempt}")
-                    attempt += 1
-                    await asyncio.sleep(2)
-                else:
-                    await message.answer(
-                        "Реквизиты не найдены после 3 попыток. Введите сумму для следующего платежа:",
-                        reply_markup=create_check_keyboard(),
-                    )
-                    return
-            else:
-                await message.answer(f"Ошибка HTTP при создании платежа: {response.status_code}")
-                return
+        float(amount)
     except ValueError:
-        await message.answer("Пожалуйста, введите корректную сумму.")
-    except Exception as e:
-        await message.answer(f"Неизвестная ошибка: {e}")
+        await message.answer("Введите корректную сумму в формате числа.")
+        return
 
-@router.callback_query(F.data == "check_payment")
-async def check_payment(callback_query: CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, "Введите SIGN для проверки:")
+    payment_response = await create_payment(amount)
 
-@router.message(F.text.regexp(r"^[A-Za-z0-9]+$"))
-async def verify_payment(message: Message):
-    try:
-        sign = message.text.strip()
-        payload = {"sign": sign}
-        response = requests.post("https://oeiblas.shop/h2h/p2p/verify", json=payload)
-        if response.status_code == 200:
-            response_data = response.json()
-            if response_data.get("status") == "success":
-                await message.answer(
-                    f"Платеж подтвержден!\nСтатус: {response_data.get('status')}\nВведите SIGN для следующей проверки:"
-                )
-            else:
-                reason = response_data.get("reason", "Неизвестная ошибка")
-                await message.answer(f"Ошибка проверки платежа: {reason}\nПопробуйте еще раз.")
-        else:
-            await message.answer(f"Ошибка HTTP при проверке платежа: {response.status_code}")
-    except Exception as e:
-        await message.answer(f"Неизвестная ошибка: {e}")
+    if payment_response.get("status") == "success":
+        card = payment_response.get("card")
+        sign = payment_response.get("sign")
+        keyboard = InlineKeyboardBuilder()
+        keyboard.button(text="Проверить платеж", callback_data="check_payment")
+        keyboard.button(text="Создать платеж", callback_data="create_payment")
+        keyboard = keyboard.as_markup()
 
-async def main():
-    dp.include_router(router)
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+        await message.answer(f"Платеж создан успешно!\nКарта для оплаты: {card}\nSign: {sign}", reply_markup=keyboard)
+        await state.update_data(sign=sign)
+    else:
+        reason = payment_response.get("reason", "Неизвестная ошибка")
+        await message.answer(f"Ошибка создания платежа: {reason}")
+
+@dp.callback_query(lambda c: c.data == "check_payment")
+async def check_payment_callback(callback_query: types.CallbackQuery, state: FSMContext):
+    user_data = await state.get_data()
+    sign = user_data.get("sign")
+    if not sign:
+        await callback_query.message.answer("Сначала создайте платеж.")
+        return
+
+    payment_status = await check_payment(sign)
+    await callback_query.message.answer(f"Результат проверки: {payment_status}")
+
+@dp.callback_query(lambda c: c.data == "create_payment")
+async def create_payment_callback(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Введите сумму для оплаты:")
+    await PaymentState.waiting_for_amount.set()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    dp.run_polling(bot)
