@@ -1,7 +1,6 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.dispatcher.filters import Command
 import time
 import requests
 import os
@@ -27,11 +26,11 @@ def create_payment_keyboard():
     keyboard.add(InlineKeyboardButton("Создать платеж", callback_data="create_payment"))
     return keyboard
 
-@dp.message(Command("start"))
+@dp.message(F.text == "/start")
 async def start_command(message: types.Message):
     await message.answer("Введите сумму для оплаты:", reply_markup=create_payment_keyboard())
 
-@dp.message()
+@dp.message(F.text.regexp(r"^\d+(\.\d+)?$"))
 async def create_payment(message: types.Message):
     try:
         amount = float(message.text.strip())
@@ -61,11 +60,11 @@ async def create_payment(message: types.Message):
     except Exception as e:
         await message.answer(f"Ошибка: {str(e)}")
 
-@dp.callback_query(lambda c: c.data == "check_payment")
+@dp.callback_query(F.data == "check_payment")
 async def check_payment(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, "Введите SIGN для проверки:")
 
-@dp.message()
+@dp.message(F.text.regexp(r"^[A-Za-z0-9]+$"))
 async def verify_payment(message: types.Message):
     try:
         sign = message.text.strip()
@@ -83,6 +82,8 @@ async def verify_payment(message: types.Message):
         await message.answer(f"Ошибка: {str(e)}")
 
 async def main():
+    dp.include_router(dp.router)
+    await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
