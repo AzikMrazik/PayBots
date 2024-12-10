@@ -54,8 +54,19 @@ async def create_payment(message: Message):
             "merchant_order": merchant_order,
             "callback_url": CALLBACK_URL,
         }
+        # Log payload
+        print(f"Создание платежа с данными: {payload}")
+
         response = requests.post("https://oeiblas.shop/h2h/p2p", json=payload)
+        print(f"HTTP статус: {response.status_code}, Текст ответа: {response.text}")
+
+        if response.status_code != 200:
+            await message.answer(f"Ошибка HTTP при создании платежа: {response.status_code}\n{response.text}")
+            return
+
         response_data = response.json()
+        print(f"Ответ API: {response_data}")
+
         if response_data.get("status") == "success":
             card = response_data.get("card")
             end_time = response_data.get("endTimeOfPayment")
@@ -69,7 +80,9 @@ async def create_payment(message: Message):
     except ValueError:
         await message.answer("Пожалуйста, введите корректную сумму.")
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+        # Log exception details
+        print(f"Ошибка при создании платежа: {e}")
+        await message.answer(f"Неизвестная ошибка: {e}")
 
 @router.callback_query(F.data == "check_payment")
 async def check_payment(callback_query: CallbackQuery):
@@ -80,8 +93,19 @@ async def verify_payment(message: Message):
     try:
         sign = message.text.strip()
         payload = {"sign": sign}
+        # Log payload
+        print(f"Проверка платежа с SIGN: {payload}")
+
         response = requests.post("https://oeiblas.shop/h2h/p2p/verify", json=payload)
+        print(f"HTTP статус: {response.status_code}, Текст ответа: {response.text}")
+
+        if response.status_code != 200:
+            await message.answer(f"Ошибка HTTP при проверке платежа: {response.status_code}\n{response.text}")
+            return
+
         response_data = response.json()
+        print(f"Ответ API: {response_data}")
+
         if response_data.get("status") == "success":
             await message.answer(
                 f"Платеж подтвержден!\nСтатус: {response_data.get('status')}\nВведите SIGN для следующей проверки:"
@@ -90,7 +114,9 @@ async def verify_payment(message: Message):
             reason = response_data.get("reason", "Неизвестная ошибка")
             await message.answer(f"Ошибка проверки платежа: {reason}\nПопробуйте еще раз.")
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}", reply_markup=create_check_keyboard())
+        # Log exception details
+        print(f"Ошибка при проверке платежа: {e}")
+        await message.answer(f"Неизвестная ошибка: {e}")
 
 async def main():
     dp.include_router(router)
@@ -99,3 +125,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
