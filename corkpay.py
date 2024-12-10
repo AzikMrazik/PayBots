@@ -47,7 +47,7 @@ async def create_payment(message: Message):
         amount = float(message.text.strip())
         merchant_order = str(int(time.time()))
         payload = {
-            "merchant_id": MERCHANT_ID,
+            "merchant_id": 145,
             "merchant_token": MERCHANT_TOKEN,
             "ip": merchant_order,
             "amount": f"{amount:.2f}",
