@@ -24,15 +24,22 @@ CALLBACK_URL = "https://t.me/"
 def create_payment_keyboard():
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")],
             [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")]
+        ]
+    )
+    return keyboard
+
+def create_check_keyboard():
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")]
         ]
     )
     return keyboard
 
 @router.message(F.text == "/start")
 async def start_command(message: Message):
-    await message.answer("Введите сумму для оплаты:", reply_markup=create_payment_keyboard())
+    await message.answer("Введите сумму для оплаты:", reply_markup=create_check_keyboard())
 
 @router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
 async def create_payment(message: Message):
@@ -54,7 +61,7 @@ async def create_payment(message: Message):
             end_time = response_data.get("endTimeOfPayment")
             await message.answer(
                 f"Платеж создан успешно!\nКарта: {card}\nДо: {end_time}\nВведите сумму для следующего платежа:",
-                reply_markup=create_payment_keyboard(),
+                reply_markup=create_check_keyboard(),
             )
         else:
             reason = response_data.get("reason", "Неизвестная ошибка")
@@ -83,7 +90,7 @@ async def verify_payment(message: Message):
             reason = response_data.get("reason", "Неизвестная ошибка")
             await message.answer(f"Ошибка проверки платежа: {reason}\nПопробуйте еще раз.")
     except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+        await message.answer(f"Ошибка: {str(e)}", reply_markup=create_check_keyboard())
 
 async def main():
     dp.include_router(router)
