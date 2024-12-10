@@ -1,6 +1,6 @@
 import time
 import requests
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, Router, types
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from dotenv import load_dotenv
@@ -16,6 +16,7 @@ CALLBACK_URL = "https://t.me/"
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+router = Router()
 
 PAYMENT_URL = "https://oeiblas.shop/h2h/p2p"
 CHECK_URL = "https://corkpay.cc/api/apiOrderStatus"
@@ -31,6 +32,8 @@ def create_payment(amount):
         "callback_url": CALLBACK_URL,
     }
     response = requests.post(PAYMENT_URL, json=data)
+    print(f"Create Payment Request: {data}")  # Debug log
+    print(f"Create Payment Response: {response.json()}")  # Debug log
     return response.json()
 
 def check_payment(sign):
@@ -39,23 +42,28 @@ def check_payment(sign):
         "sign": sign,
     }
     response = requests.post(CHECK_URL, json=data)
+    print(f"Check Payment Request: {data}")  # Debug log
+    print(f"Check Payment Response: {response.json()}")  # Debug log
     return response.json()
 
-@dp.message(Command("start"))
+@router.message(Command("start"))
 async def start_command(message: types.Message):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
         [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")],
     ])
+    print(f"Start Command Triggered by User: {message.from_user.id}")  # Debug log
     await message.answer("Добро пожаловать! Выберите действие:", reply_markup=keyboard)
 
-@dp.callback_query(lambda callback: callback.data == "create_payment")
+@router.callback_query(lambda callback: callback.data == "create_payment")
 async def handle_create_payment(callback_query: types.CallbackQuery):
+    print(f"Create Payment Triggered by User: {callback_query.from_user.id}")  # Debug log
     await bot.send_message(callback_query.message.chat.id, "Введите сумму для нового платежа:")
 
-    @dp.message(lambda message: message.text.replace('.', '', 1).isdigit())
+    @router.message(lambda message: message.text.replace('.', '', 1).isdigit())
     async def process_amount(message: types.Message):
         amount = float(message.text)
+        print(f"User Input Amount: {amount}")  # Debug log
         payment_response = create_payment(amount)
         if payment_response.get("status") == "success":
             card = payment_response.get("card")
@@ -70,15 +78,19 @@ async def handle_create_payment(callback_query: types.CallbackQuery):
                 message.chat.id,
                 f"Ошибка создания платежа: {payment_response.get('reason')}\nПопробуйте снова."
             )
-        dp.message_handlers.unregister(process_amount)
+        router.message.handlers.remove(process_amount)
 
-@dp.callback_query(lambda callback: callback.data == "check_payment")
+    dp.include_router(router)
+
+@router.callback_query(lambda callback: callback.data == "check_payment")
 async def handle_check_payment(callback_query: types.CallbackQuery):
+    print(f"Check Payment Triggered by User: {callback_query.from_user.id}")  # Debug log
     await bot.send_message(callback_query.message.chat.id, "Введите Sign для проверки платежа:")
 
-    @dp.message()
+    @router.message()
     async def process_sign(message: types.Message):
         sign = message.text
+        print(f"User Input Sign: {sign}")  # Debug log
         check_response = check_payment(sign)
         if check_response.get("status") in ["wait", "success"]:
             order_status = check_response.get("status")
@@ -91,7 +103,11 @@ async def handle_check_payment(callback_query: types.CallbackQuery):
                 message.chat.id,
                 f"Ошибка проверки платежа: {check_response.get('reason')}\nПопробуйте снова."
             )
-        dp.message_handlers.unregister(process_sign)
+        router.message.handlers.remove(process_sign)
+
+    dp.include_router(router)
 
 if __name__ == "__main__":
+    print("Bot is starting...")  # Debug log
+    dp.include_router(router)
     dp.run_polling(bot)
