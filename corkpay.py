@@ -91,7 +91,7 @@ async def verify_payment(message: Message):
     try:
         sign = message.text.strip()
         payload = {"sign": sign}
-        response = requests.post("https://oeiblas.shop/h2h/p2p/verify", json=payload)
+        response = requests.post("https://corkpay.cc/api/apiOrderStatus", json=payload)
         if response.status_code == 200:
             response_data = response.json()
             if response_data.get("status") == "success":
