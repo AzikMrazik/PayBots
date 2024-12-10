@@ -22,9 +22,12 @@ CALLBACK_URL = "https://t.me/"
 
 # Inline Keyboards
 def create_payment_keyboard():
-    keyboard = InlineKeyboardMarkup()
-    keyboard.add(InlineKeyboardButton("Проверить платеж", callback_data="check_payment"))
-    keyboard.add(InlineKeyboardButton("Создать платеж", callback_data="create_payment"))
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")],
+            [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")]
+        ]
+    )
     return keyboard
 
 @router.message(F.text == "/start")
