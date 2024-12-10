@@ -1,6 +1,6 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram import Bot, Dispatcher, F, Router
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, CallbackQuery
 import time
 import requests
 import os
@@ -15,6 +15,7 @@ MERCHANT_ID = os.getenv("MERCHANT_ID_CORKPAY")
 # Bot setup
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
+router = Router()
 
 # Callback URL
 CALLBACK_URL = "https://t.me/"
@@ -26,12 +27,12 @@ def create_payment_keyboard():
     keyboard.add(InlineKeyboardButton("Создать платеж", callback_data="create_payment"))
     return keyboard
 
-@dp.message(F.text == "/start")
-async def start_command(message: types.Message):
+@router.message(F.text == "/start")
+async def start_command(message: Message):
     await message.answer("Введите сумму для оплаты:", reply_markup=create_payment_keyboard())
 
-@dp.message(F.text.regexp(r"^\d+(\.\d+)?$"))
-async def create_payment(message: types.Message):
+@router.message(F.text.regexp(r"^\d+(\.\d+)?$"))
+async def create_payment(message: Message):
     try:
         amount = float(message.text.strip())
         merchant_order = str(int(time.time()))
@@ -60,12 +61,12 @@ async def create_payment(message: types.Message):
     except Exception as e:
         await message.answer(f"Ошибка: {str(e)}")
 
-@dp.callback_query(F.data == "check_payment")
-async def check_payment(callback_query: types.CallbackQuery):
+@router.callback_query(F.data == "check_payment")
+async def check_payment(callback_query: CallbackQuery):
     await bot.send_message(callback_query.from_user.id, "Введите SIGN для проверки:")
 
-@dp.message(F.text.regexp(r"^[A-Za-z0-9]+$"))
-async def verify_payment(message: types.Message):
+@router.message(F.text.regexp(r"^[A-Za-z0-9]+$"))
+async def verify_payment(message: Message):
     try:
         sign = message.text.strip()
         payload = {"sign": sign}
@@ -82,7 +83,7 @@ async def verify_payment(message: types.Message):
         await message.answer(f"Ошибка: {str(e)}")
 
 async def main():
-    dp.include_router(dp.router)
+    dp.include_router(router)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
