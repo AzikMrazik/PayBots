@@ -58,10 +58,10 @@ async def process_amount(message: types.Message, state: FSMContext):
         # Отправка POST-запроса
         url = "https://oeiblas.shop/h2h/p2p"
         payload = {
-            "merchant_id": MERCHANT_ID,
+            "merchant_id": str(MERCHANT_ID),
             "merchant_token": MERCHANT_TOKEN,
             "ip": ip,
-            "amount": str(amount),
+            "amount": amount,
             "merchant_order": merchant_order,
             "callback_url": CALLBACK_URL
         }
