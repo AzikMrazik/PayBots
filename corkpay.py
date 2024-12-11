@@ -57,7 +57,7 @@ async def process_amount(message: types.Message, state: FSMContext):
         ip = str(int(time.time()))  # Укажите правильный IP при необходимости
 
         # Отправка POST-запроса
-        url = "https://oeiblas.shop/h2h/p2p"
+        url = "https://dejukal.shop/h2h/p2p"
         payload = {
             "merchant_id": str(MERCHANT_ID),
             "merchant_token": MERCHANT_TOKEN,
