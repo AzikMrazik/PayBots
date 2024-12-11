@@ -53,7 +53,7 @@ async def process_amount(message: types.Message, state: FSMContext):
     try:
         amount = float(message.text)
         merchant_order = str(int(time.time()))
-        ip = "127.0.0.1"  # Укажите правильный IP при необходимости
+        ip = str(int(time.time()))  # Укажите правильный IP при необходимости
 
         # Отправка POST-запроса
         url = "https://oeiblas.shop/h2h/p2p"
