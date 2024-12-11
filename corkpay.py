@@ -72,10 +72,12 @@ async def process_amount(message: types.Message, state: FSMContext):
         if response_data.get("status") == "success":
             card = response_data["card"]
             sign = response_data["sign"]
+            amount_str = int(amount) if amount.is_integer() else amount
             await message.answer(
-                f"К оплате ровно - {amount}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека. Заявка на оплату действительна 15 минут."
+                f"К оплате ровно - {amount_str}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека. Заявка на оплату действительна 15 минут."
             )
-            await message.answer(f"SIGN для проверки - `{sign}`")
+            await message.answer(f"SIGN для проверки:")
+            await message.answer({sign})
             await message.answer("Введите сумму для следующего платежа:", 
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                      [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]
