@@ -3,8 +3,7 @@ import time
 import requests
 import json
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
@@ -34,18 +33,20 @@ class PaymentStates(StatesGroup):
     waiting_for_sign = State()
 
 # Главное меню
-main_menu = ReplyKeyboardBuilder()
-main_menu.add(KeyboardButton(text="Создать платеж"))
-main_menu.add(KeyboardButton(text="Проверить платеж"))
-main_menu.adjust(2)
+main_menu = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
+        [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")]
+    ]
+)
 
 @dp.message(Command(commands=['start']))
 async def send_welcome(message: types.Message):
-    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu.as_markup(resize_keyboard=True))
+    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu)
 
-@dp.message(lambda message: message.text == "Создать платеж")
-async def create_payment(message: types.Message, state: FSMContext):
-    await message.answer("Введите сумму для создания платежа:")
+@dp.callback_query(lambda call: call.data == "create_payment")
+async def create_payment(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer("Введите сумму для создания платежа:")
     await state.set_state(PaymentStates.waiting_for_amount)
 
 @dp.message(PaymentStates.waiting_for_amount)
@@ -56,7 +57,7 @@ async def process_amount(message: types.Message, state: FSMContext):
         ip = str(int(time.time()))  # Укажите правильный IP при необходимости
 
         # Отправка POST-запроса
-        url = "https://dejukal.shop/h2h/p2p"
+        url = "https://oeiblas.shop/h2h/p2p"
         payload = {
             "merchant_id": str(MERCHANT_ID),
             "merchant_token": MERCHANT_TOKEN,
@@ -72,19 +73,20 @@ async def process_amount(message: types.Message, state: FSMContext):
             card = response_data["card"]
             sign = response_data["sign"]
             await message.answer(f"К оплате ровно - {amount}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека.\nЗаявка на оплату действительна 15 минут.")
-            await message.answer(f"SIGN для проверки - {sign}")
-            await message.answer("Отправьте сумму для следующего платежа.", reply_markup=main_menu.as_markup(resize_keyboard=True))
+            await message.answer(f"SIGN для проверки отправлен следующим сообщением.")
+            await message.answer(sign)
         else:
             reason = response_data.get("reason", "Неизвестная ошибка")
-            await message.answer(f"Ошибка: {reason}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+            await message.answer(f"Ошибка: {reason}")
     except Exception as e:
-        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+        await message.answer(f"Произошла ошибка: {str(e)}")
     finally:
         await state.clear()
+        await message.answer("Выберите следующее действие:", reply_markup=main_menu)
 
-@dp.message(lambda message: message.text == "Проверить платеж")
-async def check_payment(message: types.Message, state: FSMContext):
-    await message.answer("Введите SIGN для проверки:")
+@dp.callback_query(lambda call: call.data == "check_payment")
+async def check_payment(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer("Введите SIGN для проверки:")
     await state.set_state(PaymentStates.waiting_for_sign)
 
 @dp.message(PaymentStates.waiting_for_sign)
@@ -109,11 +111,11 @@ async def process_sign(message: types.Message, state: FSMContext):
         else:
             await message.answer("Неизвестный статус заказа.")
 
-        await message.answer("Введите SIGN для следующей проверки.", reply_markup=main_menu.as_markup(resize_keyboard=True))
     except Exception as e:
-        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+        await message.answer(f"Произошла ошибка: {str(e)}")
     finally:
         await state.clear()
+        await message.answer("Выберите следующее действие:", reply_markup=main_menu)
 
 async def main():
     await dp.start_polling(bot)
