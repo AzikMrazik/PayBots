@@ -77,7 +77,7 @@ async def process_amount(message: types.Message, state: FSMContext):
                 f"К оплате ровно - {amount_str}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека. Заявка на оплату действительна 15 минут."
             )
             await message.answer(f"SIGN для проверки:")
-            await message.answer({sign})
+            await message.answer(f"{sign}")
             await message.answer("Введите сумму для следующего платежа:", 
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                      [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]
