@@ -1,12 +1,18 @@
+import logging
 import time
 import requests
-from aiogram import Bot, Dispatcher, Router, types
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+import json
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.filters import Command
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
+# Загрузка переменных окружения
 load_dotenv(dotenv_path='/root/paybots/api.env')
 
 API_TOKEN = os.getenv("API_TOKEN_CORKPAY")
@@ -14,100 +20,104 @@ MERCHANT_TOKEN = os.getenv("MERCHANT_TOKEN_CORKPAY")
 MERCHANT_ID = os.getenv("MERCHANT_ID_CORKPAY")
 CALLBACK_URL = "https://t.me/"
 
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+
+# Инициализация бота и диспетчера
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
-router = Router()
+storage = MemoryStorage()
+dp = Dispatcher(storage=storage)
 
-PAYMENT_URL = "https://oeiblas.shop/h2h/p2p"
-CHECK_URL = "https://corkpay.cc/api/apiOrderStatus"
+# FSM для управления состояниями
+class PaymentStates(StatesGroup):
+    waiting_for_amount = State()
+    waiting_for_sign = State()
 
-def create_payment(amount):
-    unix_time = int(time.time())
-    data = {
-        "merchant_id": MERCHANT_ID,
-        "merchant_token": MERCHANT_TOKEN,
-        "ip": str(unix_time),
-        "amount": f"{amount:.2f}",
-        "merchant_order": str(unix_time),
-        "callback_url": CALLBACK_URL,
-    }
-    response = requests.post(PAYMENT_URL, json=data)
-    print(f"Create Payment Request: {data}")  # Debug log
-    print(f"Create Payment Response: {response.json()}")  # Debug log
-    return response.json()
+# Главное меню
+main_menu = ReplyKeyboardBuilder()
+main_menu.add(KeyboardButton(text="Создать платеж"))
+main_menu.add(KeyboardButton(text="Проверить платеж"))
+main_menu.adjust(2)
 
-def check_payment(sign):
-    data = {
-        "merchant_token": MERCHANT_TOKEN,
-        "sign": sign,
-    }
-    response = requests.post(CHECK_URL, json=data)
-    print(f"Check Payment Request: {data}")  # Debug log
-    print(f"Check Payment Response: {response.json()}")  # Debug log
-    return response.json()
+@dp.message(Command(commands=['start']))
+async def send_welcome(message: types.Message):
+    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu.as_markup(resize_keyboard=True))
 
-@router.message(Command("start"))
-async def start_command(message: types.Message):
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
-        [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")],
-    ])
-    print(f"Start Command Triggered by User: {message.from_user.id}")  # Debug log
-    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=keyboard)
+@dp.message(lambda message: message.text == "Создать платеж")
+async def create_payment(message: types.Message, state: FSMContext):
+    await message.answer("Введите сумму для создания платежа:")
+    await state.set_state(PaymentStates.waiting_for_amount)
 
-@router.callback_query(lambda callback: callback.data == "create_payment")
-async def handle_create_payment(callback_query: types.CallbackQuery):
-    print(f"Create Payment Triggered by User: {callback_query.from_user.id}")  # Debug log
-    await bot.send_message(callback_query.message.chat.id, "Введите сумму для нового платежа:")
-
-    @router.message(lambda message: message.text.replace('.', '', 1).isdigit())
-    async def process_amount(message: types.Message):
+@dp.message(PaymentStates.waiting_for_amount)
+async def process_amount(message: types.Message, state: FSMContext):
+    try:
         amount = float(message.text)
-        print(f"User Input Amount: {amount}")  # Debug log
-        payment_response = create_payment(amount)
-        if payment_response.get("status") == "success":
-            card = payment_response.get("card")
-            end_time = payment_response.get("endTimeOfPayment")
-            sign = payment_response.get("sign")
-            await bot.send_message(
-                message.chat.id,
-                f"Платеж создан успешно:\nКарта: {card}\nСрок оплаты (UNIX): {end_time}\nSign: {sign}\nВведите следующую сумму или выберите действие."
-            )
+        merchant_order = str(int(time.time()))
+        ip = "127.0.0.1"  # Укажите правильный IP при необходимости
+
+        # Отправка POST-запроса
+        url = "https://oeiblas.shop/h2h/p2p"
+        payload = {
+            "merchant_id": MERCHANT_ID,
+            "merchant_token": MERCHANT_TOKEN,
+            "ip": ip,
+            "amount": str(amount),
+            "merchant_order": merchant_order,
+            "callback_url": CALLBACK_URL
+        }
+        response = requests.post(url, json=payload)
+        response_data = response.json()
+
+        if response_data.get("status") == "success":
+            card = response_data["card"]
+            sign = response_data["sign"]
+            await message.answer(f"К оплате ровно - {amount}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека.\nЗаявка на оплату действительна 15 минут.")
+            await message.answer(f"SIGN для проверки - {sign}")
+            await message.answer("Отправьте сумму для следующего платежа.", reply_markup=main_menu.as_markup(resize_keyboard=True))
         else:
-            await bot.send_message(
-                message.chat.id,
-                f"Ошибка создания платежа: {payment_response.get('reason')}\nПопробуйте снова."
-            )
-        router.message.handlers.remove(process_amount)
+            reason = response_data.get("reason", "Неизвестная ошибка")
+            await message.answer(f"Ошибка: {reason}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+    except Exception as e:
+        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+    finally:
+        await state.clear()
 
-    dp.include_router(router)
+@dp.message(lambda message: message.text == "Проверить платеж")
+async def check_payment(message: types.Message, state: FSMContext):
+    await message.answer("Введите SIGN для проверки:")
+    await state.set_state(PaymentStates.waiting_for_sign)
 
-@router.callback_query(lambda callback: callback.data == "check_payment")
-async def handle_check_payment(callback_query: types.CallbackQuery):
-    print(f"Check Payment Triggered by User: {callback_query.from_user.id}")  # Debug log
-    await bot.send_message(callback_query.message.chat.id, "Введите Sign для проверки платежа:")
-
-    @router.message()
-    async def process_sign(message: types.Message):
+@dp.message(PaymentStates.waiting_for_sign)
+async def process_sign(message: types.Message, state: FSMContext):
+    try:
         sign = message.text
-        print(f"User Input Sign: {sign}")  # Debug log
-        check_response = check_payment(sign)
-        if check_response.get("status") in ["wait", "success"]:
-            order_status = check_response.get("status")
-            await bot.send_message(
-                message.chat.id,
-                f"Проверка платежа:\nСтатус: {order_status}\nSign: {check_response.get('sign')}"
-            )
+
+        # Отправка POST-запроса
+        url = "https://corkpay.cc/api/apiOrderStatus"
+        payload = {
+            "merchant_token": MERCHANT_TOKEN,
+            "sign": sign
+        }
+        response = requests.post(url, json=payload)
+        response_data = response.json()
+
+        status = response_data.get("status")
+        if status == "wait":
+            await message.answer("Заказ не оплачен.")
+        elif status == "success":
+            await message.answer("Заказ оплачен.")
         else:
-            await bot.send_message(
-                message.chat.id,
-                f"Ошибка проверки платежа: {check_response.get('reason')}\nПопробуйте снова."
-            )
-        router.message.handlers.remove(process_sign)
+            await message.answer("Неизвестный статус заказа.")
 
-    dp.include_router(router)
+        await message.answer("Введите SIGN для следующей проверки.", reply_markup=main_menu.as_markup(resize_keyboard=True))
+    except Exception as e:
+        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+    finally:
+        await state.clear()
 
-if __name__ == "__main__":
-    print("Bot is starting...")  # Debug log
-    dp.include_router(router)
-    dp.run_polling(bot)
+async def main():
+    await dp.start_polling(bot)
+
+if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
