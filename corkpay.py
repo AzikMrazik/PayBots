@@ -32,21 +32,21 @@ class PaymentStates(StatesGroup):
     waiting_for_amount = State()
     waiting_for_sign = State()
 
-# Главное меню с inline-кнопками
+# Главное меню
 def main_menu():
-    markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("Создать платеж", callback_data="create_payment"))
-    markup.add(InlineKeyboardButton("Проверить платеж", callback_data="check_payment"))
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
+        [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")]
+    ])
     return markup
 
 @dp.message(Command(commands=['start']))
 async def send_welcome(message: types.Message):
     await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu())
 
-@dp.callback_query(lambda call: call.data == "create_payment")
+@dp.callback_query(lambda callback_query: callback_query.data == "create_payment")
 async def create_payment(callback_query: types.CallbackQuery, state: FSMContext):
-    await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(callback_query.from_user.id, "Введите сумму для создания платежа:")
+    await callback_query.message.answer("Введите сумму для создания платежа:")
     await state.set_state(PaymentStates.waiting_for_amount)
 
 @dp.message(PaymentStates.waiting_for_amount)
@@ -72,25 +72,26 @@ async def process_amount(message: types.Message, state: FSMContext):
         if response_data.get("status") == "success":
             card = response_data["card"]
             sign = response_data["sign"]
-            await message.answer(f"К оплате ровно - {amount}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека.\nЗаявка на оплату действительна 15 минут.")
+            await message.answer(
+                f"К оплате ровно - {amount}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека. Заявка на оплату действительна 15 минут."
+            )
             await message.answer(f"SIGN для проверки - {sign}")
-
-            # Запрос следующей суммы с inline-кнопкой возврата в меню
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton("Вернуться в меню", callback_data="back_to_menu"))
-            await message.answer("Введите сумму для следующего платежа или вернитесь в меню.", reply_markup=markup)
+            await message.answer("Введите сумму для следующего платежа или вернитесь в главное меню.", 
+                                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                     [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]
+                                 ]))
+            await state.set_state(PaymentStates.waiting_for_amount)  # Повтор запроса суммы
         else:
             reason = response_data.get("reason", "Неизвестная ошибка")
             await message.answer(f"Ошибка: {reason}", reply_markup=main_menu())
     except Exception as e:
         await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu())
     finally:
-        await state.clear()
+        pass  # Состояние остается в waiting_for_amount для нового платежа
 
-@dp.callback_query(lambda call: call.data == "check_payment")
+@dp.callback_query(lambda callback_query: callback_query.data == "check_payment")
 async def check_payment(callback_query: types.CallbackQuery, state: FSMContext):
-    await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(callback_query.from_user.id, "Введите SIGN для проверки:")
+    await callback_query.message.answer("Введите SIGN для проверки:")
     await state.set_state(PaymentStates.waiting_for_sign)
 
 @dp.message(PaymentStates.waiting_for_sign)
@@ -115,19 +116,18 @@ async def process_sign(message: types.Message, state: FSMContext):
         else:
             await message.answer("Неизвестный статус заказа.")
 
-        # Inline-кнопка для возврата в меню
-        markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton("Вернуться в меню", callback_data="back_to_menu"))
-        await message.answer("Введите SIGN для следующей проверки или вернитесь в меню.", reply_markup=markup)
+        await message.answer("Введите SIGN для следующей проверки или вернитесь в главное меню.", 
+                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                 [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]
+                             ]))
     except Exception as e:
         await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu())
     finally:
-        await state.clear()
+        pass  # Состояние не меняется для продолжения проверки
 
-@dp.callback_query(lambda call: call.data == "back_to_menu")
-async def back_to_menu(callback_query: types.CallbackQuery):
-    await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(callback_query.from_user.id, "Вы вернулись в главное меню.", reply_markup=main_menu())
+@dp.callback_query(lambda callback_query: callback_query.data == "main_menu")
+async def back_to_main_menu(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Выберите действие:", reply_markup=main_menu())
 
 async def main():
     await dp.start_polling(bot)
