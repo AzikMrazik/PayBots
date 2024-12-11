@@ -1,10 +1,10 @@
 import logging
 import time
 import requests
+from requests.exceptions import Timeout, RequestException
 import json
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
@@ -34,18 +34,20 @@ class PaymentStates(StatesGroup):
     waiting_for_sign = State()
 
 # Главное меню
-main_menu = ReplyKeyboardBuilder()
-main_menu.add(KeyboardButton(text="Создать платеж"))
-main_menu.add(KeyboardButton(text="Проверить платеж"))
-main_menu.adjust(2)
+def main_menu():
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Создать платеж", callback_data="create_payment")],
+        [InlineKeyboardButton(text="Проверить платеж", callback_data="check_payment")]
+    ])
+    return markup
 
 @dp.message(Command(commands=['start']))
 async def send_welcome(message: types.Message):
-    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu.as_markup(resize_keyboard=True))
+    await message.answer("Добро пожаловать! Выберите действие:", reply_markup=main_menu())
 
-@dp.message(lambda message: message.text == "Создать платеж")
-async def create_payment(message: types.Message, state: FSMContext):
-    await message.answer("Введите сумму для создания платежа:")
+@dp.callback_query(lambda callback_query: callback_query.data == "create_payment")
+async def create_payment(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите сумму для создания платежа:")
     await state.set_state(PaymentStates.waiting_for_amount)
 
 @dp.message(PaymentStates.waiting_for_amount)
@@ -66,14 +68,14 @@ async def process_amount(message: types.Message, state: FSMContext):
             "callback_url": CALLBACK_URL
         }
         try:
-            response = requests.post(url, json=payload, timeout=20)  # Таймаут 20 секунд
-            response.raise_for_status()  # Проверка статуса HTTP
+            response = requests.post(url, json=payload, timeout=20)
+            response.raise_for_status()
             response_data = response.json()
-        except requests.exceptions.Timeout:
-            await message.answer("Запрос к серверу занял слишком много времени. Попробуйте позже.")
+        except Timeout:
+            await message.answer("Ошибка: сервер не отвечает в течение 20 секунд. Попробуйте позже.")
             return
-        except requests.exceptions.RequestException as e:
-            await message.answer(f"Произошла ошибка при отправке запроса: {e}")
+        except RequestException as e:
+            await message.answer(f"Ошибка при отправке запроса: {str(e)}")
             return
 
         if response_data.get("status") == "success":
@@ -81,21 +83,23 @@ async def process_amount(message: types.Message, state: FSMContext):
             sign = response_data["sign"]
             amount_str = int(amount) if amount.is_integer() else amount
             await message.answer(
-                f"К оплате ровно - {amount_str}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека.\nЗаявка на оплату действительна 15 минут."
+                f"К оплате ровно - {amount_str}\nНомер карты - {card}\n\nПосле оплаты отправьте, пожалуйста, скриншот чека. Заявка на оплату действительна 15 минут."
             )
-            await message.answer(f"SIGN для проверки - {sign}")
-            await message.answer("Отправьте сумму для следующего платежа.", reply_markup=main_menu.as_markup(resize_keyboard=True))
+            await message.answer(f"SIGN для проверки:\n`{sign}`", parse_mode="Markdown")
+            await message.answer("Введите сумму для следующего платежа:", 
+                                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                     [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]
+                                 ]))
+            await state.set_state(PaymentStates.waiting_for_amount)  # Повтор запроса суммы
         else:
             reason = response_data.get("reason", "Неизвестная ошибка")
-            await message.answer(f"Ошибка: {reason}", reply_markup=main_menu.as_markup(resize_keyboard=True))
+            await message.answer(f"Ошибка: {reason}", reply_markup=main_menu())
     except Exception as e:
-        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu.as_markup(resize_keyboard=True))
-    finally:
-        await state.clear()
+        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu())
 
-@dp.message(lambda message: message.text == "Проверить платеж")
-async def check_payment(message: types.Message, state: FSMContext):
-    await message.answer("Введите SIGN для проверки:")
+@dp.callback_query(lambda callback_query: callback_query.data == "check_payment")
+async def check_payment(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("Введите SIGN для проверки:")
     await state.set_state(PaymentStates.waiting_for_sign)
 
 @dp.message(PaymentStates.waiting_for_sign)
@@ -110,14 +114,14 @@ async def process_sign(message: types.Message, state: FSMContext):
             "sign": sign
         }
         try:
-            response = requests.post(url, json=payload, timeout=20)  # Таймаут 20 секунд
-            response.raise_for_status()  # Проверка статуса HTTP
+            response = requests.post(url, json=payload, timeout=20)
+            response.raise_for_status()
             response_data = response.json()
-        except requests.exceptions.Timeout:
-            await message.answer("Запрос к серверу занял слишком много времени. Попробуйте позже.")
+        except Timeout:
+            await message.answer("Ошибка: сервер не отвечает в течение 20 секунд. Попробуйте позже.")
             return
-        except requests.exceptions.RequestException as e:
-            await message.answer(f"Произошла ошибка при отправке запроса: {e}")
+        except RequestException as e:
+            await message.answer(f"Ошибка при отправке запроса: {str(e)}")
             return
 
         status = response_data.get("status")
@@ -128,11 +132,16 @@ async def process_sign(message: types.Message, state: FSMContext):
         else:
             await message.answer("Неизвестный статус заказа.")
 
-        await message.answer("Введите SIGN для следующей проверки.", reply_markup=main_menu.as_markup(resize_keyboard=True))
+        await message.answer("Введите SIGN для следующей проверки или вернитесь в главное меню.", 
+                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                                 [InlineKeyboardButton(text="Главное меню", callback_data="main_menu")]
+                             ]))
     except Exception as e:
-        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu.as_markup(resize_keyboard=True))
-    finally:
-        await state.clear()
+        await message.answer(f"Произошла ошибка: {str(e)}", reply_markup=main_menu())
+
+@dp.callback_query(lambda callback_query: callback_query.data == "main_menu")
+async def back_to_main_menu(callback_query: types.CallbackQuery):
+    await callback_query.message.answer("Выберите действие:", reply_markup=main_menu())
 
 async def main():
     await dp.start_polling(bot)
