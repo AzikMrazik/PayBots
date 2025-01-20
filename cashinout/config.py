@@ -12,4 +12,3 @@ UNIQUE_NAME = getenv("UNIQUE_NAME")
 ADMIN_ID = [int(id.strip()) for id in getenv("ADMIN_ID").split(",")]
 ALLOWED_GROUPS = [int(id.strip()) for id in getenv("ALLOWED_GROUPS", "").split(",")]
 RUB_ID = int(getenv("RUB_ID"))
-USDT_ID = int(getenv("USDT_ID"))

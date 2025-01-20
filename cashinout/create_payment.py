@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
-from config import RUB_ID, USDT_ID, API_TOKEN, BASE_URL, PAY_URL
+from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL
 
 router = Router()
 
