@@ -10,11 +10,11 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 import debuger, create_payment, group_payment
-from config import TELEGRAM_BOT_TOKEN, UNIQUE_ID, UNIQUE_NAME, ADMIN_ID
+from config import BOT_TOKEN, UNIQUE_ID, UNIQUE_NAME, ADMIN_ID
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
+bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 dp.include_routers(debuger.router, create_payment.router, group_payment.router)
