@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from os import getenv
 
-load_dotenv(dotenv_path="/root/PayBots/api.env")
+load_dotenv(dotenv_path="/root/paybots/api.env")
 
 BOT_TOKEN = getenv("NP_BOT_TOKEN")
 SECRET = getenv("NP_SECRET")
