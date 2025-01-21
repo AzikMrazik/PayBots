@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
-from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL
+from config import MERCHANT_ID, SECRET, BASE_URL
 
 router = Router()
 
@@ -46,17 +46,20 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer(link)
 
 async def sendpost(amount):
-    async with ClientSession() as session:
-        async with session.post(
-            f"{BASE_URL}",
-            headers={"Authorization": API_TOKEN},
-            json={
-                "amount": str(amount),
-                "currency": RUB_ID,
-                "currencies": [RUB_ID],
-                "durationSeconds": 86400,
-                "redirectUrl": "https://your-redirect-url.com"
-            }
-        ) as response:
-            data = await response.json()
-            return f"{PAY_URL}{data['data']}"
+        amount = amount*100
+        async with ClientSession() as session:
+            async with session.post(
+                f"{BASE_URL}",
+                json={
+                    "merchant_id": MERCHANT_ID,
+                    "secret": SECRET,
+                    "order_id": "1691",
+                    "customer": "user@gmail.com",
+                    "amount": amount,
+                    "currency": "RUB",
+                    "method": "sbp_rub"
+                }
+            ) as response:
+                full = await response.json()
+                data = full['data']
+                return f"{data['link']}"

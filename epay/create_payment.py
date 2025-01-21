@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
-from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL
+from config import API_TOKEN, BASE_URL
 
 router = Router()
 
@@ -41,7 +41,7 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        await message.answer("⌛️Ожидаем ссылку...")
+        await message.answer("⌛️Ожидаем реквизиты...")
         link = await sendpost(amount)
         await message.answer(link)
 
@@ -49,14 +49,14 @@ async def sendpost(amount):
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}",
-            headers={"Authorization": API_TOKEN},
             json={
-                "amount": str(amount),
-                "currency": RUB_ID,
-                "currencies": [RUB_ID],
-                "durationSeconds": 86400,
-                "redirectUrl": "https://your-redirect-url.com"
+                "api_key" : API_TOKEN,
+                "amount": amount,
+                "merchant_order_id": "1691",
+                "notice_url": "https://t.me/"
             }
         ) as response:
             data = await response.json()
-            return f"{PAY_URL}{data['data']}"
+            precise_amount = data['amount']
+            card = data['card_number']
+            return f"📄 Создан заказ: №1691\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰 Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."

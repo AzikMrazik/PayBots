@@ -15,7 +15,7 @@ from config import ALLOWED_GROUPS
 
 router = Router()
 
-@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/cash_"))
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/nice_"))
 async def cash_command(message: Message):
     if message.chat.id not in ALLOWED_GROUPS:
         await message.answer("Бот не активирован в этой группе!")
@@ -29,5 +29,6 @@ async def cash_command(message: Message):
         await message.answer("Неверный формат команды. Используйте: /cash_1000")
         return
     else:
+        await message.answer("⌛️Ожидаем реквизиты...")
         link = await sendpost(amount)
         await message.answer(link)
