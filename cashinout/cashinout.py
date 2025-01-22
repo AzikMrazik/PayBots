@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from aiohttp import ClientSession as session
+from aiohttp import web
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command
@@ -9,15 +9,16 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-import create_payment, group_payment
-from config import BOT_TOKEN
+import create_payment, group_payment, checker
+from config import BOT_TOKEN, WEB_SERVER_IP, WEB_SERVER_PORT
+from checker import send_success
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-dp.include_routers(create_payment.router, group_payment.router)
+dp.include_routers(checker.router, create_payment.router, group_payment.router)
 
 def main_kb():
     keyboard = [
@@ -36,8 +37,24 @@ async def start_command(message: Message):
     await message.answer("Добро пожаловать!")
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
+async def webhook_handler(bot: Bot, request: web.Request):
+    data = await request.json()
+    await send_success(data)
+    
+app = web.Application()
+app.router.add_post("/webhook", webhook_handler)
+
+async def on_startup(dp):
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, WEB_SERVER_IP, WEB_SERVER_PORT)
+    await site.start()
+    logging.info(f"Webhook server started on {WEB_SERVER_IP}:{WEB_SERVER_PORT}")
+
 async def main():
-    await dp.start_polling(bot)
+    await asyncio.gather(
+        dp.start_polling(bot),
+        on_startup(dp))
 
 if __name__ == "__main__":
     asyncio.run(main())

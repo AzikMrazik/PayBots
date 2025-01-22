@@ -1,6 +1,7 @@
 import dotenv
 import logging
 import asyncio
+from datetime import datetime
 from aiohttp import ClientSession
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
@@ -10,6 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL
+from checker import addorder
 
 router = Router()
 
@@ -41,11 +43,11 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        await message.answer("⌛️Ожидаем ссылку...")
-        link = await sendpost(amount)
+        link = await sendpost(amount, message.from_user.id)
         await message.answer(link)
 
-async def sendpost(amount):
+async def sendpost(amount, chat_id):
+    externaltext = datetime.now().strftime("%d%m")
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}",
@@ -55,8 +57,11 @@ async def sendpost(amount):
                 "currency": RUB_ID,
                 "currencies": [RUB_ID],
                 "durationSeconds": 86400,
-                "redirectUrl": "https://your-redirect-url.com"
+                "callbackUrl": "https://{WEB_SERVER_IP}:{WEB_SERVER_PORT}/webhook",
+                "redirectUrl": "https://t.me/",
+                "externalText": externaltext
             }
         ) as response:
             data = await response.json()
+            await addorder(externaltext, chat_id, amount)
             return f"{PAY_URL}{data['data']}"
