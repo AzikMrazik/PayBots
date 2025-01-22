@@ -26,9 +26,9 @@ async def cash_command(message: Message):
             await message.answer("Минимальная сумма: 1000 RUB")
             return
     except:
-        await message.answer("Неверный формат команды. Используйте: /cash_1000")
+        await message.answer("Неверный формат команды. Используйте: /pay_1000")
         return
     else:
         await message.answer("⌛️Ожидаем реквизиты...")
-        link = await sendpost(amount)
+        link = await sendpost(amount, message.chat.id)
         await message.answer(link)

@@ -9,15 +9,16 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-import create_payment, group_payment
+import create_payment, group_payment, checker
 from config import BOT_TOKEN
+from checker import checklist
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-dp.include_routers(create_payment.router, group_payment.router)
+dp.include_routers(create_payment.router, group_payment.router, checker.router)
 
 def main_kb():
     keyboard = [
@@ -37,7 +38,10 @@ async def start_command(message: Message):
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 async def main():
-    await dp.start_polling(bot)
+    await asyncio.gather(
+        dp.start_polling(bot),
+        checklist(bot)
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())

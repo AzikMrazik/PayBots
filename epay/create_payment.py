@@ -10,6 +10,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from config import API_TOKEN, BASE_URL
+from checker import addorder
 
 router = Router()
 
@@ -42,15 +43,15 @@ async def create_payment(message: Message,  state: FSMContext):
         return
     else:
         await message.answer("⌛️Ожидаем реквизиты...")
-        link = await sendpost(amount)
+        link = await sendpost(amount, message.from_user.id)
         await message.answer(link)
 
-async def sendpost(amount):
+async def sendpost(amount, chat_id):
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}",
             json={
-                "api_key" : API_TOKEN,
+                "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": "1691",
                 "notice_url": "https://t.me/"
@@ -59,4 +60,6 @@ async def sendpost(amount):
             data = await response.json()
             precise_amount = data['amount']
             card = data['card_number']
-            return f"📄 Создан заказ: №1691\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰 Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
+            order_id = data['order_id']
+            await addorder(order_id, chat_id, precise_amount)
+            return f"📄 Создан заказ: <b>№{order_id}</b>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰 Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
