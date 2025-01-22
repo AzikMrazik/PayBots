@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
-from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL
+from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL, WEB_SERVER_IP, WEB_SERVER_PORT
 from checker import addorder
 
 router = Router()
