@@ -64,4 +64,4 @@ async def sendpost(amount, chat_id):
         ) as response:
             data = await response.json()
             await addorder(externaltext, chat_id, amount)
-            return f"{PAY_URL}{data}"
+            return f"{PAY_URL}{data['data']}"
