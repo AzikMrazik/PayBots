@@ -46,20 +46,19 @@ async def webhook_handler(request: web.Request):
 
 @middleware
 async def security_middleware(request, handler):
-    # Разрешаем только POST /webhook
-    if request.path != "/webhook" or request.method != "POST":
-        logging.warning(f"Blocked invalid request: {request.method} {request.path}")
-        return web.Response(status=404)
-    
-    return await handler(request)
-
-app = web.Application(middlewares=[security_middleware])
-app.router.add_post("/webhook", webhook_handler)
+    if request.path == "/" and request.method == "GET":
+        return await handler(request)
+    if request.path == "/webhook" and request.method == "POST":
+        return await handler(request)
+    logging.warning(f"Blocked invalid request: {request.method} {request.path}")
+    return web.Response(status=404)
 
 async def handle_root(request):
     return web.Response(text="Bot is running", status=200)
 
+app = web.Application()
 app.router.add_get("/", handle_root)
+app.middlewares.append(security_middleware
 
 async def on_startup(dp):
     runner = web.AppRunner(app)
