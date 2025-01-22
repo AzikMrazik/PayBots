@@ -56,8 +56,6 @@ async def on_startup(dp):
     await runner.setup()
     site = web.TCPSite(runner, WEB_SERVER_IP, WEB_SERVER_PORT)
     await site.start()
-    logging.info(f"Webhook server started on {WEB_SERVER_IP}:{WEB_SERVER_PORT}")
-    print(f"https://{WEB_SERVER_IP}:{WEB_SERVER_PORT}/webhook")
 
 async def main():
     await asyncio.gather(
