@@ -43,9 +43,6 @@ async def webhook_handler(request: web.Request):
     data = await request.json()
     await send_success(bot, data)
     return web.Response(text="OK", status=200)
-    
-app = web.Application(middlewares=[security_middleware])
-app.router.add_post("/webhook", webhook_handler)
 
 @middleware
 async def security_middleware(request, handler):
@@ -55,6 +52,9 @@ async def security_middleware(request, handler):
         return web.Response(status=404)
     
     return await handler(request)
+
+app = web.Application(middlewares=[security_middleware])
+app.router.add_post("/webhook", webhook_handler)
 
 async def handle_root(request):
     return web.Response(text="Bot is running", status=200)
