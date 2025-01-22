@@ -28,21 +28,20 @@ async def checklist(bot: Bot):
 async def check(bot: Bot):
     async with ClientSession() as session:
         for order_id in list(orderlist.keys()):
-            try:
-                async with session.post(
-                    CHECK_URL,
-                    json={"order_id": order_id, "api_key": API_TOKEN}
-                ) as response:
-                    data = await response.json()
-                    status = data.get('status', 'unknown')
+            async with session.post(
+                CHECK_URL,
+                json={"order_id": order_id, "api_key": API_TOKEN}
+            ) as response:
+                data = await response.json()
+                status = data.get('status', 'unknown')
 
-                if status == "payment_success":
-                    chat_id, amount = orderlist[order_id]
-                    await send_success(bot, [order_id, chat_id, amount])
-                    del orderlist[order_id]
+            if status == "payment_success":
+                chat_id, amount = orderlist[order_id]
+                await send_success(bot, [order_id, chat_id, amount])
+                del orderlist[order_id]
 
-                elif status == "payment_canceled":
-                    del orderlist[order_id]
+            elif status == "payment_canceled":
+                del orderlist[order_id]
 
             await asyncio.sleep(3)
 
