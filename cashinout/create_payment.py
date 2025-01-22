@@ -57,7 +57,7 @@ async def sendpost(amount, chat_id):
                 "currency": RUB_ID,
                 "currencies": [RUB_ID],
                 "durationSeconds": 86400,
-                "callbackUrl": "https://{WEB_SERVER_IP}:{WEB_SERVER_PORT}/webhook",
+                "callbackUrl": f"https://{WEB_SERVER_IP}:{WEB_SERVER_PORT}/webhook",
                 "redirectUrl": "https://t.me/",
                 "externalText": externaltext
             }
