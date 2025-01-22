@@ -58,7 +58,7 @@ async def handle_root(request):
 
 app = web.Application()
 app.router.add_get("/", handle_root)
-app.middlewares.append(security_middleware
+app.middlewares.append(security_middleware)
 
 async def on_startup(dp):
     runner = web.AppRunner(app)
