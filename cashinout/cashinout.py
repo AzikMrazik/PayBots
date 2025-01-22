@@ -49,7 +49,6 @@ async def security_middleware(request, handler):
     return web.Response(status=200)
 
 app = web.Application()
-app.router.add_get("/")
 app.middlewares.append(security_middleware)
 
 async def on_startup(dp):
