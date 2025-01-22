@@ -1,4 +1,5 @@
 import logging
+import ssl
 import asyncio
 from aiohttp import web
 from aiohttp.web import middleware
@@ -44,17 +45,15 @@ async def webhook_handler(request: web.Request):
     await send_success(bot, data)
     return web.Response(text="OK", status=200)
 
-@middleware
-async def security_middleware(request, handler):
-    return web.Response(status=200)
 
 app = web.Application()
-app.middlewares.append(security_middleware)
 
 async def on_startup(dp):
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, WEB_SERVER_IP, WEB_SERVER_PORT)
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.load_cert_chain('/root/cert.pem', '/root/key.pem')  # пути к файлам
+    site = web.TCPSite(runner, WEB_SERVER_IP, WEB_SERVER_PORT, ssl_context=ssl_context)
     await site.start()
 
 async def main():
