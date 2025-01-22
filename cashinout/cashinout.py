@@ -10,6 +10,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 import create_payment, group_payment, checker
+from aiogram.enums import ParseMode
 from config import BOT_TOKEN, WEB_SERVER_IP, WEB_SERVER_PORT
 from checker import send_success
 
@@ -37,9 +38,10 @@ async def start_command(message: Message):
     await message.answer("Добро пожаловать!")
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
-async def webhook_handler(bot: Bot, request: web.Request):
+async def webhook_handler(request: web.Request):
     data = await request.json()
-    await send_success(data)
+    await send_success(bot, data)
+    return web.Response(text="OK", status=200)
     
 app = web.Application()
 app.router.add_post("/webhook", webhook_handler)
