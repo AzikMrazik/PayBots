@@ -1,6 +1,7 @@
 import logging
 import asyncio
 from aiohttp import web
+from aiohttp.web import middleware
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command
@@ -43,8 +44,22 @@ async def webhook_handler(request: web.Request):
     await send_success(bot, data)
     return web.Response(text="OK", status=200)
     
-app = web.Application()
+app = web.Application(middlewares=[security_middleware])
 app.router.add_post("/webhook", webhook_handler)
+
+@middleware
+async def security_middleware(request, handler):
+    # Разрешаем только POST /webhook
+    if request.path != "/webhook" or request.method != "POST":
+        logging.warning(f"Blocked invalid request: {request.method} {request.path}")
+        return web.Response(status=404)
+    
+    return await handler(request)
+
+async def handle_root(request):
+    return web.Response(text="Bot is running", status=200)
+
+app.router.add_get("/", handle_root)
 
 async def on_startup(dp):
     runner = web.AppRunner(app)
