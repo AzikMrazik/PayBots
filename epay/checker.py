@@ -50,13 +50,14 @@ async def send_success(bot: Bot, target_chat):
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/check_"))
 async def check_command(message: Message):
+    logging.info(f"Processing /check_ command in chat: {message.chat.id}")
     if message.chat.id not in ALLOWED_GROUPS:
         await message.answer("Бот не активирован в этой группе!")
         return
     try:
         ordercheck_id = int(message.text.split("_")[1])
-    except:
-        await message.answer("Неверный формат команды. Используйте: /pay_1000")
+    except (IndexError, ValueError):
+        await message.answer("Неверный формат команды. Используйте: /check_1000")
         return
     else:
         try:
