@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from config import API_TOKEN, ALLOWED_GROUPS, CHECK_URL
+from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL
 
 router = Router()
 
@@ -29,7 +29,7 @@ async def check(bot: Bot):
     async with ClientSession() as session:
         for order_id in list(orderlist.keys()):
             async with session.post(
-                CHECK_URL,
+                f"{BASE_URL}/request/order/info",
                 json={"order_id": order_id, "api_key": API_TOKEN}
             ) as response:
                 data = await response.json()
@@ -61,7 +61,7 @@ async def check_command(message: Message):
     try:
         async with ClientSession() as session:
             async with session.post(
-                CHECK_URL,
+                f"{BASE_URL}/request/order/info",
                 json={"order_id": ordercheck_id, "api_key": API_TOKEN}
             ) as response:
                 data = await response.json()

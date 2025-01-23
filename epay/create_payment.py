@@ -50,7 +50,7 @@ async def create_payment(message: Message,  state: FSMContext):
 async def sendpost(amount, chat_id):
     async with ClientSession() as session:
         async with session.post(
-            f"{BASE_URL}",
+            f"{BASE_URL}/request/requisites",
             json={
                 "api_key": API_TOKEN,
                 "amount": amount,

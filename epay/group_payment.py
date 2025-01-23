@@ -15,6 +15,7 @@ from config import ALLOWED_GROUPS
 
 router = Router()
 
+
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/pay_"))
 async def cash_command(message: Message):
     if message.chat.id not in ALLOWED_GROUPS:
