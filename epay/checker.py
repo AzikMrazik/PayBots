@@ -61,24 +61,23 @@ async def check_command(message: Message):
     else:
         try:
             async with ClientSession() as session:
-               for order_id in list(orderlist.keys()):
-                    async with session.post(
-                        CHECK_URL,
-                        json={
-                            "order_id": order_id,
-                            "api_key": API_TOKEN
-                            }
-                    ) as response:
-                        data = await response.json()
-                        status = data.get('status')
-                        if status == "payment_success":
-                            await message.answer(f"✅Заказ №{ordercheck_id}, оплачен!")
-                        elif status == "payment_canceled":
-                            await message.answer(f"⛔Заказ №{ordercheck_id}, отменен!")
-                        elif status == "payment_wait":
-                            await message.answer(f"⚠️Заказ №{ordercheck_id}, ожидате оплаты!")
-                        else:
-                            await message.answer(f"⚰️Заказ №{ordercheck_id}, умер!")
+                async with session.post(
+                    CHECK_URL,
+                    json={
+                        "order_id": ordercheck_id,
+                        "api_key": API_TOKEN
+                        }
+                ) as response:
+                    data = await response.json()
+                    status = data.get('status')
+                    if status == "payment_success":
+                        await message.answer(f"✅Заказ №{ordercheck_id}, оплачен!")
+                    elif status == "payment_canceled":
+                        await message.answer(f"⛔Заказ №{ordercheck_id}, отменен!")
+                    elif status == "payment_wait":
+                        await message.answer(f"⚠️Заказ №{ordercheck_id}, ожидате оплаты!")
+                    else:
+                        await message.answer(f"⚰️Заказ №{ordercheck_id}, умер!")
         except:
             await message.answer(f"⚰️Бот умер!")
 
