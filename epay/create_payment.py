@@ -42,9 +42,10 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        await message.answer("⌛️Ожидаем реквизиты...")
+        bot_msg = await message.answer("⌛️Ожидаем реквизиты...")
         link = await sendpost(amount, message.from_user.id)
         await message.answer(link)
+        await bot_msg.delete
 
 async def sendpost(amount, chat_id):
     async with ClientSession() as session:
