@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from config import CHECK_URL, API_TOKEN, ALLOWED_GROUPS
+from config import API_TOKEN, ALLOWED_GROUPS, CHECK_URL
 
 router = Router()
 
@@ -50,35 +50,30 @@ async def send_success(bot: Bot, target_chat):
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/check_"))
 async def check_command(message: Message):
-    logging.info(f"Processing /check_ command in chat: {message.chat.id}")
     if message.chat.id not in ALLOWED_GROUPS:
         await message.answer("Бот не активирован в этой группе!")
         return
     try:
         ordercheck_id = int(message.text.split("_")[1])
-    except (IndexError, ValueError):
+    except (IndexError, ValueError) as e:
         await message.answer("Неверный формат команды. Используйте: /check_1000")
         return
-    else:
-        try:
-            async with ClientSession() as session:
-                async with session.post(
-                    CHECK_URL,
-                    json={
-                        "order_id": ordercheck_id,
-                        "api_key": API_TOKEN
-                        }
-                ) as response:
-                    data = await response.json()
-                    status = data.get('status')
-                    if status == "payment_success":
-                        await message.answer(f"✅Заказ №{ordercheck_id}, оплачен!")
-                    elif status == "payment_canceled":
-                        await message.answer(f"⛔Заказ №{ordercheck_id}, отменен!")
-                    elif status == "payment_wait":
-                        await message.answer(f"⚠️Заказ №{ordercheck_id}, ожидате оплаты!")
-                    else:
-                        await message.answer(f"⚰️Заказ №{ordercheck_id}, умер!")
-        except:
-            await message.answer(f"⚰️Бот умер!")
+    try:
+        async with ClientSession() as session:
+            async with session.post(
+                CHECK_URL,
+                json={"order_id": ordercheck_id, "api_key": API_TOKEN}
+            ) as response:
+                data = await response.json()
+                status = data.get('status')
+                if status == "payment_success":
+                    await message.answer(f"✅Заказ №{ordercheck_id}, оплачен!")
+                elif status == "payment_canceled":
+                    await message.answer(f"⛔Заказ №{ordercheck_id}, отменен!")
+                elif status == "payment_wait":
+                    await message.answer(f"⚠️Заказ №{ordercheck_id}, ожидате оплаты!")
+                else:
+                    await message.answer(f"⚰️Заказ №{ordercheck_id}, умер!")
+    except Exception as e:
+        await message.answer("⚰️Бот умер!")
 
