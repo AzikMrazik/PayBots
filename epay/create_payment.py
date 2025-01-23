@@ -63,4 +63,4 @@ async def sendpost(amount, chat_id):
             card = data['card_number']
             order_id = data['order_id']
             await addorder(order_id, chat_id, precise_amount)
-            return f"📄 Создан заказ: <b>№{order_id}</b>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰 Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
+            return f"📄 Создан заказ: <b>№<code>{order_id}</code></b>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰 Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
