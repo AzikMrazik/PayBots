@@ -45,7 +45,7 @@ async def create_payment(message: Message,  state: FSMContext):
         bot_msg = await message.answer("⌛️Ожидаем реквизиты...")
         link = await sendpost(amount, message.from_user.id)
         await message.answer(link)
-        await bot_msg.delete
+        await bot_msg.delete()
 
 async def sendpost(amount, chat_id):
     async with ClientSession() as session:

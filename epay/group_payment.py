@@ -32,4 +32,4 @@ async def cash_command(message: Message):
         bot_msg = await message.answer("⌛️Ожидаем реквизиты...")
         link = await sendpost(amount, message.chat.id)
         await message.answer(link)
-        await bot_msg.delete
+        await bot_msg.delete()
