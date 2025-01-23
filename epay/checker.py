@@ -71,7 +71,7 @@ async def check_command(message: Message):
                 elif status == "payment_canceled":
                     await message.answer(f"⛔Заказ №{ordercheck_id}, отменен!")
                 elif status == "payment_wait":
-                    await message.answer(f"⚠️Заказ №{ordercheck_id}, ожидате оплаты!")
+                    await message.answer(f"⚠️Заказ №{ordercheck_id}, ожидает оплаты!")
                 else:
                     await message.answer(f"⚰️Заказ №{ordercheck_id}, умер!")
     except Exception as e:
