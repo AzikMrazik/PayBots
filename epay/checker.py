@@ -69,7 +69,7 @@ async def check(bot: Bot):
                     data = await response.json()
                     status = data.get('status')
 
-                if status == "payment_wait":
+                if status == "payment_success":
                     await send_success(bot, [order_id, chat_id, amount])
                     await delorder(order_id)
 
