@@ -1,6 +1,7 @@
 import dotenv
 import logging
 import asyncio
+from aiosqlite import connect
 from aiohttp import ClientSession
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
@@ -43,9 +44,17 @@ async def create_payment(message: Message,  state: FSMContext):
         return
     else:
         bot_msg = await message.answer("⌛️Ожидаем реквизиты...")
-        link = await sendpost(amount, message.from_user.id)
-        await message.answer(link)
+        checkout = await sendpost(amount, message.from_user.id)
         await bot_msg.delete()
+        await message.answer(checkout)
+
+async def bank_check(bin):
+    async with connect("bins.db") as db:
+        cursor = await db.execute(
+            "SELECT note FROM bins WHERE bin = ?", 
+            (bin,)
+        )
+        return await cursor.fetchone()
 
 async def sendpost(amount, chat_id):
     async with ClientSession() as session:
@@ -62,5 +71,14 @@ async def sendpost(amount, chat_id):
             precise_amount = data['amount']
             card = data['card_number']
             order_id = data['order_id']
-            await addorder(order_id, chat_id, precise_amount)
-            return f"📄 Создан заказ: <b>№<code>{order_id}</code></b>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰 Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
+            bin = card[:6]
+            bank_status = await bank_check(bin)
+            if bank_status == "RIP":
+                await addorder(order_id, chat_id, precise_amount)
+                return f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
+            else:
+                print("again")
+                await asyncio.sleep(3)
+                await sendpost(amount, chat_id)
+
+
