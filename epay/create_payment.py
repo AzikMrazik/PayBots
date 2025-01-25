@@ -74,7 +74,7 @@ async def sendpost(amount, chat_id, counter):
             else:
                 order_status = data['status']
                 print(order_status)
-                try:
+                if order_status != "error":
                     precise_amount = data['amount']
                     card = data['card_number']
                     order_id = data['order_id']
@@ -87,7 +87,7 @@ async def sendpost(amount, chat_id, counter):
                         print("again RIP")
                         await asyncio.sleep(3)
                         return await sendpost(amount, chat_id, 1)
-                except:
+                else:
                         print("again no")
                         print(counter)
                         if counter < 3:
