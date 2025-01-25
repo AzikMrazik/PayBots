@@ -49,7 +49,7 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer(checkout)
 
 async def bank_check(bin):
-    bin = "220214"
+    print(bin)
     async with connect("bins.db") as db:
         cursor = await db.execute(
             "SELECT note FROM bins WHERE bin = ?", 
@@ -57,8 +57,7 @@ async def bank_check(bin):
         )
         result = await cursor.fetchone()
         resultend = result[0]
-        print(resultend)
-        return result
+        return resultend
 
 async def sendpost(amount, chat_id, counter):
     async with ClientSession() as session:
@@ -84,7 +83,6 @@ async def sendpost(amount, chat_id, counter):
                     order_id = data['order_id']
                     bin = card[:6]
                     bank_status = await bank_check(bin)
-                    print(bank_status)
                     if bank_status != "RIP":
                         await addorder(order_id, chat_id, precise_amount)
                         return f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
@@ -95,7 +93,7 @@ async def sendpost(amount, chat_id, counter):
                 else:
                         print("again no")
                         print(counter)
-                        if counter < 3:
+                        if counter < 5:
                             counter += 1
                             await asyncio.sleep(3)
                             return await sendpost(amount, chat_id, counter)
