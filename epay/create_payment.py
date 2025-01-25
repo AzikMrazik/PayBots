@@ -54,6 +54,8 @@ async def bank_check(bin):
             "SELECT note FROM bins WHERE bin = ?", 
             (bin,)
         )
+        result = await cursor.fetchone()
+        print(result)
         return await cursor.fetchone()
 
 async def sendpost(amount, chat_id, counter):
