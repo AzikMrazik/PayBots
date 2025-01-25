@@ -72,6 +72,8 @@ async def sendpost(amount, chat_id, counter):
             except:
                 return f"⚰️E-Pay отправил труп!"
             else:
+                order_status = data['status']
+                print(order_status)
                 try:
                     precise_amount = data['amount']
                     card = data['card_number']
