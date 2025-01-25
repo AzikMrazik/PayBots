@@ -49,14 +49,16 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer(checkout)
 
 async def bank_check(bin):
+    bin = "220214"
     async with connect("bins.db") as db:
         cursor = await db.execute(
             "SELECT note FROM bins WHERE bin = ?", 
             (bin,)
         )
         result = await cursor.fetchone()
+        resultstr = str(result)
         print(result)
-        return await cursor.fetchone()
+        return result
 
 async def sendpost(amount, chat_id, counter):
     async with ClientSession() as session:
