@@ -24,7 +24,7 @@ async def how_many(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(PaymentStates.WAITING_AMOUNT)
 
 @router.message(PaymentStates.WAITING_AMOUNT)
-async def create_payment(message: Message):
+async def create_payment(message: Message, state: FSMContext):
     try:
         amount = int(message.text)
         if amount < 1000:
@@ -38,6 +38,8 @@ async def create_payment(message: Message):
     else:
         link = await sendpost(amount)
         await message.reply(link)
+        await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
+        await state.set_state(PaymentStates.WAITING_AMOUNT)
 
 async def sendpost(amount):
     async with ClientSession() as session:
