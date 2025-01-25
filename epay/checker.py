@@ -55,7 +55,9 @@ async def get_one_order(order_id):
             "SELECT amount FROM orders WHERE order_id = ?", 
             (order_id,)
         )
-        return await cursor.fetchone()
+        result = await cursor.fetchone()
+        resultend = result[0]
+        return resultend
 
 async def check(bot: Bot):
     async with ClientSession() as session:
