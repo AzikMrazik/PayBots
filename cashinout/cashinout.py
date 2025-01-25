@@ -27,7 +27,7 @@ def main_kb():
 async def handle_main_menu_callback(callback_query: CallbackQuery, state: FSMContext):
     await state.clear()
     await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(text="Вы в главном меню, выберите действие:", reply_markup=main_kb())
+    await callback_query.message.answer(text="Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
