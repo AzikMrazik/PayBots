@@ -46,7 +46,8 @@ async def create_payment(message: Message,  state: FSMContext):
         bot_msg = await message.answer("⌛️Ожидаем реквизиты...")
         checkout = await sendpost(amount, message.from_user.id, 1)
         await bot_msg.delete()
-        await message.answer(checkout)
+        await message.answer(checkout[0])
+        await message.answer(checkout[1])
 
 async def bank_check(bin):
     async with connect("bins.db") as db:
@@ -94,7 +95,7 @@ async def sendpost(amount, chat_id, counter):
                     bank_name = await check_name(bin)
                     if bank_status != "RIP":
                         await addorder(order_id, chat_id, precise_amount)
-                        return f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n🏦Банк: {bank_name}\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
+                        return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
                     else:
                         print("again RIP")
                         await asyncio.sleep(3)
