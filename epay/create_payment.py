@@ -80,6 +80,7 @@ async def sendpost(amount, chat_id, counter):
                     order_id = data['order_id']
                     bin = card[:6]
                     bank_status = await bank_check(bin)
+                    print(bank_status)
                     if bank_status != "RIP":
                         await addorder(order_id, chat_id, precise_amount)
                         return f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин."
