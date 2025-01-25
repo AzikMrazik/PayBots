@@ -24,7 +24,7 @@ async def balance(callback_query: CallbackQuery, bot: Bot):
     await bot.answer_callback_query(callback_query.id)
     async with ClientSession() as session:
         async with session.post(
-            f"{BASE__URL}balance",
+            f"{BASE_URL}balance",
             params={
                 "apikey": API_TOKEN
             }

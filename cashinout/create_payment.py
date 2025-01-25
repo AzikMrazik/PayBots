@@ -44,7 +44,7 @@ async def create_payment(message: Message,  state: FSMContext):
         return
     else:
         link = await sendpost(amount, message.from_user.id)
-        await message.answer(link)
+        await message.reply(link)
 
 async def sendpost(amount, chat_id):
     externaltext = datetime.now().strftime("%d%m")

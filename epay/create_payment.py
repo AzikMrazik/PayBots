@@ -43,11 +43,14 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        bot_msg = await message.answer("⌛️Ожидаем реквизиты...")
+        bot_msg = await message.reply("⌛️Ожидаем реквизиты...")
         checkout = await sendpost(amount, message.from_user.id, 1)
         await bot_msg.delete()
-        await message.answer(checkout[0])
-        await message.answer(checkout[1])
+        if checkout == True:
+            await message.reply("⛔Нет реквизитов!")
+        else:
+            await message.reply(checkout[0])
+            await message.answer(checkout[1])
 
 async def bank_check(bin):
     async with connect("bins.db") as db:

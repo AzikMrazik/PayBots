@@ -30,4 +30,4 @@ async def cash_command(message: Message):
         return
     else:
         link = await sendpost(amount, message.chat.id)
-        await message.answer(link)
+        await message.reply(link)
