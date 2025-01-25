@@ -56,8 +56,8 @@ async def bank_check(bin):
             (bin,)
         )
         result = await cursor.fetchone()
-        resultstr = str(result)
-        print(result)
+        resultend = result[0]
+        print(resultend)
         return result
 
 async def sendpost(amount, chat_id, counter):
