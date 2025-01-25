@@ -1,15 +1,11 @@
-import dotenv
-import logging
 import asyncio
 from aiosqlite import connect
 from aiohttp import ClientSession
-from aiogram import Bot, Dispatcher, Router, F
+from aiogram import Bot, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from aiogram.client.default import DefaultBotProperties
 from config import API_TOKEN, BASE_URL
 from checker import addorder
 
@@ -32,6 +28,7 @@ async def how_many(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
 
 @router.message(PaymentStates.WAITING_AMOUNT)
 async def create_payment(message: Message,  state: FSMContext):
+    await state.clear()
     try:
         amount = int(message.text)
         if amount < 1000:
@@ -51,6 +48,8 @@ async def create_payment(message: Message,  state: FSMContext):
         else:
             await message.reply(checkout[0])
             await message.answer(checkout[1])
+        await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
+        await state.set_state(PaymentStates.WAITING_AMOUNT)
 
 async def bank_check(bin):
     async with connect("bins.db") as db:

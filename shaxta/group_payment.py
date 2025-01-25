@@ -1,15 +1,6 @@
-import dotenv
-import logging
-import asyncio
-from aiohttp import ClientSession
-from aiogram import Bot, Dispatcher, Router, F
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+from aiogram import Router, F
+from aiogram.types import Message
 from aiogram.utils.formatting import *
-from aiogram.client.default import DefaultBotProperties
-from aiogram.filters import CommandObject
 from create_payment import sendpost
 from config import ALLOWED_GROUPS
 

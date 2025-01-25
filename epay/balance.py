@@ -1,14 +1,9 @@
-import dotenv
-import logging
-import asyncio
 from aiohttp import ClientSession
-from aiogram import Bot, Dispatcher, Router, F
+from aiogram import Bot, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from aiogram.client.default import DefaultBotProperties
 from config import API_TOKEN, BASE_URL, ADMINS
 
 router = Router()
@@ -120,7 +115,8 @@ async def which_order(callback_query: CallbackQuery, bot: Bot, state: FSMContext
     await state.set_state(PaymentStates.WAITING_NUMBER)
 
 @router.message(PaymentStates.WAITING_NUMBER)
-async def check_order(message: Message, bot: Bot, state: FSMContext):
+async def check_order(message: Message, state: FSMContext):
+    await state.clear()
     try:
         order_id = message.text
     except:

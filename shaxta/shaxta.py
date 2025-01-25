@@ -1,14 +1,12 @@
 import logging
 import asyncio
-from aiohttp import ClientSession as session
-from aiogram import Bot, Dispatcher, Router, F
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 import create_payment, group_payment, checker, balance
 from config import BOT_TOKEN
 from checker import checklist

@@ -1,14 +1,10 @@
-import dotenv
-import logging
 import asyncio
 from aiohttp import ClientSession
-from aiogram import Bot, Dispatcher, Router, F
+from aiogram import Bot, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from aiogram.client.default import DefaultBotProperties
 from config import API_TOKEN, BASE_URL
 from checker import addorder
 
@@ -33,6 +29,7 @@ def choose_kb():
 
 @router.callback_query(F.data == 'create_payment')
 async def which_method(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
+    await state.clear()
     await bot.answer_callback_query(callback_query.id)
     await callback_query.message.answer("Выберите метод:", reply_markup=choose_kb())
     await state.set_state(PaymentStates.WAITING_CHOOSE)
@@ -68,7 +65,10 @@ async def create_payment(message: Message, bot: Bot, state: FSMContext):
             await message.reply(checkout[0])
             await message.answer(checkout[1])
         else:
-            await message.reply("⛔Нет реквизитов!")            
+            await message.reply("⛔Нет реквизитов!") 
+        await state.clear()
+        await message.answer("Выберет метод для следующего платежа:", reply_markup=choose_kb())  
+        await state.set_state(PaymentStates.WAITING_CHOOSE)         
 
 async def sendpost(amount, chat_id, method, counter=1):
     print(amount)
