@@ -86,7 +86,7 @@ async def process_final_request(message: Message, state: FSMContext):
     api_url = "https://api.cashinout.io/merchant/invoices"
     async with ClientSession() as session:
         async with session.get(
-            api_url, params=params
+            api_url, headers={"Authorization": API_TOKEN}, params=params
         ) as response:
             data = await response.json()
             print(data)
