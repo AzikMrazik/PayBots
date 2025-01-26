@@ -30,7 +30,7 @@ def choose_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-@router.callback_query(F.data == 'checker')
+@router.callback_query(F.data == 'check')
 async def how_many(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
     await bot.answer_callback_query(callback_query.id)
     await callback_query.message.answer(
