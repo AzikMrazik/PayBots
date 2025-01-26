@@ -31,6 +31,13 @@ def choose_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+def last_kb():
+        keyboard = [
+            [InlineKeyboardButton(text="Показать все заказы", callback_data="show_all_orders")],
+            [InlineKeyboardButton(text="Назад в меню", callback_data="main_menu")]
+        ]
+        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
 @router.callback_query(F.data == 'check')
 async def how_many(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
     await bot.answer_callback_query(callback_query.id)
@@ -67,7 +74,7 @@ async def process_end_date(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("❌ Неверный формат даты!", reply_markup=choose_kb())
 
-async def process_final_request(message: Message, state: FSMContext):
+async def process_final_request(message: Message, callback_query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     filters = {}
     
@@ -111,14 +118,10 @@ async def process_final_request(message: Message, state: FSMContext):
             f"Сумма в RUB: {total_rub:.2f}",
             f"Сумма в USDT: {total_usdt:.2f}",
         ]
-        
-        # Создаем клавиатуру с кнопкой
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Показать все заказы", callback_data="show_all_orders")],
-            [InlineKeyboardButton(text="Назад в меню", callback_data="main_menu")]
-        ])
-        
-        await message.answer(**as_section(*summary), reply_markup=keyboard)
+        try:
+            await message.answer(**as_section(*summary), reply_markup=last_kb())
+        except:
+            await callback_query.message.answer(**as_section(*summary), reply_markup=last_kb())
         await state.set_state(PaymentStates.SHOW_DETAILS)
 
 # Обработчик для кнопки "Показать все заказы"
