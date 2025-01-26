@@ -83,7 +83,7 @@ async def process_final_request(message: Message, state: FSMContext):
         'limit': 999,
         'filters': json.dumps(filters)
     }
-    
+    print(params)
     # Отправляем запрос к API (заглушка)
     api_url = "https://api.cashinout.io/merchant/invoices"
     async with ClientSession() as session:
@@ -95,4 +95,3 @@ async def process_final_request(message: Message, state: FSMContext):
             entry for entry in resp['data']['entries'] 
             if entry.get('status') == 'succeeded'
         ]
-            print(successful_orders)
