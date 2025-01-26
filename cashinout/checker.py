@@ -80,9 +80,9 @@ async def process_final_request(message: Message, state: FSMContext):
     print(data)
     # Формируем фильтры с правильным форматом времени
     if 'from_ts' in data:
-        fromts = f"fromTimestampSeconds: {int(data['from_ts'])};"
+        fromts = f"fromTimestampSeconds:{int(data['from_ts'])};"
     if 'to_ts' in data and data['to_ts'] is not None:
-        tots = f"\ntoTimestampSeconds: {int(data['to_ts'])};"
+        tots = f"\ntoTimestampSeconds:{int(data['to_ts'])};"
     try:
        filters = "{\n" + fromts + tots + "\n}"
     except:
