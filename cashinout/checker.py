@@ -74,7 +74,7 @@ async def process_end_date(message: Message, state: FSMContext):
     except ValueError:
         await message.answer("❌ Неверный формат даты!", reply_markup=choose_kb())
 
-async def process_final_request(message: Message, callback_query: CallbackQuery, state: FSMContext):
+async def process_final_request(message: Message, state: FSMContext):
     data = await state.get_data()
     filters = {}
     
