@@ -10,6 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.formatting import Bold, Text, as_section
 from config import API_TOKEN
 
 router = Router()
@@ -107,18 +108,18 @@ async def process_final_request(message: Message, state: FSMContext):
         # Сохраняем заказы в хранилище состояний
         await state.update_data(orders=successful_orders)
         
-        # Считаем суммы
         total_rub = sum(float(order['currentAmountCurrency']) for order in successful_orders)
         total_usdt = sum(float(order['currentAmountUsdt']) for order in successful_orders)
         
-        # Формируем сообщение со сводкой
-        summary = [
+        # Формируем текст правильно
+        text = as_section(
             Bold("📊 Сводка за период:"),
-            f"Всего успешных заказов: {len(successful_orders)}",
-            f"Сумма в RUB: {total_rub:.2f}",
-            f"Сумма в USDT: {total_usdt:.2f}",
-        ]
-        await message.answer(**as_section(*summary), reply_markup=last_kb())
+            Text(f"Всего успешных заказов: {len(successful_orders)}"),
+            Text(f"Сумма в RUB: {total_rub:.2f}"),
+            Text(f"Сумма в USDT: {total_usdt:.2f}"),
+        )
+
+        await message.answer(**text.as_kwargs(), reply_markup=last_kb())
         await state.set_state(PaymentStates.SHOW_DETAILS)
 
 # Обработчик для кнопки "Показать все заказы"
