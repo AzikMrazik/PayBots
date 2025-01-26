@@ -26,6 +26,9 @@ async def balance(callback_query: CallbackQuery, bot: Bot):
                 }
             ) as response:
                 resp = await response.json(content_type=None)
-                data = resp['data']
-                bal = data['balance']
+                try:
+                    data = resp['data']
+                    bal = data['balance']
+                except:
+                    bal = str(resp)
                 await callback_query.message.answer(f"Ваш баланс: {bal}", reply_markup=back_kb())
