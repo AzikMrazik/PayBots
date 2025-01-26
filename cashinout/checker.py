@@ -83,7 +83,10 @@ async def process_final_request(message: Message, state: FSMContext):
         fromts = f"fromTimestampSeconds: {int(data['from_ts'])};"
     if 'to_ts' in data and data['to_ts'] is not None:
         tots = f"\ntoTimestampSeconds: {int(data['to_ts'])};"
-    filters = "{\n" + fromts + tots + "\n}"
+    try:
+       filters = "{\n" + fromts + tots + "\n}"
+    except:
+        filters = "{\n" + fromts + "\n}"
     
     api_url = "https://api.cashinout.io/merchant/invoices?offset=0&limit=999&filters=" + filters
     async with ClientSession() as session:
