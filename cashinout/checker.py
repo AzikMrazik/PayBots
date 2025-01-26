@@ -124,6 +124,7 @@ async def process_final_request(message: Message, state: FSMContext):
 
 # Обработчик для кнопки "Показать все заказы"
 @router.callback_query(F.data == "show_all_orders", PaymentStates.SHOW_DETAILS)
+@router.callback_query(F.data == "show_all_orders", PaymentStates.SHOW_DETAILS)
 async def show_all_orders(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     orders = data.get('orders', [])
@@ -131,13 +132,13 @@ async def show_all_orders(callback: CallbackQuery, state: FSMContext):
     for order in orders:
         order_text = as_section(
             Bold("📝 Детали заказа:"),
-            f"ID: {order['id']}",
-            f"Сумма в RUB: {order['currentAmountCurrency']}",
-            f"Сумма в USDT: {order['currentAmountUsdt']}",
-            f"Дата: {datetime.fromtimestamp(order['createdTimestampSeconds']).strftime('%d.%m.%Y %H:%M')}",
-            "-------------------------"
+            Text(f"ID: {order['id']}"),
+            Text(f"Сумма в RUB: {order['currentAmountCurrency']}"),
+            Text(f"Сумма в USDT: {order['currentAmountUsdt']}"),
+            Text(f"Дата: {datetime.fromtimestamp(order['createdTimestampSeconds']).strftime('%d.%m.%Y %H:%M')}"),
+            Text("-------------------------")
         )
-        await callback.message.answer(**order_text)
+        await callback.message.answer(**order_text.as_kwargs())  # Добавлен .as_kwargs()
     
     await callback.answer()
     await state.clear()
