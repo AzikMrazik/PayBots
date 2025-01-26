@@ -89,7 +89,7 @@ async def process_final_request(message: Message, state: FSMContext):
     params = {
         'offset': 0,
         'limit': 999,
-        'filters': json.dumps(filters, separators=(',', ':'))  # Убираем пробелы в JSON
+        'filters': json.dumps(filters, separators=(',', ':'), ensure_ascii=False)
     }
     
     print("Отправляемые параметры:", params)  # Для отладки
