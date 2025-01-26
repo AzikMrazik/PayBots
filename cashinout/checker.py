@@ -130,7 +130,7 @@ async def show_all_orders(callback: CallbackQuery, state: FSMContext):
     orders = data.get('orders', [])
     
     for order in orders:
-        order_text = as_section(
+        order_text = as_list(
             Bold("📝 Детали заказа:"),
             Text(f"ID: {order['id']}"),
             Text(f"Сумма в RUB: {order['currentAmountCurrency']}"),
@@ -139,6 +139,7 @@ async def show_all_orders(callback: CallbackQuery, state: FSMContext):
             Text("-------------------------")
         )
         await callback.message.answer(**order_text.as_kwargs())  # Добавлен .as_kwargs()
+        await asyncio.sleep(0.1)
     
     await callback.answer()
     await state.clear()
