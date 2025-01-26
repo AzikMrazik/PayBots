@@ -140,7 +140,7 @@ async def show_all_orders(callback: CallbackQuery, state: FSMContext):
             Text("-------------------------")
         )
         await callback.message.answer(**order_text.as_kwargs())  # Добавлен .as_kwargs()
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.33)
     
     await callback.answer()
     await state.clear()
