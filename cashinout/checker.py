@@ -89,7 +89,7 @@ async def process_final_request(message: Message, state: FSMContext):
             api_url, headers={"Authorization": API_TOKEN}, params=params
         ) as response:
             data = await response.json()
-            print[data]
+            print(data)
             successful_orders = [
             entry for entry in data['data']['entries'] 
             if entry.get('status') == 'succeeded'
