@@ -77,7 +77,7 @@ async def process_end_date(message: Message, state: FSMContext):
 
 async def process_final_request(message: Message, state: FSMContext):
     data = await state.get_data()
-    
+    print(data)
     # Формируем фильтры с правильным форматом времени
     if 'from_ts' in data:
         filters = f"fromTimestampSeconds: {int(data['from_ts'])};"
