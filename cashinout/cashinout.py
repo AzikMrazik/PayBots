@@ -7,7 +7,7 @@ from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-import create_payment, group_payment
+import create_payment, group_payment, checker
 from config import BOT_TOKEN
 
 logging.basicConfig(level=logging.INFO)
@@ -15,11 +15,12 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-dp.include_routers(create_payment.router, group_payment.router)
+dp.include_routers(checker.router, create_payment.router, group_payment.router)
 
 def main_kb():
     keyboard = [
-        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')]
+        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')],
+        [InlineKeyboardButton(text="Просмотреть заявки", callback_data='check')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
