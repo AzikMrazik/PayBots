@@ -77,27 +77,18 @@ async def process_end_date(message: Message, state: FSMContext):
 
 async def process_final_request(message: Message, state: FSMContext):
     data = await state.get_data()
-    filters = {}
     
     # Формируем фильтры с правильным форматом времени
     if 'from_ts' in data:
-        filters['fromTimestampSeconds'] = int(data['from_ts'])
+        filters = f"fromTimestampSeconds: {int(data['from_ts'])};"
     if 'to_ts' in data and data['to_ts'] is not None:
-        filters['toTimestampSeconds'] = int(data['to_ts'])
+        filters = filters + f"\ntoTimestampSeconds: {int(data['to_ts'])};"
+    filters = "{\n" + filters + "\n}"
     
-    # Формируем параметры с правильной сериализацией JSON
-    params = {
-        'offset': 0,
-        'limit': 999,
-        'filters': json.dumps(filters, separators=(',', ':'), ensure_ascii=False)
-    }
-    
-    print("Отправляемые параметры:", params)  # Для отладки
-    
-    api_url = "https://api.cashinout.io/merchant/invoices?"
+    api_url = "https://api.cashinout.io/merchant/invoices?offset=0&limit=999&filters=" + filters
     async with ClientSession() as session:
         async with session.get(
-            api_url, headers={"Authorization": API_TOKEN}, params=params
+            api_url, headers={"Authorization": API_TOKEN}
         ) as response:
             print(response.url)
             resp = await response.json()
