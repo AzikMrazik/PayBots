@@ -99,6 +99,7 @@ async def process_final_request(message: Message, state: FSMContext):
         async with session.get(
             api_url, headers={"Authorization": API_TOKEN}, params=params
         ) as response:
+            print(response.url)
             resp = await response.json()
             successful_orders = [
             entry for entry in resp['data']['entries'] 
@@ -112,7 +113,7 @@ async def process_final_request(message: Message, state: FSMContext):
         total_usdt = sum(float(order['currentAmountUsdt']) for order in successful_orders)
         
         # Формируем текст правильно
-        text = as_section(
+        text = as_list(
             Bold("📊 Сводка за период:"),
             Text(f"Всего успешных заказов: {len(successful_orders)}"),
             Text(f"Сумма в RUB: {total_rub:.2f}"),
