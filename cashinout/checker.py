@@ -78,7 +78,7 @@ async def process_final_request(message: Message, state: FSMContext):
     # Формируем параметры запроса
     params = {
         'offset': 0,
-        'limit': 9999,
+        'limit': 999,
         'filters': json.dumps(filters)
     }
     
