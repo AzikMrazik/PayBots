@@ -72,8 +72,10 @@ async def process_final_request(message: Message, state: FSMContext):
     
     if 'from_ts' in data:
         filters['fromTimestampSeconds'] = data['from_ts']
+        print(filters)
     if 'to_ts' in data and data['to_ts'] is not None:
         filters['toTimestampSeconds'] = data['to_ts']
+        print(filters)
     
     # Формируем параметры запроса
     params = {
@@ -88,9 +90,9 @@ async def process_final_request(message: Message, state: FSMContext):
         async with session.get(
             api_url, headers={"Authorization": API_TOKEN}, params=params
         ) as response:
-            data = await response.json()
+            resp = await response.json()
             successful_orders = [
-            entry for entry in data['data']['entries'] 
+            entry for entry in resp['data']['entries'] 
             if entry.get('status') == 'succeeded'
         ]
             print(successful_orders)
