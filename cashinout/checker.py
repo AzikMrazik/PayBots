@@ -86,7 +86,7 @@ async def process_final_request(message: Message, state: FSMContext):
     
     print("Отправляемые параметры:", params)  # Для отладки
     
-    api_url = "https://example.com/merchant/invoices"
+    api_url = "https://api.cashinout.io/merchant/invoices?"
     async with ClientSession() as session:
         async with session.get(
             api_url, headers={"Authorization": API_TOKEN}, params=params
