@@ -118,10 +118,7 @@ async def process_final_request(message: Message, state: FSMContext):
             f"Сумма в RUB: {total_rub:.2f}",
             f"Сумма в USDT: {total_usdt:.2f}",
         ]
-        try:
-            await message.answer(**as_section(*summary), reply_markup=last_kb())
-        except:
-            await callback_query.message.answer(**as_section(*summary), reply_markup=last_kb())
+        await message.answer(**as_section(*summary), reply_markup=last_kb())
         await state.set_state(PaymentStates.SHOW_DETAILS)
 
 # Обработчик для кнопки "Показать все заказы"
