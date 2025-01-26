@@ -17,6 +17,7 @@ router = Router()
 class PaymentStates(StatesGroup):
     WAITING_STARTDATE = State()
     WAITING_ENDDATE = State()
+    SHOW_DETAILS = State()
 
 def back_kb():
     keyboard = [
