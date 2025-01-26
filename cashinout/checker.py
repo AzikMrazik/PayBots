@@ -70,22 +70,22 @@ async def process_final_request(message: Message, state: FSMContext):
     data = await state.get_data()
     filters = {}
     
+    # Формируем фильтры с правильным форматом времени
     if 'from_ts' in data:
-        filters['fromTimestampSeconds'] = data['from_ts']
-        print(filters)
+        filters['fromTimestampSeconds'] = int(data['from_ts'])
     if 'to_ts' in data and data['to_ts'] is not None:
-        filters['toTimestampSeconds'] = data['to_ts']
-        print(filters)
+        filters['toTimestampSeconds'] = int(data['to_ts'])
     
-    # Формируем параметры запроса
+    # Формируем параметры с правильной сериализацией JSON
     params = {
         'offset': 0,
         'limit': 999,
-        'filters': json.dumps(filters)
+        'filters': json.dumps(filters, separators=(',', ':'))  # Убираем пробелы в JSON
     }
-    print(params)
-    # Отправляем запрос к API (заглушка)
-    api_url = "https://api.cashinout.io/merchant/invoices"
+    
+    print("Отправляемые параметры:", params)  # Для отладки
+    
+    api_url = "https://example.com/merchant/invoices"
     async with ClientSession() as session:
         async with session.get(
             api_url, headers={"Authorization": API_TOKEN}, params=params
@@ -95,3 +95,47 @@ async def process_final_request(message: Message, state: FSMContext):
             entry for entry in resp['data']['entries'] 
             if entry.get('status') == 'succeeded'
         ]
+        
+        # Сохраняем заказы в хранилище состояний
+        await state.update_data(orders=successful_orders)
+        
+        # Считаем суммы
+        total_rub = sum(float(order['currentAmountCurrency']) for order in successful_orders)
+        total_usdt = sum(float(order['currentAmountUsdt']) for order in successful_orders)
+        
+        # Формируем сообщение со сводкой
+        summary = [
+            Bold("📊 Сводка за период:"),
+            f"Всего успешных заказов: {len(successful_orders)}",
+            f"Сумма в RUB: {total_rub:.2f}",
+            f"Сумма в USDT: {total_usdt:.2f}",
+        ]
+        
+        # Создаем клавиатуру с кнопкой
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Показать все заказы", callback_data="show_all_orders")],
+            [InlineKeyboardButton(text="Назад в меню", callback_data="main_menu")]
+        ])
+        
+        await message.answer(**as_section(*summary), reply_markup=keyboard)
+        await state.set_state(PaymentStates.SHOW_DETAILS)
+
+# Обработчик для кнопки "Показать все заказы"
+@router.callback_query(F.data == "show_all_orders", PaymentStates.SHOW_DETAILS)
+async def show_all_orders(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    orders = data.get('orders', [])
+    
+    for order in orders:
+        order_text = as_section(
+            Bold("📝 Детали заказа:"),
+            f"ID: {order['id']}",
+            f"Сумма в RUB: {order['currentAmountCurrency']}",
+            f"Сумма в USDT: {order['currentAmountUsdt']}",
+            f"Дата: {datetime.fromtimestamp(order['createdTimestampSeconds']).strftime('%d.%m.%Y %H:%M')}",
+            "-------------------------"
+        )
+        await callback.message.answer(**order_text)
+    
+    await callback.answer()
+    await state.clear()
