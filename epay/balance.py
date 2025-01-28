@@ -72,7 +72,7 @@ async def which_wallet(message: Message, bot: Bot, state: FSMContext):
     await state.set_state(PaymentStates.WAITING_WALLET)
 
 @router.message(PaymentStates.WAITING_WALLET)
-async def create_order(message: Message, bot: Bot, state: FSMContext):
+async def create_order(message: Message, state: FSMContext):
     wallet = message.text
     data = await state.get_data()
     amount = data.get("amount") 
@@ -87,6 +87,7 @@ async def create_order(message: Message, bot: Bot, state: FSMContext):
                 "wallet": wallet
                   }
         ) as response:
+            await message.answer(f"{response.url}")
             data = await response.json()
             try:
                 await message.answer(f"✅Заявка №<code>{data['id']}</code> успешно создана!", reply_markup=last_kb())
