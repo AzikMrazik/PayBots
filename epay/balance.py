@@ -87,7 +87,6 @@ async def create_order(message: Message, state: FSMContext):
                 "wallet": wallet
                   }
         ) as response:
-            await message.answer(f"{response.url}")
             data = await response.json()
             try:
                 await message.answer(f"✅Заявка №<code>{data['id']}</code> успешно создана!", reply_markup=last_kb())
@@ -126,7 +125,7 @@ async def check_order(message: Message, state: FSMContext):
         return
     async with ClientSession() as session:
         async with session.get(
-            f"{BASE_URL}/payout/{order_id}?api_key={API_TOKEN}"
+            f"{BASE_URL}/payout/{order_id}?api_key={PAYOUT_API}"
         ) as response:
             data = await response.json()
             try:
