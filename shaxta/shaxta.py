@@ -31,11 +31,6 @@ async def handle_main_menu_callback(callback_query: CallbackQuery, state: FSMCon
     await bot.answer_callback_query(callback_query.id)
     await callback_query.message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
-@dp.message(Command("start"))
-async def start_command(message: Message):
-    await message.answer("Добро пожаловать!")
-    await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
-
 async def main():
     await asyncio.gather(
         dp.start_polling(bot),

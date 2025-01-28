@@ -4,7 +4,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import API_TOKEN, BASE_URL, ADMINS
+from config import API_TOKEN, PAYOUT_URL, ADMINS, BASE_URL
 
 router = Router()
 
@@ -79,7 +79,7 @@ async def create_order(message: Message, state: FSMContext):
     print(type(amount)) 
     async with ClientSession() as session:
         async with session.post(
-            f"{BASE_URL}/payout",
+            f"{PAYOUT_URL}/payout",
             json={
                 "api_key": API_TOKEN,
                 "amount": amount,
