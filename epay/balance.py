@@ -79,9 +79,9 @@ async def create_order(message: Message, state: FSMContext):
     print(type(amount)) 
     async with ClientSession() as session:
         async with session.post(
-            f"{PAYOUT_URL}/payout",
+            f"{BASE_URL}/payout",
             json={
-                "api_key": API_TOKEN,
+                "api_key": PAYOUT_API,
                 "amount": amount,
                 "method": 3,
                 "wallet": wallet
