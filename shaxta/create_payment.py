@@ -84,7 +84,11 @@ async def sendpost(amount, chat_id, method, counter=1):
             try:
                 resp = await response.json(content_type=None)
             except:
-                return (f"{response}", f"⛔Ошибка отправьте сообщение выше кодеру!")
+                try: 
+                    resp = await response.text()
+                    return (f"{response}\n\n{resp}", f"⛔Ошибка отправьте сообщение выше кодеру!")
+                except:
+                    return (f"{response}", f"⛔Ошибка отправьте сообщение выше кодеру!")
             else:
                 status = resp['status']
                 if status == "ok":
