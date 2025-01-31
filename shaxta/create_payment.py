@@ -81,31 +81,35 @@ async def sendpost(amount, chat_id, method, counter=1):
                 "type_fiat": method
             }
         ) as response:
-            resp = await response.json(content_type=None)
-            status = resp['status']
-            if status == "ok":
-                data = resp['data']
-                order_id = data['orderId']
-                precise_amount = data['amountExc']
-                card = data['paymentData']
-                send_type = "карты"
-                if method == "SBP":
-                    card = "+" + card
-                    send_type = "телефона"
-                try:
-                    bank = data['bank']
-                except:
-                    bank = "Не найден"
-                await addorder(order_id, chat_id, precise_amount)
-                return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}")
-            elif status == "error":
-                if counter < 10:
-                    counter += 1
-                    print("again")
-                    await asyncio.sleep(3)
-                    return await sendpost(amount, chat_id, method, counter)   
-                else:
-                    return True
+            try:
+                resp = await response.json(content_type=None)
+            except:
+                return (f"{response}", f"⛔Ошибка отправьте сообщение выше кодеру!")
             else:
-                print("Fuck")
+                status = resp['status']
+                if status == "ok":
+                    data = resp['data']
+                    order_id = data['orderId']
+                    precise_amount = data['amountExc']
+                    card = data['paymentData']
+                    send_type = "карты"
+                    if method == "SBP":
+                        card = "+" + card
+                        send_type = "телефона"
+                    try:
+                        bank = data['bank']
+                    except:
+                        bank = "Не найден"
+                    await addorder(order_id, chat_id, precise_amount)
+                    return (f"📄Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}")
+                elif status == "error":
+                    if counter < 10:
+                        counter += 1
+                        print("again")
+                        await asyncio.sleep(3)
+                        return await sendpost(amount, chat_id, method, counter)   
+                    else:
+                        return True
+                else:
+                    print("Fuck")
 
