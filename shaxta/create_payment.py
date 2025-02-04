@@ -108,7 +108,7 @@ async def sendpost(amount, chat_id, method, counter=1):
                             await back_payment(order_id)
                             counter += 1
                             print(counter)
-                            asyncio.sleep(3)
+                            await asyncio.sleep(3)
                             return await sendpost(amount, chat_id, method, counter)
                     try:
                         bank = data['bank']
