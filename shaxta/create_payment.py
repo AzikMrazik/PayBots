@@ -105,6 +105,7 @@ async def sendpost(amount, chat_id, method, counter=1):
                         if card[:3] in prefixes or card[:2] in prefixes:
                             pass
                         else:
+                            print(counter)
                             await back_payment(order_id)
                             counter += 1
                             print(counter)
