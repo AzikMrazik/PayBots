@@ -61,13 +61,13 @@ async def create_payment(message: Message, bot: Bot, state: FSMContext):
         method = data.get("method")
         checkout = await sendpost(amount, message.from_user.id, method)
         await bot_msg.delete()
-        if checkout != True:
+        if isinstance(checkout, tuple):
             await message.reply(checkout[0])
             await message.answer(checkout[1])
         else:
-            await message.reply("⛔Нет реквизитов!") 
+            await message.reply("⛔Нет реквизитов!")
         await state.clear()
-        await message.answer("Выберет метод для следующего платежа:", reply_markup=choose_kb())  
+        await message.answer("Выберете метод для следующего платежа:", reply_markup=choose_kb())  
         await state.set_state(PaymentStates.WAITING_CHOOSE)         
 
 async def sendpost(amount, chat_id, method, counter=1):
@@ -122,7 +122,7 @@ async def sendpost(amount, chat_id, method, counter=1):
                     return (f"📄Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}\n🙍‍♂️ФИО: {initials}")
                 elif status == "error":
                     counter += 1
-                    print("again")
+                    print(counter)
                     await asyncio.sleep(3)
                     return await sendpost(amount, chat_id, method, counter)   
                 else:
