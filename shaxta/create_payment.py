@@ -98,19 +98,19 @@ async def sendpost(amount, chat_id, method, counter=1):
                     precise_amount = data['amountExc']
                     card = data['paymentData']
                     send_type = "карты"
+                    prefixes = {"+79", "220", "+89", "79", "89"}
+                    if card[:3] in prefixes or card[:2] in prefixes:
+                        pass
+                    else:
+                        print(counter)
+                        await back_payment(order_id)
+                        counter += 1
+                        print(counter)
+                        await asyncio.sleep(3)
+                        return await sendpost(amount, chat_id, method, counter)
                     if method == "SBP":
                         card = "+" + card
                         send_type = "телефона"
-                        prefixes = {"+79", "220", "+89", "79", "89"}
-                        if card[:3] in prefixes or card[:2] in prefixes:
-                            pass
-                        else:
-                            print(counter)
-                            await back_payment(order_id)
-                            counter += 1
-                            print(counter)
-                            await asyncio.sleep(3)
-                            return await sendpost(amount, chat_id, method, counter)
                     try:
                         bank = data['bank']
                     except:
