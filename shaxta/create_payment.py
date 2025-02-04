@@ -104,8 +104,12 @@ async def sendpost(amount, chat_id, method, counter=1):
                         bank = data['bank']
                     except:
                         bank = "Не найден"
+                    try:
+                        initials = data['holder_name']
+                    except:
+                        initials = "Не найдены"
                     await addorder(order_id, chat_id, precise_amount)
-                    return (f"📄Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}")
+                    return (f"📄Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}\n🙍‍♂️ФИО: {initials}")
                 elif status == "error":
                     if counter < 10:
                         counter += 1
