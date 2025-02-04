@@ -71,7 +71,8 @@ async def create_payment(message: Message, bot: Bot, state: FSMContext):
         await state.set_state(PaymentStates.WAITING_CHOOSE)         
 
 async def sendpost(amount, chat_id, method, counter=1):
-    print(amount)
+    if counter >= 10:
+        return True
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}new-order",
@@ -100,6 +101,13 @@ async def sendpost(amount, chat_id, method, counter=1):
                     if method == "SBP":
                         card = "+" + card
                         send_type = "телефона"
+                        prefixes = {"+79", "220", "+89", "79", "89"}
+                        if card[:3] in prefixes or card[:2] in prefixes:
+                            pass
+                        else:
+                            await back_payment(order_id)
+                            counter += 1
+                            return await sendpost(amount, chat_id, method, counter)
                     try:
                         bank = data['bank']
                     except:
@@ -111,13 +119,25 @@ async def sendpost(amount, chat_id, method, counter=1):
                     await addorder(order_id, chat_id, precise_amount)
                     return (f"📄Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}\n🙍‍♂️ФИО: {initials}")
                 elif status == "error":
-                    if counter < 10:
-                        counter += 1
-                        print("again")
-                        await asyncio.sleep(3)
-                        return await sendpost(amount, chat_id, method, counter)   
-                    else:
-                        return True
+                    counter += 1
+                    print("again")
+                    await asyncio.sleep(3)
+                    return await sendpost(amount, chat_id, method, counter)   
                 else:
-                    print("Fuck")
+                    return (f"⚰️Вернулся труп!", "Поздравляю!")
 
+async def back_payment(order_id):
+    try:
+        async with ClientSession() as session:
+            async with session.post(
+                f"{BASE_URL}cancel-order",
+                params={
+                    "apiKey": API_TOKEN,
+                    "type_order": "buy",
+                    "orderId": order_id
+                }
+            ):
+                pass
+    except:
+        pass
+            
