@@ -7,19 +7,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from config import API_TOKEN, BASE_URL
 from checker import addorder
-import logging
 
 router = Router()
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[  # Логи в файл
-        logging.StreamHandler()          # Логи в консоль (для systemd)
-    ]
-)
-
-logger = logging.getLogger(__name__)
 
 class PaymentStates(StatesGroup):
     WAITING_AMOUNT = State()
@@ -113,11 +102,8 @@ async def sendpost(amount, chat_id, method, counter=1):
                     if card[:3] in prefixes or card[:2] in prefixes:
                         pass
                     else:
-                        print(counter)
                         await back_payment(order_id)
                         counter += 1
-                        print(card, counter, flush=True)
-                        logger.debug("Сообщение для дебага")
                         await asyncio.sleep(3)
                         return await sendpost(amount, chat_id, method, counter)
                     if method == "SBP":
@@ -135,8 +121,6 @@ async def sendpost(amount, chat_id, method, counter=1):
                     return (f"📄Создан заказ: №<code>{order_id}</code>\n\n💳Номер {send_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.", F"🏦Банк: {bank}\n🙍‍♂️ФИО: {initials}")
                 elif status == "error":
                     counter += 1
-                    print(status, counter, flush=True)
-                    logger.debug("Сообщение для дебага")
                     await asyncio.sleep(3)
                     return await sendpost(amount, chat_id, method, counter)   
                 else:
