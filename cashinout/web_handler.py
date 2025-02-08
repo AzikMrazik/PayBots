@@ -27,6 +27,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_get('/test', handle_test)
     app.router.add_post('/custom_webhook', handle_post)
     app.router.add_get('/', handle_root)
+    app.router.add_post('/payment_webhook', handle_payment_webhook)
     # Регистрируем обработчик aiogram
     SimpleRequestHandler(
         dispatcher=dispatcher,
@@ -41,3 +42,36 @@ async def handle_test(request):
 
 async def handle_root(request):
     return web.Response(text="Bot is running")
+
+async def handle_payment_webhook(request: web.Request):
+    bot: Bot = request.app['bot']
+    try:
+        data = await request.json()
+        logger.info(f"Получен вебхук: {data}")
+
+        # Проверяем наличие externalText
+        if 'externalText' not in data or not data['externalText']:
+            return web.Response(text="Error: externalText is missing", status=400)
+
+        # Парсим externalText (формат: "order_id,chat_id")
+        external_text = data['externalText'].split(',')
+        if len(external_text) != 2:
+            return web.Response(text="Error: invalid externalText format", status=400)
+        
+        order_id, chat_id = external_text
+        chat_id = int(chat_id)  # Преобразуем в число
+
+        # Формируем сообщение в зависимости от типа
+        if data['type'] == 'payment':
+            amount = data['amount']
+            status = data['status']
+            await bot.send_message(
+                chat_id=chat_id,
+                text=f"Заказ №{order_id} на сумму {amount} RUB в статусе {status}."
+            )
+
+        return web.Response(text="OK")
+
+    except Exception as e:
+        logger.error(f"Ошибка: {str(e)}")
+        return web.Response(text=f"Error: {str(e)}", status=500)

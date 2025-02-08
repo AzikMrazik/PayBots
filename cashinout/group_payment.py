@@ -20,5 +20,5 @@ async def cash_command(message: Message):
         await message.answer("Неверный формат команды. Используйте: /cash_1000")
         return
     else:
-        link = await sendpost(amount)
+        link = await sendpost(amount, message.chat.id)
         await message.reply(link)
