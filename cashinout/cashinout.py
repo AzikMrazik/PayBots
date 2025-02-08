@@ -49,9 +49,9 @@ async def main():
     setup_application(web_app, dp, bot=bot)  # <-- Добавьте эту строку
 
     # Запуск веб-сервера
-    runner = web.AppRunner(web_app)
+    runner = await web.AppRunner(web_app)
     await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', 8080)
+    site = await web.TCPSite(runner, '0.0.0.0', 8080)
     
     await asyncio.gather(site.start())
 
