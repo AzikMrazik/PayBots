@@ -7,9 +7,6 @@ bot = Bot(token=BOT_TOKEN)
 
 async def handle_post(request):
     # Проверка секретного токена для кастомных запросов
-    if request.headers.get("X-Secret-Token") != SECRET_KEY:
-        return web.Response(status=403, text="Forbidden")
-    
     try:
         data = await request.json()
         chat_id = data.get('chat_id')
