@@ -52,7 +52,7 @@ async def main():
     
     await asyncio.gather(
         site.start(),
-        dp.start_webhook(
+        bot.start_webhook(
             bot,
             webhook_path="/tg_webhook",
             secret_token=SECRET_KEY
