@@ -21,15 +21,20 @@ async def handle_post(request: web.Request):
 
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
-    app['bot'] = bot  # Сохраняем бот в приложении
+    app['bot'] = bot
     
+    # Добавляем кастомные обработчики ПЕРЕД регистрацией вебхука aiogram
     app.router.add_get('/test', handle_test)
-
+    app.router.add_post('/custom_webhook', handle_post)
+    
+    # Регистрируем обработчик aiogram
     SimpleRequestHandler(
-        dispatcher=dispatcher, 
+        dispatcher=dispatcher,
         bot=bot,
         secret_token=SECRET_KEY
     ).register(app, path="/tg_webhook")
+    
+    return app
     
     app.router.add_post('/custom_webhook', handle_post)
     return app
