@@ -1,11 +1,16 @@
 from aiohttp import web
 from aiogram import Bot, Dispatcher
+import logging
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-from config import BOT_TOKEN, SECRET_KEY
+from config import SECRET_KEY
+
+logger = logging.getLogger(__name__)
 
 async def handle_post(request: web.Request):
     bot: Bot = request.app['bot']
+    logger = logging.getLogger(__name__)
     try:
+        logger.info("Handling POST request to /custom_webhook")
         data = await request.json()
         chat_id = data.get('chat_id')
         text = data.get('text')
