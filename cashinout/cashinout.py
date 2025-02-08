@@ -13,11 +13,10 @@ from aiohttp import web
 from aiogram.webhook.aiohttp_server import setup_application
 from web_handler import start_web_app
 
-# Настройка логгера
-logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()]  # Явное указание вывода в консоль
 )
 
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
@@ -67,6 +66,8 @@ async def main():
         await site.start()
         logger.info("=== Bot is running ===")
         
+        await dp.start_polling(bot)
+
         # Бесконечное ожидание
         while True:
             await asyncio.sleep(3600)
