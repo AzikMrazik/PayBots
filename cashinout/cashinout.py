@@ -48,7 +48,10 @@ async def main():
         await bot.delete_webhook()
         
         logger.info(f"Настройка вебхука: https://{DOMAIN}/tg_webhook")
-        await bot.set_webhook(...)
+        await bot.set_webhook(
+            url=f"https://{DOMAIN}/tg_webhook",
+            secret_token=SECRET_KEY
+        )
 
         # Создание aiohttp-приложения
         web_app = await start_web_app(dp, bot)
