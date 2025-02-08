@@ -42,31 +42,22 @@ async def start_command(message: Message):
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 async def main():
+    logger = logging.getLogger(__name__)
     try:
+        logger.info("Удаление старого вебхука...")
         await bot.delete_webhook()
-        # Настройка вебхука
-        await bot.set_webhook(
-            url=f"https://{DOMAIN}/tg_webhook",
-            secret_token=SECRET_KEY
-        )
-
-        # Создание aiohttp-приложения
-        web_app = await start_web_app(dp, bot)
-        setup_application(web_app, dp, bot=bot)
-
-        # Запуск веб-сервера
-        runner = web.AppRunner(web_app)
-        await runner.setup()
-        site = web.TCPSite(runner, '0.0.0.0', 8080)
         
-        await site.start()
-
-        # Бесконечное ожидание
+        logger.info(f"Настройка вебхука: https://{DOMAIN}/tg_webhook")
+        await bot.set_webhook(...)
+        
+        # ... остальной код ...
+        
+        logger.info("Сервер запущен на порту 8080")
         while True:
             await asyncio.sleep(3600)
             
     except Exception as e:
-        print(e)
+        logger.error(f"Ошибка: {e}", exc_info=True)
     finally:
         await bot.session.close()
         if 'runner' in locals():
