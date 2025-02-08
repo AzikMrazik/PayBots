@@ -1,14 +1,17 @@
 from aiohttp import web
-import json
-from aiogram import Bot
-from config import BOT_TOKEN
+from aiogram import Bot, Dispatcher
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler
+from config import BOT_TOKEN, SECRET_KEY
 
 bot = Bot(token=BOT_TOKEN)
 
 async def handle_post(request):
+    # Проверка секретного токена для кастомных запросов
+    if request.headers.get("X-Secret-Token") != SECRET_KEY:
+        return web.Response(status=403, text="Forbidden")
+    
     try:
         data = await request.json()
-        # Пример: отправка уведомления в чат
         chat_id = data.get('chat_id')
         text = data.get('text')
         if chat_id and text:
@@ -17,7 +20,17 @@ async def handle_post(request):
     except Exception as e:
         return web.Response(text=f"Error: {str(e)}", status=400)
 
-async def start_web_app():
+async def start_web_app(dispatcher: Dispatcher):  # <- Добавлен аргумент
     app = web.Application()
-    app.router.add_post('/webhook', handle_post)  # Ваш кастомный эндпоинт
+    
+    # Регистрация обработчика Telegram
+    SimpleRequestHandler(
+        dispatcher=dispatcher, 
+        bot=bot,
+        secret_token=SECRET_KEY
+    ).register(app, path="/tg_webhook")  # Путь совпадает с вебхуком
+    
+    # Регистрация кастомного эндпоинта
+    app.router.add_post('/custom_webhook', handle_post)
+    
     return app
