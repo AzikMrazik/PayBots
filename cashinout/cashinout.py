@@ -8,7 +8,10 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 import create_payment, group_payment
-from config import BOT_TOKEN
+from config import BOT_TOKEN, SECRET_KEY, DOMAIN
+
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler
+from web_handler import start_web_app
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,9 +38,26 @@ async def start_command(message: Message):
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 async def main():
+    # Настройка вебхука для Telegram
+    await bot.set_webhook(
+        url=f"https://{DOMAIN}/tg_webhook",
+        secret_token=SECRET_KEY
+    )
+
+    # Запуск веб-сервера для POST-запросов
+    web_app = await start_web_app(dp)
+    runner = web.AppRunner(web_app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8080)  # Порт должен совпадать с настройками туннеля
+    
     await asyncio.gather(
-        dp.start_polling(bot),
+        site.start(),
+        dp.start_webhook(
+            bot,
+            webhook_path="/tg_webhook",
+            secret_token=SECRET_KEY
         )
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
