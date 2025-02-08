@@ -26,7 +26,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     # Добавляем кастомные обработчики ПЕРЕД регистрацией вебхука aiogram
     app.router.add_get('/test', handle_test)
     app.router.add_post('/custom_webhook', handle_post)
-    
+    app.router.add_get('/', handle_root)
     # Регистрируем обработчик aiogram
     SimpleRequestHandler(
         dispatcher=dispatcher,
@@ -35,9 +35,9 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     ).register(app, path="/tg_webhook")
     
     return app
-    
-    app.router.add_post('/custom_webhook', handle_post)
-    return app
 
 async def handle_test(request):
     return web.Response(text="OK")
+
+async def handle_root(request):
+    return web.Response(text="Bot is running")
