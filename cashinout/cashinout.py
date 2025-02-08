@@ -68,7 +68,7 @@ async def main():
             await asyncio.sleep(3600)
             
     except Exception as e:
-        pass
+        print(e)
     finally:
         await bot.session.close()
         if 'runner' in locals():
