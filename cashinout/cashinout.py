@@ -43,7 +43,7 @@ async def start_command(message: Message):
 
 async def main():
     try:
-        
+        await bot.delete_webhook()
         # Настройка вебхука
         await bot.set_webhook(
             url=f"https://{DOMAIN}/tg_webhook",
