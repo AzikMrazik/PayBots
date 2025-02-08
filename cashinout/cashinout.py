@@ -49,9 +49,19 @@ async def main():
         
         logger.info(f"Настройка вебхука: https://{DOMAIN}/tg_webhook")
         await bot.set_webhook(...)
+
+        # Создание aiohttp-приложения
+        web_app = await start_web_app(dp, bot)
+        setup_application(web_app, dp, bot=bot)
+
+        # Запуск веб-сервера
+        runner = web.AppRunner(web_app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', 8080)
         
-        # ... остальной код ...
-        
+        await site.start()
+
+        # Бесконечное ожидание
         logger.info("Сервер запущен на порту 8080")
         while True:
             await asyncio.sleep(3600)
