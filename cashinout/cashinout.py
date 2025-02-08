@@ -46,14 +46,25 @@ async def main():
 
     # Создание aiohttp-приложения
     web_app = await start_web_app(dp, bot)
-    setup_application(web_app, dp, bot=bot)  # <-- Добавьте эту строку
+    setup_application(web_app, dp, bot=bot)
 
     # Запуск веб-сервера
     runner = web.AppRunner(web_app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', 8080)
     
-    await asyncio.gather(site.start())
+    try:
+        await asyncio.gather(site.start())
+        while True:
+            await asyncio.sleep(3600)
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await bot.session.close()
+        await runner.cleanup()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
