@@ -3,8 +3,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from config import BOT_TOKEN, SECRET_KEY
 
-bot = Bot(token=BOT_TOKEN)
-
 async def handle_post(request):
     # Проверка секретного токена для кастомных запросов
     try:
@@ -17,7 +15,7 @@ async def handle_post(request):
     except Exception as e:
         return web.Response(text=f"Error: {str(e)}", status=400)
 
-async def start_web_app(dispatcher: Dispatcher):  # <- Добавлен аргумент
+async def start_web_app(dispatcher: Dispatcher, bot: Bot):  # <- Добавлен аргумент
     app = web.Application()
     
     # Регистрация обработчика Telegram

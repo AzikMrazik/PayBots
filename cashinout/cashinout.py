@@ -45,13 +45,13 @@ async def main():
     )
 
     # Создание aiohttp-приложения
-    web_app = await start_web_app(dp)
+    web_app = await start_web_app(dp, bot)
     setup_application(web_app, dp, bot=bot)  # <-- Добавьте эту строку
 
     # Запуск веб-сервера
-    runner = await web.AppRunner(web_app)
+    runner = web.AppRunner(web_app)
     await runner.setup()
-    site = await web.TCPSite(runner, '0.0.0.0', 8080)
+    site = web.TCPSite(runner, '0.0.0.0', 8080)
     
     await asyncio.gather(site.start())
 
