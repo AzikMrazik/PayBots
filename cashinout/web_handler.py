@@ -66,8 +66,15 @@ async def handle_payment_webhook(request: web.Request):
             amount = data['amount']
             status = data['status']
             await bot.send_message(
-                chat_id=chat_id,
-                text=f"Заказ №{order_id} на сумму {amount} RUB в статусе {status}."
+                chat_id=831055006,
+                text=f"Заказ №{order_id} на сумму {amount} RUB успешно оплачен!"
+            )
+        
+        if data['type'] == 'status':
+            status = data['status']
+            await bot.send_message(
+                chat_id=831055006,
+                text=f"Заказ №{order_id} успешно отклонен! Статус: {status}"
             )
 
         return web.Response(text="OK")
