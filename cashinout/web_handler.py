@@ -65,13 +65,10 @@ async def handle_payment_webhook(request: web.Request):
                 amount = data['amount']
                 await bot.send_message(
                     chat_id=chat_id,
-                    text=f"Заказ №{order_id} на сумму {amount} RUB успешно оплачен!"
+                    text=f"✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
         except Exception as e:   
-                await bot.send_message(
-                    chat_id=831055006,
-                    text=f"{e}"
-                )
+                pass
 
         return web.Response(text="OK")
 
