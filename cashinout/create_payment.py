@@ -60,4 +60,4 @@ async def sendpost(amount, chat_id):
             }
         ) as response:
             data = await response.json()
-            return f"{PAY_URL}{data['data']}"
+            return (f"📄Создан заказ: №{order_id}!", f"{PAY_URL}{data['data']}")
