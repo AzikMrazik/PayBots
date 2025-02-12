@@ -66,8 +66,9 @@ async def check(bot: Bot):
                         f"{BASE_URL}/api/apiOrderStatus",
                         json={"merchant_token": MERCHANT_TOKEN, "sign": sign}
                     ) as response:
-                        data = await response.json()
-                        status = data.get('status')
+                        data = await response.text()
+                        print(data, flush=True)
+                        status = "rop"
 
                     if status == "success":
                         await send_success(bot, [chat_id, amount, order_id])
