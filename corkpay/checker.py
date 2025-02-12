@@ -102,22 +102,23 @@ async def check_command(message: Message):
         amount, sign = await get_one_order(ordercheck_id)
         if sign == None:
             await message.answer("⭕Заказ не найден!")
-        async with ClientSession() as session:
-            async with session.post(
-                f"{BASE_URL}/api/apiOrderStatus",
-                json={"merchant_token": MERCHANT_TOKEN, "sign": sign}
-            ) as response:
-                data = await response.json()
-                status = data.get('status')
-                print(data, flush=True)
-                if status == "success":
-                    await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
-                elif status == "canceled":
-                    await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
-                elif status == "wait":
-                    await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
-                else:
-                    await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер! по причине {status}")
+        else:
+            async with ClientSession() as session:
+                async with session.post(
+                    f"{BASE_URL}/api/apiOrderStatus",
+                    json={"merchant_token": MERCHANT_TOKEN, "sign": sign}
+                ) as response:
+                    data = await response.json()
+                    status = data.get('status')
+                    print(data, flush=True)
+                    if status == "success":
+                        await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                    elif status == "canceled":
+                        await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                    elif status == "wait":
+                        await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                    else:
+                        await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер! по причине {status}")
     except Exception as e:
-        await message.answer(f"⚰️Бот умер! because {e}")
+            await message.answer(f"⚰️Бот умер! because {e}")
 
