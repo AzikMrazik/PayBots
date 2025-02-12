@@ -51,7 +51,10 @@ async def get_one_order(order_id):
             (order_id,)
         )
         result = await cursor.fetchone()
-        return result
+        if result:
+            return result
+        else:
+            return None, None
 
 async def check(bot: Bot):
     async with ClientSession() as session:
@@ -97,8 +100,8 @@ async def check_command(message: Message):
         return
     try:
         amount, sign = await get_one_order(ordercheck_id)
-        if not amount:
-            amount = "[сумма не получена]"
+        if sign == None:
+            await message.answer("⭕Заказ не найден!")
         async with ClientSession() as session:
             async with session.post(
                 f"{BASE_URL}/api/apiOrderStatus",
