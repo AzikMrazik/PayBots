@@ -106,7 +106,7 @@ async def check_command(message: Message):
             ) as response:
                 data = await response.json()
                 status = data.get('status')
-                print(data)
+                print(data, flush=True)
                 if status == "success":
                     await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
                 elif status == "canceled":
