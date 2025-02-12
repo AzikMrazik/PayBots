@@ -76,8 +76,7 @@ async def check(bot: Bot):
 
                     elif status == "canceled":
                         await delorder(order_id)       
-                    elif status == "rop":
-                        await bot.send_message(chat_id=chat_id, text=f"{data}")
+
                 except Exception as e:
                     await bot.send_message(chat_id=chat_id, text=f"{e}")
                     await bot.send_message(chat_id=chat_id, text=f"⚰️Заказ №{order_id} на сумму {amount} успешно умер! because {e}")
