@@ -1,7 +1,7 @@
 from os import getenv
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="C:/Programming/PayBots/api.env")
+load_dotenv(dotenv_path="/root/paybots/api.env")
 
 BOT_TOKEN = getenv("CP_BOT_TOKEN")
 API_TOKEN = getenv("CP_API_TOKEN")
