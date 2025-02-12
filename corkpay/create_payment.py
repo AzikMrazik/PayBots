@@ -97,11 +97,12 @@ async def sendpost(amount, chat_id, counter):
         ) as response:
             try:
                 data = await response.json()
-                print(data)
+                print(data, flush=True)
             except Exception as e:
                 return (f"⚰️CorkPay отправил труп!", f"{e}")
             else:
                 order_status = data['status']
+                print(order_status, flush=True)
                 if order_status == "success":
                     card = data['card']
                     sign = data['sign']
