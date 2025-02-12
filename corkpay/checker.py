@@ -85,7 +85,7 @@ async def check(bot: Bot):
 async def send_success(bot: Bot, target_chat):
     await bot.send_message(chat_id=target_chat[0], text=f"✅Заказ №{target_chat[2]} на сумму {target_chat[1]} успешно оплачен!")
 
-@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/check_"))
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/corkc_"))
 async def check_command(message: Message):
     if message.chat.id not in ALLOWED_GROUPS:
         await message.answer("Бот не активирован в этой группе!")
