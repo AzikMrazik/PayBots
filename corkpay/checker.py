@@ -76,14 +76,15 @@ async def check(bot: Bot):
 
                     elif status == "canceled":
                         await delorder(order_id)       
-
+                    elif status == "rop":
+                        await bot.send_message(chat_id=chat_id, text=f"{data}")
                 except Exception as e:
                     await bot.send_message(chat_id=chat_id, text=f"{e}")
                     await bot.send_message(chat_id=chat_id, text=f"⚰️Заказ №{order_id} на сумму {amount} успешно умер! because {e}")
 
                 await asyncio.sleep(3)
         except Exception as e:
-            print("no", e)
+            print("no", e, flush=True)
             await asyncio.sleep(30)
 
 async def send_success(bot: Bot, target_chat):
