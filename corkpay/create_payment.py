@@ -1,5 +1,4 @@
 import asyncio
-import json
 from aiosqlite import connect
 from aiohttp import ClientSession
 from aiogram import Bot, Router, F
