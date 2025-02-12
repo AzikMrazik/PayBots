@@ -106,6 +106,15 @@ async def sendpost(amount, chat_id, counter):
                     card = data['card']
                     sign = data['sign']
                     bin = card[:6]
+                    if bin != "220220":
+                        print("again non-ru")
+                        await asyncio.sleep(3)
+                        if counter < 5:
+                            counter += 1
+                            await asyncio.sleep(3)
+                            return await sendpost(amount, chat_id, counter)
+                        else:
+                            return True
                     bank_status = await bank_check(bin)
                     bank_name = await check_name(bin)
                     if bank_status != "RIP":

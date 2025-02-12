@@ -16,11 +16,11 @@ async def addorder(sign, chat_id, amount, order_id):
         )
         await db.commit()
 
-async def delorder(sign):
+async def delorder(order_id):
     async with connect("orders_corkpay.db") as db:
         await db.execute(
-            "DELETE FROM orders_corkpay WHERE sign = ?", 
-            (sign,)
+            "DELETE FROM orders_corkpay WHERE order_id = ?", 
+            (order_id,)
         )
         await db.commit()
 
@@ -47,12 +47,11 @@ async def get_all_orders():
 async def get_one_order(order_id):
     async with connect("orders_corkpay.db") as db:
         cursor = await db.execute(
-            "SELECT amount FROM orders_corkpay WHERE order_id = ?", 
+            "SELECT amount, sign FROM orders_corkpay WHERE order_id = ?", 
             (order_id,)
         )
         result = await cursor.fetchone()
-        print(result)
-        return result[0]
+        return result
 
 async def check(bot: Bot):
     async with ClientSession() as session:
@@ -97,7 +96,7 @@ async def check_command(message: Message):
         await message.answer("Неверный формат команды. Используйте: /check_1000")
         return
     try:
-        amount = await get_one_order(ordercheck_id)
+        amount, sign = await get_one_order(ordercheck_id)
         if not amount:
             amount = "[сумма не получена]"
         async with ClientSession() as session:
@@ -107,6 +106,7 @@ async def check_command(message: Message):
             ) as response:
                 data = await response.json()
                 status = data.get('status')
+                print(data)
                 if status == "success":
                     await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
                 elif status == "canceled":
