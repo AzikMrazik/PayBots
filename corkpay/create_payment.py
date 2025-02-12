@@ -104,7 +104,10 @@ async def sendpost(amount, chat_id, counter):
                 order_status = data['status']
                 if order_status != "error":
                     card = data['card']
-                    sign = data['sign']
+                    try:
+                        sign = data['sign']
+                    except Exception as e:
+                        return (f"⚰️CorkPay отправил труп!", f"{e}")
                     bin = card[:6]
                     if bin != "220220":
                         print("again non-ru")
