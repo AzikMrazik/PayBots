@@ -69,8 +69,8 @@ async def check_name(bin):
             (bin,)
         )
         result = await cursor.fetchone()
-        resultend = result[0]
-        return resultend
+        print(result)
+        return result
 
 async def get_domain():
     async with ClientSession() as session:
