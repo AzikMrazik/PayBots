@@ -37,8 +37,9 @@ async def create_payment(message: Message, state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        link = await sendpost(amount, message.from_user.id)
-        await message.reply(link)
+        checkout = await sendpost(amount, message.from_user.id)
+        await message.reply(checkout[0])
+        await message.reply(checkout[1])
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
 
