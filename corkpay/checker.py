@@ -61,7 +61,7 @@ async def check(bot: Bot):
             for sign, chat_id, amount, order_id in all_data:
                 try:
                     async with session.post(
-                        f"{BASE_URL}/api/apiOrderStatus ",
+                        f"{BASE_URL}/api/apiOrderStatus",
                         json={"merchant_token": MERCHANT_TOKEN, "sign": sign}
                     ) as response:
                         data = await response.json()
@@ -75,7 +75,7 @@ async def check(bot: Bot):
                         await delorder(order_id)       
 
                 except Exception as e:
-                    await bot.send_message(chat_id=chat_id, text=f"{data}")
+                    await bot.send_message(chat_id=chat_id, text=f"{e}")
                     await bot.send_message(chat_id=chat_id, text=f"⚰️Заказ №{order_id} на сумму {amount} успешно умер! because {e}")
 
                 await asyncio.sleep(3)
