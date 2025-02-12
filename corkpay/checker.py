@@ -52,7 +52,7 @@ async def get_one_order(order_id):
         )
         result = await cursor.fetchone()
         print(result)
-        return result
+        return result[0]
 
 async def check(bot: Bot):
     async with ClientSession() as session:
