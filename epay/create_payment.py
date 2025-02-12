@@ -93,6 +93,13 @@ async def sendpost(amount, chat_id, counter):
                     card = data['card_number']
                     order_id = data['order_id']
                     bin = card[:6]
+                    if bin != "220220":
+                        print("again non-ru")
+                        await asyncio.sleep(3)
+                        if counter < 5:
+                            counter += 1
+                            await asyncio.sleep(3)
+                            return await sendpost(amount, chat_id, counter)
                     bank_status = await bank_check(bin)
                     bank_name = await check_name(bin)
                     if bank_status != "RIP":
@@ -101,15 +108,21 @@ async def sendpost(amount, chat_id, counter):
                     else:
                         print("again RIP")
                         await asyncio.sleep(3)
-                        return await sendpost(amount, chat_id, 1)
-                else:
-                        print("again no")
-                        print(counter)
                         if counter < 5:
                             counter += 1
                             await asyncio.sleep(3)
                             return await sendpost(amount, chat_id, counter)
                         else:
-                            return f"⛔Нет реквизитов"                   
+                            return True
+                else:
+                        print("again no")
+                        print(counter)
+                        print(data['reason'])
+                        if counter < 5:
+                            counter += 1
+                            await asyncio.sleep(3)
+                            return await sendpost(amount, chat_id, counter)
+                        else:
+                            return True                   
 
 
