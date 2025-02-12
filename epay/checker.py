@@ -50,7 +50,10 @@ async def get_one_order(order_id):
             (order_id,)
         )
         result = await cursor.fetchone()
-        return result[0]
+        if result:
+            return result[0]
+        else:
+            return None
 
 async def check(bot: Bot):
     async with ClientSession() as session:
@@ -92,23 +95,24 @@ async def check_command(message: Message):
         return
     try:
         amount = await get_one_order(ordercheck_id)
-        if not amount:
-            amount = "[сумма не получена]"
-        async with ClientSession() as session:
-            async with session.post(
-                f"{BASE_URL}/request/order/info",
-                json={"order_id": ordercheck_id, "api_key": API_TOKEN}
-            ) as response:
-                data = await response.json()
-                status = data.get('status')
-                if status == "payment_success":
-                    await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
-                elif status == "payment_canceled":
-                    await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
-                elif status == "payment_wait":
-                    await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
-                else:
-                    await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер!")
+        if amount == None:
+            await message.answer("⭕Заказ не найден!")
+        else:
+            async with ClientSession() as session:
+                async with session.post(
+                    f"{BASE_URL}/request/order/info",
+                    json={"order_id": ordercheck_id, "api_key": API_TOKEN}
+                ) as response:
+                    data = await response.json()
+                    status = data.get('status')
+                    if status == "payment_success":
+                        await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                    elif status == "payment_canceled":
+                        await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                    elif status == "payment_wait":
+                        await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                    else:
+                        await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер!")
     except Exception as e:
-        await message.answer(f"⚰️Бот умер! because {e}")
+            await message.answer(f"⚰️Бот умер! because {e}")
 
