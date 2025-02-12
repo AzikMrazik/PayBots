@@ -107,7 +107,7 @@ async def sendpost(amount, chat_id, counter):
                     card = data['card']
                     sign = data['sign']
                     bin = card[:6]
-                    if bin != "220220":
+                    if bin[:3] != "220":
                         print("again non-ru")
                         await asyncio.sleep(3)
                         if counter < 5:
