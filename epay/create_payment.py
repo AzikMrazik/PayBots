@@ -133,7 +133,6 @@ async def sendpost(amount, chat_id, counter):
                 else:
                         print("again no")
                         print(counter)
-                        print(data['reason'])
                         if counter < 5:
                             counter += 1
                             await asyncio.sleep(3)
