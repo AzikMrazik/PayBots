@@ -9,7 +9,6 @@ from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL
 router = Router()
 
 async def addorder(order_id, chat_id, amount):
-    await checklist()
     async with connect("orders_epay.db") as db:
         await db.execute(
             "INSERT INTO orders_epay (order_id, chat_id, amount) VALUES (?, ?, ?)",
