@@ -35,6 +35,7 @@ async def start_command(message: Message):
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 async def main():
+    await bot.delete_webhook()
     await asyncio.gather(
         dp.start_polling(bot),
         )
