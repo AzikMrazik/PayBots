@@ -111,10 +111,11 @@ async def sendpost(amount, chat_id, counter):
                                 await asyncio.sleep(3)
                                 return await sendpost(amount, chat_id, counter)
                         bank_status = await bank_check(bin)
-                        bank_name = await check_name(bin)
                     else:
                         bank_status = "Good"
                         bank_type = "телефона"
+                    if not sbp and bank_name == None:    
+                        bank_name = await check_name(bin)
                     if bank_status != "RIP":
                         await addorder(order_id, chat_id, precise_amount)
                         return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
