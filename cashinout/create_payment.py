@@ -4,7 +4,8 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL
+from config import RUB_ID, API_TOKEN, BASE_URL, PAY_URL, DOMAIN
+from datetime import datetime
 
 router = Router()
 
@@ -36,12 +37,15 @@ async def create_payment(message: Message, state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        link = await sendpost(amount)
-        await message.reply(link)
+        checkout = await sendpost(amount, message.from_user.id)
+        await message.reply(checkout[0])
+        await message.reply(checkout[1])
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
 
-async def sendpost(amount):
+async def sendpost(amount, chat_id):
+    order_id = datetime.now().strftime("%d%m%H%M")
+    external_text = f"{order_id},{chat_id}"
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}",
@@ -51,7 +55,9 @@ async def sendpost(amount):
                 "currency": RUB_ID,
                 "currencies": [RUB_ID],
                 "durationSeconds": 2700,
-                "redirectUrl": "https://t.me/"
+                "callbackUrl": f"https://{DOMAIN}/cashinout",
+                "redirectUrl": "https://t.me/",
+                "externalText": external_text
             }
         ) as response:
             data = await response.json()
