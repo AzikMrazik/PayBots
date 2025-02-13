@@ -6,7 +6,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import API_TOKEN, BASE_URL
+from config import API_TOKEN, BASE_URL, DOMAIN
 from checker import addorder
 from datetime import datetime
 import re
@@ -82,7 +82,7 @@ async def sendpost(amount, chat_id, counter):
                 "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
-                "notice_url": "https://paybots.shop/epay"
+                "notice_url": f"https://{DOMAIN}/epay"
             }
         ) as response:
             try:
