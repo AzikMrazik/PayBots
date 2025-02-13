@@ -95,10 +95,10 @@ async def sendpost(amount, chat_id, counter):
                     precise_amount = data['amount']
                     card = data['card_number']
                     order_id = data['order_id']
-                    try:
-                        bank_name = data['bank']
+                    bank_name = data['bank']
+                    if card[:1] == "+" or card[:1] == "8" or card[:1] == "7":
                         sbp = True
-                    except:
+                    else:
                         sbp = False
                     if not sbp:
                         bin = card[:6]
