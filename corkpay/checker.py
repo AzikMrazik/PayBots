@@ -24,7 +24,7 @@ async def delorder(order_id):
         )
         await db.commit()
 
-async def checklist(bot: Bot):
+async def checklist():
     async with connect("orders_corkpay.db") as db:
         await db.execute('''
             CREATE TABLE IF NOT EXISTS orders_corkpay (
@@ -35,14 +35,7 @@ async def checklist(bot: Bot):
             )
         ''')
         await db.commit()
-        while True:
-            await check(bot)
-            await asyncio.sleep(60)
 
-async def get_all_orders():
-    async with connect("orders_corkpay.db") as db:
-        cursor = await db.execute("SELECT * FROM orders_corkpay")
-        return await cursor.fetchall()
     
 async def get_one_order(order_id):
     async with connect("orders_corkpay.db") as db:
@@ -55,36 +48,6 @@ async def get_one_order(order_id):
             return result
         else:
             return None, None
-
-async def check(bot: Bot):
-    async with ClientSession() as session:
-        all_data = await get_all_orders()
-        try:
-            for sign, chat_id, amount, order_id in all_data:
-                try:
-                    async with session.post(
-                        f"{BASE_URL}/api/apiOrderStatus",
-                        json={"merchant_token": MERCHANT_TOKEN, "sign": sign}
-                    ) as response:
-                        data = await response.text()
-                        print(data, flush=True)
-                        status = "rop"
-
-                    if status == "success":
-                        await send_success(bot, [chat_id, amount, order_id])
-                        await delorder(order_id)
-
-                    elif status == "canceled":
-                        await delorder(order_id)       
-
-                except Exception as e:
-                    await bot.send_message(chat_id=chat_id, text=f"{e}")
-                    await bot.send_message(chat_id=chat_id, text=f"⚰️Заказ №{order_id} на сумму {amount} успешно умер! because {e}")
-
-                await asyncio.sleep(3)
-        except Exception as e:
-            print("no", e, flush=True)
-            await asyncio.sleep(30)
 
 async def send_success(bot: Bot, target_chat):
     await bot.send_message(chat_id=target_chat[0], text=f"✅Заказ №{target_chat[2]} на сумму {target_chat[1]} успешно оплачен!")
@@ -114,7 +77,7 @@ async def check_command(message: Message):
                     print(data, flush=True)
                     if status == "success":
                         await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
-                    elif status == "canceled":
+                    elif status == "fail":
                         await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
                     elif status == "wait":
                         await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")

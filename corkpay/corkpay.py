@@ -82,9 +82,9 @@ async def cash_command(message: Message):
         await bot_msg.delete()
 
 async def main():
+    await checklist()
     await asyncio.gather(
-        dp.start_polling(bot),
-        checklist(bot)
+        dp.start_polling(bot)
     )
 
 if __name__ == "__main__":
