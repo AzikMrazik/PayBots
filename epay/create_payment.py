@@ -99,7 +99,7 @@ async def sendpost(amount, chat_id, counter):
                         bank_name = data['bank']
                         sbp = True
                     except:
-                        pass
+                        sbp = False
                     if not sbp:
                         bin = card[:6]
                         bank_type = "карты"
