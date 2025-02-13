@@ -66,7 +66,7 @@ async def handle_cashinout(request: web.Request):
                 try:
                     await bot.send_message(
                         chat_id=chat_id,
-                        text=f"✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
+                        text=f"🔵CASHINOUT:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                     )
                 except:
                     pass
@@ -96,7 +96,7 @@ async def handle_corkpay(request: web.Request):
             try:
                 await bot.send_message(
                     chat_id=chat_id,
-                    text=f"✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
+                    text=f"🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
             except:
                 pass
@@ -133,7 +133,7 @@ async def main():
         )
 
         # Создание aiohttp-приложения
-        web_app = await start_web_app()
+        web_app = await start_web_app(dp, bot)
         setup_application(web_app, dp, bot=bot)
 
         # Запуск веб-сервера
