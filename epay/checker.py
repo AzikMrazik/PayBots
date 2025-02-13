@@ -9,25 +9,25 @@ from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL
 router = Router()
 
 async def addorder(order_id, chat_id, amount):
-    async with connect("orders.db") as db:
+    async with connect("orders_epay.db") as db:
         await db.execute(
-            "INSERT INTO orders (order_id, chat_id, amount) VALUES (?, ?, ?)",
+            "INSERT INTO orders_epay (order_id, chat_id, amount) VALUES (?, ?, ?)",
             (order_id, chat_id, amount)
         )
         await db.commit()
 
 async def delorder(order_id):
-    async with connect("orders.db") as db:
+    async with connect("orders_epay.db") as db:
         await db.execute(
-            "DELETE FROM orders WHERE order_id = ?", 
+            "DELETE FROM orders_epay WHERE order_id = ?", 
             (order_id,)
         )
         await db.commit()
 
 async def checklist():
-    async with connect("orders.db") as db:
+    async with connect("orders_epay.db") as db:
         await db.execute('''
-            CREATE TABLE IF NOT EXISTS orders (
+            CREATE TABLE IF NOT EXISTS orders_epay (
                 order_id TEXT PRIMARY KEY,
                 chat_id TEXT NOT NULL,
                 amount TEXT NOT NULL
@@ -37,9 +37,9 @@ async def checklist():
 
     
 async def get_one_order(order_id):
-    async with connect("orders.db") as db:
+    async with connect("orders_epay.db") as db:
         cursor = await db.execute(
-            "SELECT amount FROM orders WHERE order_id = ?", 
+            "SELECT amount FROM orders_epay WHERE order_id = ?", 
             (order_id,)
         )
         result = await cursor.fetchone()

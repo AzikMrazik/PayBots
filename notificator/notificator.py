@@ -32,6 +32,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_post('/corkpay', handle_corkpay)
     app.router.add_get('/', handle_root)
     app.router.add_post('/cashinout', handle_cashinout)
+    app.router.add_post('/epay', handle_epay)
     # Регистрируем обработчик aiogram
     SimpleRequestHandler(
         dispatcher=dispatcher,
@@ -109,7 +110,7 @@ async def handle_corkpay(request: web.Request):
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
 
-async def handle_corkpay(request: web.Request):
+async def handle_epay(request: web.Request):
     bot: Bot = request.app['bot']
     try:
         data = await request.json()
