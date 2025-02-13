@@ -24,7 +24,7 @@ async def delorder(order_id):
         )
         await db.commit()
 
-async def checklist(bot: Bot):
+async def checklist():
     async with connect("orders.db") as db:
         await db.execute('''
             CREATE TABLE IF NOT EXISTS orders (
@@ -34,14 +34,7 @@ async def checklist(bot: Bot):
             )
         ''')
         await db.commit()
-        while True:
-            await check(bot)
-            await asyncio.sleep(60)
 
-async def get_all_orders():
-    async with connect("orders.db") as db:
-        cursor = await db.execute("SELECT * FROM orders")
-        return await cursor.fetchall()
     
 async def get_one_order(order_id):
     async with connect("orders.db") as db:
@@ -54,31 +47,6 @@ async def get_one_order(order_id):
             return result[0]
         else:
             return None
-
-async def check(bot: Bot):
-    async with ClientSession() as session:
-        all_data = await get_all_orders()
-        for order_id, chat_id, amount in all_data:
-            try:
-                async with session.post(
-                    f"{BASE_URL}/request/order/info",
-                    json={"order_id": order_id, "api_key": API_TOKEN}
-                ) as response:
-                    data = await response.json()
-                    status = data.get('status')
-
-                if status == "payment_success":
-                    await send_success(bot, [order_id, chat_id, amount])
-                    await delorder(order_id)
-
-                elif status == "payment_canceled":
-                    await delorder(order_id)       
-
-            except Exception as e:
-                await bot.send_message(chat_id=chat_id, text=f"{data}")
-                await bot.send_message(chat_id=chat_id, text=f"⚰️Заказ №{order_id} на сумму {amount} успешно умер! because {e}")
-
-            await asyncio.sleep(3)
 
 async def send_success(bot: Bot, target_chat):
     await bot.send_message(chat_id=target_chat[1], text=f"✅Заказ №{target_chat[0]} на сумму {target_chat[2]} успешно оплачен!")

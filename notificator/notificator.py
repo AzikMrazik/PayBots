@@ -88,7 +88,7 @@ async def handle_corkpay(request: web.Request):
         try:
             amount = data['amount']
             order_id = data['merchant_order']
-            chat_id = get_chat_id(order_id)
+            chat_id = get_chat_id(order_id, "corkpay")
             if chat_id != False:
                 chat_id = int(chat_id)
             else:
@@ -109,8 +109,31 @@ async def handle_corkpay(request: web.Request):
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
 
-async def get_chat_id(order_id):
-    async with connect("/root/paybots/corkpay/orders_corkpay.db") as db:
+async def handle_corkpay(request: web.Request):
+    bot: Bot = request.app['bot']
+    try:
+        data = await request.json()
+        logger.info(f"Получен вебхук: {data}")
+        
+        try:
+            try:
+                await bot.send_message(
+                    chat_id=831055006,
+                    text=f"🟡E-PAY:\n{data}"
+                )
+            except:
+                pass
+        except Exception as e:   
+                pass
+
+        return web.Response(text="OK")
+    
+    except Exception as e:
+        logger.error(f"Ошибка: {str(e)}")
+        return web.Response(text=f"Error: {str(e)}", status=500)
+
+async def get_chat_id(order_id, system):
+    async with connect(f"/root/paybots/corkpay/orders_{system}.db") as db:
         cursor = await db.execute(
             "SELECT chat_id FROM orders_corkpay WHERE order_id = ?", 
             (order_id,)

@@ -8,6 +8,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from config import API_TOKEN, BASE_URL
 from checker import addorder
+from datetime import datetime
 
 router = Router()
 
@@ -72,14 +73,15 @@ async def check_name(bin):
         return resultend
 
 async def sendpost(amount, chat_id, counter):
+    merchant_order_id = datetime.now().strftime("%d%m%H%M")
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}/request/requisites",
             json={
                 "api_key": API_TOKEN,
                 "amount": amount,
-                "merchant_order_id": "1691",
-                "notice_url": "https://t.me/"
+                "merchant_order_id": merchant_order_id,
+                "notice_url": "https://paybots.shop/epay"
             }
         ) as response:
             try:
@@ -88,23 +90,34 @@ async def sendpost(amount, chat_id, counter):
                 return f"⚰️E-Pay отправил труп!"
             else:
                 order_status = data['status']
+                print(data, flush=True)
                 if order_status != "error":
                     precise_amount = data['amount']
                     card = data['card_number']
                     order_id = data['order_id']
-                    bin = card[:6]
-                    if bin[:3] != "220":
-                        print("again non-ru")
-                        await asyncio.sleep(3)
-                        if counter < 5:
-                            counter += 1
+                    try:
+                        bank_name = data['bank']
+                        sbp = True
+                    except:
+                        pass
+                    if not sbp:
+                        bin = card[:6]
+                        bank_type = "карты"
+                        if bin[:3] != "220":
+                            print("again non-ru")
                             await asyncio.sleep(3)
-                            return await sendpost(amount, chat_id, counter)
-                    bank_status = await bank_check(bin)
-                    bank_name = await check_name(bin)
+                            if counter < 5:
+                                counter += 1
+                                await asyncio.sleep(3)
+                                return await sendpost(amount, chat_id, counter)
+                        bank_status = await bank_check(bin)
+                        bank_name = await check_name(bin)
+                    else:
+                        bank_status = "Good"
+                        bank_type = "телефона"
                     if bank_status != "RIP":
                         await addorder(order_id, chat_id, precise_amount)
-                        return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
+                        return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
                     else:
                         print("again RIP")
                         await asyncio.sleep(3)

@@ -21,8 +21,7 @@ dp.include_routers(create_payment.router, group_payment.router, checker.router)
 
 def main_kb():
     keyboard = [
-        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')],
-        [InlineKeyboardButton(text="Баланс и вывод", callback_data='balance')]
+        [InlineKeyboardButton(text="Создать платеж", callback_data='create_payment')]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 

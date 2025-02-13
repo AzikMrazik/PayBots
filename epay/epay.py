@@ -83,8 +83,7 @@ async def cash_command(message: Message):
 
 async def main():
     await asyncio.gather(
-        dp.start_polling(bot),
-        checklist(bot)
+        dp.start_polling(bot)
     )
 
 if __name__ == "__main__":
