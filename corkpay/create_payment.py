@@ -1,4 +1,5 @@
 import asyncio
+import re
 from aiosqlite import connect
 from aiohttp import ClientSession
 from aiogram import Bot, Router, F
@@ -105,6 +106,7 @@ async def sendpost(amount, chat_id, counter):
                 print(order_status, flush=True)
                 if order_status == "success":
                     card = data['card']
+                    card = re.sub(r'\s+', '', card)
                     sign = data['sign']
                     bin = card[:6]
                     if bin[:3] != "220":

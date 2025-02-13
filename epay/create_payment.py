@@ -9,6 +9,7 @@ from aiogram.utils.formatting import *
 from config import API_TOKEN, BASE_URL
 from checker import addorder
 from datetime import datetime
+import re
 
 router = Router()
 
@@ -94,6 +95,7 @@ async def sendpost(amount, chat_id, counter):
                 if order_status != "error":
                     precise_amount = data['amount']
                     card = data['card_number']
+                    card = re.sub(r'\s+', '', card)
                     order_id = data['order_id']
                     bank_name = data['bank']
                     if card[:1] == "+" or card[:1] == "8" or card[:1] == "7":
