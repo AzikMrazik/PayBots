@@ -84,6 +84,7 @@ async def sendpost(amount, chat_id, method, counter=1):
         ) as response:
             try:
                 resp = await response.json(content_type=None)
+                print(resp, flush=True)
             except:
                 try: 
                     resp = await response.text()

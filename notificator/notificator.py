@@ -71,9 +71,9 @@ async def handle_cashinout(request: web.Request):
                         text=f"🔵CASHINOUT:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                     )
                 except:
-                    pass
+                    logger.info(f"Ошибка: {e}")
         except Exception as e:   
-                pass
+                logger.info(f"Ошибка: {e}")
 
         return web.Response(text="OK")
 
@@ -83,6 +83,7 @@ async def handle_cashinout(request: web.Request):
 
 async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
+    system = "corkpay"
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
@@ -90,7 +91,7 @@ async def handle_corkpay(request: web.Request):
         try:
             amount = data['amount']
             order_id = data['merchant_order']
-            chat_id = get_chat_id(order_id, "corkpay")
+            chat_id = get_chat_id(order_id, system)
             if chat_id != False:
                 chat_id = int(chat_id)
             else:
@@ -100,10 +101,11 @@ async def handle_corkpay(request: web.Request):
                     chat_id=chat_id,
                     text=f"🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
+                await delorder(order_id, system)
             except:
-                pass
+                logger.info(f"Ошибка: {e}")
         except Exception as e:   
-                pass
+                logger.info(f"Ошибка: {e}")
 
         return web.Response(text="OK")
     
@@ -113,20 +115,28 @@ async def handle_corkpay(request: web.Request):
 
 async def handle_epay(request: web.Request):
     bot: Bot = request.app['bot']
+    system = "epay"
     try:
         data = await request.json()
-        logger.info(f"{request}")
-        logger.info(f"Получен вебхук: {data}") 
+        logger.info(f"Получен вебхук: {data}")
+        order_id = data['merchant_order_id']
+        amount = data['amount'] 
+        chat_id = get_chat_id(order_id, system)
+        if chat_id != False:
+                chat_id = int(chat_id)
+        else:
+                return web.Response(text="OK")
         try:
             try:
                 await bot.send_message(
-                    chat_id=831055006,
-                    text=f"🟡E-PAY:\n{data}"
+                    chat_id=chat_id,
+                    text=f"🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
+                await delorder(order_id, system)
             except:
-                pass
+                logger.info(f"Ошибка: {e}")
         except Exception as e:   
-                pass
+                logger.info(f"Ошибка: {e}")
 
         return web.Response(text="OK")
     
@@ -135,16 +145,50 @@ async def handle_epay(request: web.Request):
         return web.Response(text=f"Error: {str(e)}", status=500)
 
 async def get_chat_id(order_id, system):
-    async with connect(f"/root/paybots/corkpay/orders_{system}.db") as db:
-        cursor = await db.execute(
-            "SELECT chat_id FROM orders_corkpay WHERE order_id = ?", 
-            (order_id,)
-        )
-        result = await cursor.fetchone()
-        if result:
-            return result[0]
-        else:
-            return False
+    if system == "corkpay":
+        async with connect(f"/root/paybots/corkpay/orders_corkpay.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id FROM orders_corkpay WHERE order_id = ?", 
+                (order_id,)
+            )
+            result = await cursor.fetchone()
+            try:
+                if result:
+                    return result[0]
+                else:
+                    return False
+            except:
+                return False
+    if system == "epay":
+        async with connect(f"/root/paybots/epay/orders_epay.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id FROM orders_epay WHERE order_id = ?", 
+                (order_id,)
+            )
+            result = await cursor.fetchone()
+            try:
+                if result:
+                    return result[0]
+                else:
+                    return False
+            except:
+                return False
+
+async def delorder(order_id, system):
+    if system == "corkpay":
+        async with connect("/root/paybots/corkpay/orders_corkpay.db.db") as db:
+            await db.execute(
+                "DELETE FROM orders_corkpay WHERE order_id = ?", 
+                (order_id,)
+            )
+            await db.commit()
+    if system =="epay":
+        async with connect("/root/paybots/epay/orders_epay.db") as db:
+            await db.execute(
+                "DELETE FROM orders_epay WHERE order_id = ?", 
+                (order_id,)
+            )
+            await db.commit()
 
 async def main():
     logger = logging.getLogger(__name__)
