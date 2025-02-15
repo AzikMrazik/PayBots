@@ -31,6 +31,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_get('/', handle_root)
     app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
+    app.router.add_post('/crocopay', handle_crocopay)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
@@ -79,7 +80,7 @@ async def handle_corkpay(request: web.Request):
         try:
             amount = data['amount']
             order_id = data['merchant_order']
-            chat_id = get_chat_id(order_id, system)
+            chat_id = await get_chat_id(order_id, system)
             if chat_id != False:
                 chat_id = int(chat_id)
             else:
@@ -107,7 +108,7 @@ async def handle_epay(request: web.Request):
         logger.info(f"Получен вебхук: {data}")
         order_id = data['merchant_order_id']
         amount = data['amount'] 
-        chat_id = get_chat_id(order_id, system)
+        chat_id = await get_chat_id(order_id, system)
         if chat_id != False:
                 chat_id = int(chat_id)
         else:
@@ -117,6 +118,40 @@ async def handle_epay(request: web.Request):
                 await bot.send_message(
                     chat_id=chat_id,
                     text=f"🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
+                )
+                await delorder(order_id, system)
+            except:
+                logger.info(f"Ошибка: {e}")
+        except Exception as e:   
+                logger.info(f"Ошибка: {e}")
+
+        return web.Response(text="OK", status=200)
+    
+    except Exception as e:
+        logger.error(f"Ошибка: {str(e)}")
+        return web.Response(text=f"Error: {str(e)}", status=500)
+
+async def handle_crocopay(request: web.Request):
+    bot: Bot = request.app['bot']
+    system = "crocopay"
+    try:
+        data = await request.json()
+        await bot.send_message(
+                    chat_id=831055006,
+                    text=f"🟢CrocoPay:\n✅{data}"
+                )
+        chat_id = 831055006
+        order_id = 10000
+        amount = 10000
+        if chat_id != False:
+                chat_id = int(chat_id)
+        else:
+                return web.Response(text="OK")
+        try:
+            try:
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=f"🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
                 await delorder(order_id, system)
             except:
