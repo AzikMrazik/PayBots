@@ -14,8 +14,8 @@ async def cash_command(message: Message):
         return
     try:
         amount = int(message.text.split("_")[1])
-        if amount < 1000:
-            await message.answer("Минимальная сумма: 1000 RUB")
+        if amount < 1000 or amount > 10000:
+            await message.answer("Доступная сумма: 1000 - 10.000 RUB")
             return
     except:
         await message.answer("Неверный формат команды. Используйте: /cork_1000")
