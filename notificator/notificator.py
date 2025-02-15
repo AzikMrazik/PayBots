@@ -27,18 +27,15 @@ dp = Dispatcher(storage=storage)
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
-    
-    # Добавляем кастомные обработчики ПЕРЕД регистрацией вебхука aiogram
     app.router.add_post('/corkpay', handle_corkpay)
     app.router.add_get('/', handle_root)
     app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
-    # Регистрируем обработчик aiogram
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
     ).register(app, path="/tg_webhook")
-    
+    app.router.add_route('*', '/{path:.*}', handle_all_other)
     return app
 
 async def handle_root(request):
@@ -49,16 +46,11 @@ async def handle_cashinout(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
-
-        # Проверяем наличие externalText
         if 'externalText' not in data or not data['externalText']:
             return web.Response(text="Error: externalText is missing", status=400)
-
-        # Парсим externalText (формат: "order_id,chat_id")
         external_text = data['externalText'].split(',')
         if len(external_text) != 2:
             return web.Response(text="Error: invalid externalText format", status=400)
-        
         order_id, chat_id = external_text
         chat_id = int(chat_id)  # Преобразуем в число
         try:
@@ -73,9 +65,7 @@ async def handle_cashinout(request: web.Request):
                     logger.info(f"Ошибка: {e}")
         except Exception as e:   
                 logger.info(f"Ошибка: {e}")
-
-        return web.Response(text="OK")
-
+        return web.Response(text="OK", status=200)
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
@@ -86,7 +76,6 @@ async def handle_corkpay(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
-        
         try:
             amount = data['amount']
             order_id = data['merchant_order']
@@ -105,9 +94,7 @@ async def handle_corkpay(request: web.Request):
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
                 logger.info(f"Ошибка: {e}")
-
-        return web.Response(text="OK")
-    
+        return web.Response(text="OK", status=200)
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
@@ -137,11 +124,14 @@ async def handle_epay(request: web.Request):
         except Exception as e:   
                 logger.info(f"Ошибка: {e}")
 
-        return web.Response(text="OK")
+        return web.Response(text="OK", status=200)
     
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
+
+async def handle_all_other(request):
+    return web.Response(text="Forbidden", status=403)
 
 async def get_chat_id(order_id, system):
     if system == "corkpay":
@@ -194,28 +184,19 @@ async def main():
     try:
         logger.info("Удаление старого вебхука...")
         await bot.delete_webhook()
-        
         logger.info(f"Настройка вебхука: https://{DOMAIN}/tg_webhook")
         await bot.set_webhook(
             url=f"https://{DOMAIN}/tg_webhook"
         )
-
-        # Создание aiohttp-приложения
         web_app = await start_web_app(dp, bot)
         setup_application(web_app, dp, bot=bot)
-
-        # Запуск веб-сервера
         runner = web.AppRunner(web_app)
         await runner.setup()
-        site = web.TCPSite(runner, '0.0.0.0', 8080)
-        
+        site = web.TCPSite(runner, '0.0.0.0', 8080) 
         await site.start()
-
-        # Бесконечное ожидание
         logger.info("Сервер запущен на порту 8080")
         while True:
-            await asyncio.sleep(3600)
-            
+            await asyncio.sleep(3600)  
     except Exception as e:
         logger.error(f"Ошибка: {e}", exc_info=True)
     finally:
