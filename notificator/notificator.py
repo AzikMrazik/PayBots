@@ -33,7 +33,6 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_get('/', handle_root)
     app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
-    app.router.add_get('/epay', handle_epay)
     # Регистрируем обработчик aiogram
     SimpleRequestHandler(
         dispatcher=dispatcher,
