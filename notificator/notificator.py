@@ -75,7 +75,7 @@ async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
     system = "corkpay"
     try:
-        data = await request.json()
+        data = await request.text()
         logger.info(f"Получен вебхук: {data}")
         await bot.send_message(
                     chat_id=831055006,
