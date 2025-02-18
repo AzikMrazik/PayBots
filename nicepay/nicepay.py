@@ -36,6 +36,10 @@ async def start_command(message: Message):
     await message.answer("Добро пожаловать!")
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
+@dp.message(Command("ping"))
+async def start_command(message: Message):
+    await message.answer("🎲Nicepay на связи✅")
+
 async def main():
     await dp.start_polling(bot)
 

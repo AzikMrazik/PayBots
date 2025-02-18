@@ -80,6 +80,10 @@ async def cash_command(message: Message):
         await asyncio.sleep(10)
         await bot_msg.delete()
 
+@dp.message(Command("ping"))
+async def start_command(message: Message):
+    await message.answer("🟣CorkPay на связи✅")
+
 async def main():
     await checklist()
     await asyncio.gather(

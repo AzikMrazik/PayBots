@@ -2,6 +2,8 @@ import logging
 import asyncio
 from aiohttp import web
 from aiogram import Bot, Dispatcher
+from aiogram.filters import Command
+from aiogram.types import Message
 import logging
 from aiosqlite import connect
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
@@ -259,6 +261,10 @@ async def delorder(order_id, system):
                 (order_id,)
             )
             await db.commit()
+
+@dp.message(Command("ping"))
+async def start_command(message: Message):
+    await message.answer("🔔Notificator на связи✅")
 
 async def main():
     logger = logging.getLogger(__name__)

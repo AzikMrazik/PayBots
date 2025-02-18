@@ -37,6 +37,10 @@ async def start_command(message: Message, state: FSMContext):
     await message.answer("Добро пожаловать!")
     await message.answer(text="Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
+@dp.message(Command("ping"))
+async def start_command(message: Message):
+    await message.answer("🟢CrocoPay на связи✅")
+
 async def main():
     await checklist()
     await asyncio.gather(

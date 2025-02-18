@@ -1,7 +1,7 @@
-# binchecker.py
 import re
 from aiogram import Bot, Dispatcher, types
-from aiogram.enums import ParseMode
+from aiogram.filters import Command
+from aiogram.types import Message
 from BINs import bin_database
 from config import BOT_TOKEN
 
@@ -25,6 +25,10 @@ async def handle_message(message: types.Message):
     
     response = "\n".join(results)
     await message.reply(response)
+
+@dp.message(Command("ping"))
+async def start_command(message: Message):
+    await message.answer("🗑️BinChecker на связи✅")
 
 if __name__ == '__main__':
     import asyncio
