@@ -234,13 +234,7 @@ async def get_chat_id(order_id, system):
                 (order_id,)
             )
             result = await cursor.fetchone()
-            try:
-                if result:
-                    return result
-                else:
-                    return False
-            except:
-                return False
+            return result
     if system == "epay":
         async with connect(f"/root/paybots/epay/orders_epay.db") as db:
             cursor = await db.execute(
@@ -248,13 +242,7 @@ async def get_chat_id(order_id, system):
                 (order_id,)
             )
             result = await cursor.fetchone()
-            try:
-                if result:
-                    return result[0]
-                else:
-                    return False
-            except:
-                return False
+            return result[0]
 
 async def delorder(order_id, system):
     if system == "corkpay":
