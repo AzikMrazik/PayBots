@@ -51,7 +51,6 @@ async def sendpost(amount, chat_id, counter=1):
     if counter == 10:
         return (f"⛔Нет реквизитов", f"Запросите снова!")
     order_id = datetime.now().strftime("%d%m%H%M")
-    external_text = f"{order_id},{chat_id}"
     ids = str(uuid.uuid4())
     payload = {
     "paymentMethod": 9,
@@ -60,8 +59,8 @@ async def sendpost(amount, chat_id, counter=1):
         "amount": amount,
         "currency": "RUB"
     },
-    "description": "test",
-    "return": "https://google.com"
+    "description": order_id,
+    "return": "https://t.me/"
     }
     async with ClientSession() as session:
         async with session.post(
@@ -71,10 +70,30 @@ async def sendpost(amount, chat_id, counter=1):
         ) as response:
             data = await response.json()
             print(data, flush=True)
+            status_code = 200
             try:
-                URL = data['redirect']
-                return (f"📄Создан заказ №{order_id}!", f"{URL}")
+                status_code = data['statusCode']
             except:
+                pass
+            if status_code == 200:
+                transaction_id = data['transactionId']
+                async with ClientSession() as session:
+                    async with session.get(
+                        f"{BASE_URL}/h2h/{transaction_id}",
+                        headers={"X-Secret": API_KEY, "X-MerchantId": MERCHANT_ID},
+                        json=payload
+                    ) as response:
+                        data = response.json()
+                        print(data, flush=True)
+                        account_number = data['accountNumber']
+                        account_name = data['accountName']
+                        method = data['method']
+                        amount = data['amount']
+                        return (
+                            f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер для оплаты: {account_number}\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.",
+                            F"🏦Банк: {method}, получатель {account_name}"
+                            )
+            else:
                 counter += 1
                 await asyncio.sleep(3)
                 return await sendpost(amount, chat_id, counter)
