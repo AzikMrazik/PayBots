@@ -4,7 +4,7 @@ from aiohttp import ClientSession
 from aiogram import Bot, Router, F
 from aiogram.types import Message
 from aiogram.utils.formatting import *
-from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL, MERCHANT_ID, API_KEY
+from config import ALLOWED_GROUPS, BASE_URL, MERCHANT_ID, API_KEY
 
 router = Router()
 
@@ -71,8 +71,7 @@ async def check_command(message: Message):
             async with ClientSession() as session:
                 async with session.get(
                     f"{BASE_URL}/transaction/{id}",
-                    headers={"X-Secret": API_KEY, "X-MerchantId": MERCHANT_ID},
-                    json={"order_id": ordercheck_id, "api_key": API_TOKEN}
+                    headers={"X-Secret": API_KEY, "X-MerchantId": MERCHANT_ID}
                 ) as response:
                     try:
                         data = await response.json()
