@@ -88,7 +88,7 @@ async def sendpost(amount, chat_id, counter):
             try:
                 data = await response.json()
             except:
-                return f"⚰️E-Pay отправил труп!"
+                return (f"⚰️", f"E-Pay отправил труп!")
             else:
                 order_status = data['status']
                 print(data, flush=True)
@@ -116,8 +116,7 @@ async def sendpost(amount, chat_id, counter):
                     else:
                         bank_status = "Good"
                         bank_type = "телефона"
-                    if not sbp and bank_name == None:    
-                        bank_name = await check_name(bin)
+                    bank_name = await check_name(bin)
                     if bank_status != "RIP":
                         await addorder(order_id, chat_id, precise_amount)
                         return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
