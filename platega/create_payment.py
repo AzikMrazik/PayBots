@@ -111,8 +111,8 @@ async def sendpost(amount, chat_id, counter=1):
                         account_number = data['accountNumber']
                         sbp = ["+", "7", "8"]
                         if account_number not in sbp:
-                            card = re.sub(r'\s+', '', card)
-                            bin = card[:6]
+                            account_number = re.sub(r'\s+', '', account_number)
+                            bin = account_number[:6]
                             method = await check_name(bin)
                             bank_status = await bank_check(bin)
                             if bank_status == "RIP":
@@ -125,7 +125,7 @@ async def sendpost(amount, chat_id, counter=1):
                         if method in all_method:
                             method = "Любой банк"
                         amount = data['amount']
-                        await addorder()
+                        await addorder(order_id, chat_id, amount, transaction_id)
                         return (
                             f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер для оплаты: {account_number}\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.",
                             f"🏦Банк: {method}, получатель {account_name}"
