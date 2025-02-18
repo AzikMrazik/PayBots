@@ -12,6 +12,10 @@ def extract_bins(text):
     numbers = re.findall(r"\b\d{6,}", text)  # Находим последовательности от 6 цифр
     return {n[:6] for n in numbers if len(n) >= 6}  # Берем первые 6 цифр
 
+@dp.message(Command("ping"))
+async def start_command(message: Message):
+    await message.answer("🗑️BinChecker на связи✅")
+
 @dp.message()
 async def handle_message(message: types.Message):
     bins = extract_bins(message.text)
@@ -25,10 +29,6 @@ async def handle_message(message: types.Message):
     
     response = "\n".join(results)
     await message.reply(response)
-
-@dp.message(Command("ping"))
-async def start_command(message: Message):
-    await message.answer("🗑️BinChecker на связи✅")
 
 if __name__ == '__main__':
     import asyncio
