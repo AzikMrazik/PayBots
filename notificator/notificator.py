@@ -87,9 +87,8 @@ async def handle_corkpay(request: web.Request):
                     text=f"🟣CORKPAY:\n✅{data}"
                 )
         try:
-            amount = data['amount']
             order_id = data['merchant_order']
-            chat_id = await get_chat_id(order_id, system)
+            chat_id, amount = await get_chat_id(order_id, system)
             if chat_id != False:
                 chat_id = int(chat_id)
             else:
@@ -231,13 +230,13 @@ async def get_chat_id(order_id, system):
     if system == "corkpay":
         async with connect(f"/root/paybots/corkpay/orders_corkpay.db") as db:
             cursor = await db.execute(
-                "SELECT chat_id FROM orders_corkpay WHERE order_id = ?", 
+                "SELECT chat_id, amount FROM orders_corkpay WHERE order_id = ?", 
                 (order_id,)
             )
             result = await cursor.fetchone()
             try:
                 if result:
-                    return result[0]
+                    return result
                 else:
                     return False
             except:
