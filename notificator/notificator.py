@@ -99,7 +99,7 @@ async def handle_corkpay(request: web.Request):
                     text=f"🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
                 await delorder(order_id, system)
-            except:
+            except Exception as e:
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
                 logger.info(f"Ошибка: {e}")
@@ -128,7 +128,7 @@ async def handle_epay(request: web.Request):
                     text=f"🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
                 await delorder(order_id, system)
-            except:
+            except Exception as e:
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
                 logger.info(f"Ошибка: {e}")
