@@ -8,6 +8,9 @@ from config import MERCHANT_ID, API_KEY, BASE_URL
 from datetime import datetime
 import uuid
 import asyncio
+from aiosqlite import connect
+import re
+from checker import addorder
 
 router = Router()
 
@@ -46,6 +49,26 @@ async def create_payment(message: Message, state: FSMContext):
         await message.reply(checkout[1])
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
+
+async def bank_check(bin):
+    async with connect("bins.db") as db:
+        cursor = await db.execute(
+            "SELECT note FROM bins WHERE bin = ?", 
+            (bin,)
+        )
+        result = await cursor.fetchone()
+        resultend = result[0]
+        return resultend
+    
+async def check_name(bin):
+    async with connect("bins.db") as db:
+        cursor = await db.execute(
+            "SELECT bank_name FROM bins WHERE bin = ?", 
+            (bin,)
+        )
+        result = await cursor.fetchone()
+        resultend = result[0]
+        return resultend
 
 async def sendpost(amount, chat_id, counter=1):
     if counter == 10:
@@ -86,14 +109,28 @@ async def sendpost(amount, chat_id, counter=1):
                         data = await response.json()
                         print(data, flush=True)
                         account_number = data['accountNumber']
+                        sbp = ["+", "7", "8"]
+                        if account_number not in sbp:
+                            card = re.sub(r'\s+', '', card)
+                            bin = card[:6]
+                            method = await check_name(bin)
+                            bank_status = await bank_check(bin)
+                            if bank_status == "RIP":
+                                counter += 1
+                                await asyncio.sleep(1)
+                                return await sendpost(amount, chat_id, counter)
                         account_name = data['accountName']
                         method = data['method']
+                        all_method = ["ALL", "All", "all"]
+                        if method in all_method:
+                            method = "Любой банк"
                         amount = data['amount']
+                        await addorder()
                         return (
-                            f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер для оплаты: {account_number}\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.",
-                            F"🏦Банк: {method}, получатель {account_name}"
+                            f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер для оплаты: {account_number}\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.",
+                            f"🏦Банк: {method}, получатель {account_name}"
                             )
             else:
                 counter += 1
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)
                 return await sendpost(amount, chat_id, counter)
