@@ -83,7 +83,7 @@ async def sendpost(amount, chat_id, counter=1):
                         headers={"X-Secret": API_KEY, "X-MerchantId": MERCHANT_ID},
                         json=payload
                     ) as response:
-                        data = response.json()
+                        data = await response.json()
                         print(data, flush=True)
                         account_number = data['accountNumber']
                         account_name = data['accountName']
