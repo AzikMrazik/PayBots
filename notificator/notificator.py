@@ -187,22 +187,15 @@ async def handle_platega(request: web.Request):
     bot: Bot = request.app['bot']
     system = "platega"
     try:
-        data = await request.text()
-        await bot.send_message(
-                    chat_id=831055006,
-                    text=f"⚪Platega:\n✅{data}"
-                )
-        try:
-            data = await request.json()
-            await bot.send_message(
-                    chat_id=831055006,
-                    text=f"⚪Platega:\n✅{data}"
-                )
-        except:
-            pass
-        chat_id = 831055006
-        order_id = 10000
-        amount = 10000
+        data = await request.json()
+        status = data['status']
+        if status == "CONFIRMED" or status == "PAID":
+            pass   
+        else:
+            return web.Response(text="OK", status=200) 
+        id = data['id']
+        order_id, chat_id = await get_chat_id(id)
+        amount = data['amount']
         if chat_id != False:
                 chat_id = int(chat_id)
         else:
@@ -237,7 +230,7 @@ async def get_chat_id(order_id, system):
             )
             result = await cursor.fetchone()
             return result
-    if system == "epay":
+    elif system == "epay":
         async with connect(f"/root/paybots/epay/orders_epay.db") as db:
             cursor = await db.execute(
                 "SELECT chat_id FROM orders_epay WHERE order_id = ?", 
@@ -245,6 +238,14 @@ async def get_chat_id(order_id, system):
             )
             result = await cursor.fetchone()
             return result[0]
+    elif system == "platega":
+        async with connect(f"/root/paybots/platega/orders_platega.db") as db:
+            cursor = await db.execute(
+                "SELECT order_id, chat_id FROM orders_platega WHERE transaction_id = ?", 
+                (order_id,)
+            )
+            result = await cursor.fetchone()
+            return result
 
 async def delorder(order_id, system):
     if system == "corkpay":
