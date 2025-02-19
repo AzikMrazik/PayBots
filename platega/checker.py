@@ -12,7 +12,7 @@ async def addorder(order_id, chat_id, amount, transaction_id):
     await checklist()
     async with connect("orders_platega.db") as db:
         await db.execute(
-            "INSERT INTO orders_platega (order_id, chat_id, amount, transaction_id) VALUES (?, ?, ?)",
+            "INSERT INTO orders_platega (order_id, chat_id, amount, transaction_id) VALUES (?, ?, ?, ?)",
             (order_id, chat_id, amount, transaction_id)
         )
         await db.commit()
@@ -73,22 +73,19 @@ async def check_command(message: Message):
                     f"{BASE_URL}/transaction/{id}",
                     headers={"X-Secret": API_KEY, "X-MerchantId": MERCHANT_ID}
                 ) as response:
-                    try:
                         data = await response.json()
-                    except:
-                        data = await response.text
-                    try:
-                        status = data.get('status')
-                        if status == "payment_success":
-                            await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
-                        elif status == "payment_canceled":
-                            await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
-                        elif status == "payment_wait":
-                            await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
-                        else:
-                            await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер!")
-                    except:
-                        await message.answer(f"{data}")
+                        try:
+                            status = data['status']
+                            if status == "CONFIRMED" or status == "PAID ":
+                                await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                            elif status == "CANCELED" or status == "FAILED" or status == "EXPIRED":
+                                await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                            elif status == "PENDING":
+                                await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                            else:
+                                await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер!")
+                        except:
+                            await message.answer(f"{data}")
     except Exception as e:
             await message.answer(f"⚰️Бот умер! because {e}")
 
