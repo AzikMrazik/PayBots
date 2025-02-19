@@ -110,7 +110,12 @@ async def sendpost(amount, chat_id, counter=1):
                         data = await response.json()
                         print(data, flush=True)
                         account_number = data['accountNumber']
+                        if account_number == None:
+                            return await sendpost(amount, chat_id, counter)
+                        prefixes = ["220"]
                         sbp = ["+", "7", "8"]
+                        if account_number[:3] not in prefixes and account_number[:1] not in sbp:
+                            return await sendpost(amount, chat_id, counter)
                         if account_number not in sbp:
                             account_number = re.sub(r'\s+', '', account_number)
                             bin = account_number[:6]

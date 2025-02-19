@@ -206,7 +206,6 @@ async def handle_platega(request: web.Request):
                     chat_id=chat_id,
                     text=f"⚪Platega:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
-                await delorder(order_id, system)
             except:
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
