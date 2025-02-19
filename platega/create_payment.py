@@ -83,7 +83,8 @@ async def sendpost(amount, chat_id, counter=1):
         "currency": "RUB"
     },
     "description": order_id,
-    "return": "https://t.me/"
+    "return": "https://t.me/",
+    "redirectUrl": "https://t.me/"
     }
     async with ClientSession() as session:
         async with session.post(
