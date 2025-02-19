@@ -134,7 +134,7 @@ async def sendpost(amount, chat_id, counter=1):
                         await addorder(order_id, chat_id, amount, transaction_id)
                         return (
                             f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер для оплаты: {account_number}\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 15 мин.",
-                            f"🏦Банк: {method}, получатель {account_name}"
+                            f"🏦Банк: {method}\n🙍‍♂️Получатель: {account_name}"
                             )
             else:
                 counter += 1
