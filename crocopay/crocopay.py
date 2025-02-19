@@ -39,7 +39,9 @@ async def start_command(message: Message, state: FSMContext):
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
-    await message.answer("🟢CrocoPay на связи✅")
+    msg = await message.answer("🟢CrocoPay на связи✅")
+    await asyncio.sleep(5)  
+    await msg.delete
 
 async def main():
     await checklist()

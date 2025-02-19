@@ -264,7 +264,9 @@ async def delorder(order_id, system):
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
-    await message.answer("🔔Notificator на связи✅")
+    msg = await message.answer("🔔Notificator на связи✅")
+    await asyncio.sleep(5)
+    await msg.delete
 
 async def main():
     logger = logging.getLogger(__name__)

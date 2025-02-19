@@ -80,7 +80,9 @@ async def cash_command(message: Message):
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
-    await message.answer("⚪Platega на связи✅")
+    msg = await message.answer("⚪Platega на связи✅")
+    await asyncio.sleep(5)
+    await msg.delete
 
 async def main():
     await bot.delete_webhook()
