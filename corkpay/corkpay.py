@@ -84,7 +84,7 @@ async def cash_command(message: Message):
 async def start_command(message: Message):
     msg = await message.answer("🟣CorkPay на связи✅")
     await asyncio.sleep(5)
-    await msg.delete
+    await msg.delete()
 
 async def main():
     await checklist()

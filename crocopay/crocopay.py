@@ -41,7 +41,7 @@ async def start_command(message: Message, state: FSMContext):
 async def start_command(message: Message):
     msg = await message.answer("🟢CrocoPay на связи✅")
     await asyncio.sleep(5)  
-    await msg.delete
+    await msg.delete()
 
 async def main():
     await checklist()

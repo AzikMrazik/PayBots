@@ -40,7 +40,7 @@ async def start_command(message: Message):
 async def start_command(message: Message):
     msg = await message.answer("🎲Nicepay на связи✅")
     await asyncio.sleep(5)
-    await msg.delete
+    await msg.delete()
 
 async def main():
     await dp.start_polling(bot)

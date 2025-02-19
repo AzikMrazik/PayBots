@@ -16,7 +16,7 @@ def extract_bins(text):
 async def start_command(message: Message):
     msg = await message.answer("🗑️BinChecker на связи✅")
     await asyncio.sleep(5)
-    await msg.delete
+    await msg.delete()
 
 @dp.message()
 async def handle_message(message: types.Message):
