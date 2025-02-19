@@ -9,12 +9,12 @@ from config import ALLOWED_GROUPS, BASE_URL, MERCHANT_ID, API_KEY
 router = Router()
 
 async def addorder(order_id, chat_id, amount, transaction_id):
+    await checklist()
     async with connect("orders_platega.db") as db:
         await db.execute(
             "INSERT INTO orders_platega (order_id, chat_id, amount) VALUES (?, ?, ?)",
             (order_id, chat_id, amount, transaction_id)
         )
-        await checklist()
         await db.commit()
 
 async def delorder(order_id):
