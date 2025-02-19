@@ -12,7 +12,7 @@ async def addorder(order_id, chat_id, amount, transaction_id):
     await checklist()
     async with connect("orders_platega.db") as db:
         await db.execute(
-            "INSERT INTO orders_platega (order_id, chat_id, amount) VALUES (?, ?, ?)",
+            "INSERT INTO orders_platega (order_id, chat_id, amount, transaction_id) VALUES (?, ?, ?)",
             (order_id, chat_id, amount, transaction_id)
         )
         await db.commit()
