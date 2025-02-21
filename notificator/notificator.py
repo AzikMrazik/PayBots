@@ -111,7 +111,7 @@ async def handle_epay(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
-        order_id = data['merchant_order_id']
+        order_id = data['transaction_id']
         chat_id, amount = await get_chat_id(order_id, system)
         if chat_id != False:
                 chat_id = int(chat_id)
