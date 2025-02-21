@@ -1,0 +1,77 @@
+from aiosqlite import connect
+from aiohttp import ClientSession
+from aiogram import Router, F
+from aiogram.types import Message
+from aiogram.utils.formatting import *
+from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL
+
+router = Router()
+
+async def addorder(order_id, chat_id, amount, payment_id):
+    await checklist()
+    async with connect("orders_p2p.db") as db:
+        await db.execute(
+            "INSERT INTO orders_p2p (order_id, chat_id, amount, payment_id) VALUES (?, ?, ?, ?)",
+            (order_id, chat_id, amount, payment_id)
+        )
+        await db.commit()
+
+async def checklist():
+    async with connect("orders_p2p.db") as db:
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS orders_p2p (
+                order_id TEXT PRIMARY KEY,
+                chat_id TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                payment_id TEXT NOT NULL
+            )
+        ''')
+        await db.commit()
+
+async def get_one_order(order_id):
+    async with connect("orders_p2p.db") as db:
+        cursor = await db.execute(
+            "SELECT payment_id FROM orders_p2p WHERE order_id = ?", 
+            (order_id,)
+        )
+        result = await cursor.fetchone()
+        if result:
+            return result[0]
+
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/p2pc_"))
+async def check_command(message: Message):
+    if message.chat.id not in ALLOWED_GROUPS:
+        await message.answer("Бот не активирован в этой группе!")
+        return
+    try:
+        ordercheck_id = int(message.text.split("_")[1])
+    except (IndexError, ValueError) as e:
+        await message.answer("Неверный формат команды. Используйте: /check_1000")
+        return
+    try:
+        payment_id = await get_one_order(ordercheck_id)
+        if payment_id == None:
+            await message.answer("⭕Заказ не найден!")
+        else:
+            async with ClientSession() as session:
+                async with session.get(
+                    f"{BASE_URL}/v1/payment/status",
+                    headers={'authorization': 'Bearer ' + API_TOKEN},
+                    params={"id": payment_id}
+                ) as response:
+                    data = await response.json()
+                    order_id = data['client_order_id']
+                    amount = data['amount']
+                    paid_amount = data['paid_amount']
+                    status = data['status']
+                    if status == "payment_success":
+                        await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                    elif status == "payment_canceled":
+                        await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                    elif status == "payment_wait":
+                        await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                    else:
+                        await message.answer(f"🔔Заказ №{order_id} на сумму {amount}, оплачен на {paid_amount}, в статусе {status}")
+    except Exception as e:
+            await message.answer(f"⚰️Бот умер! because {e}")
+
