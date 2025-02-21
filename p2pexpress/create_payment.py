@@ -106,13 +106,11 @@ async def sendpost(amount, chat_id, counter):
                         bank_type = "счёта"
                     if type == "card":
                         bin = card[:6]
-                        print(bin, flush=True)
                         bank_name, bank_status = await check_bank(bin)
                     else:
                         bank_status = "N/A"
                     if bank_status != "RIP":
                         await addorder(client_order_id, chat_id, precise_amount, payment_id)
-                        print("Added to DB", flush=True)
                         if comment == None:
                             return (f"📄Создан заказ: №<code>{client_order_id}</code>\n\n💳Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.",
                                     F"🙍‍♂️Получатель: {card_name}\n🏦Банк: {bank}")
