@@ -82,7 +82,7 @@ async def cash_command(message: Message):
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
-    msg = await message.answer("🟡E-Pay на связи✅")
+    msg = await message.answer("⚪P2P Express на связи✅")
     await asyncio.sleep(5)
     await msg.delete()
 
