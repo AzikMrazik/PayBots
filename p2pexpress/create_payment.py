@@ -106,7 +106,10 @@ async def sendpost(amount, chat_id, counter):
                         bank_type = "счёта"
                     if type == "card":
                         bin = card[:6]
-                        bank_name, bank_status = await check_bank(bin)
+                        try:
+                            bank_name, bank_status = await check_bank(bin)
+                        except:
+                            bank_status = "Good"
                     else:
                         bank_status = "N/A"
                     if bank_status != "RIP":
