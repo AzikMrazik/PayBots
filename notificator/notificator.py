@@ -35,6 +35,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay', handle_crocopay)
+    app.router.add_post('/p2p', handle_p2p)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
@@ -177,6 +178,35 @@ async def handle_crocopay(request: web.Request):
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
 
+async def handle_p2p(request: web.Request):
+    bot: Bot = request.app['bot']
+    system = "p2p"
+    try:
+        data = await request.json()
+        logger.info(f"Получен вебхук: {data}")
+        order_id = data['client_order_id']
+        amount = data['amount']
+        paid_amount = data['paid_amount']
+        status = data['status']
+        chat_id = await get_chat_id(order_id, system)
+        if chat_id != False:
+                chat_id = int(chat_id)
+        else:
+                return web.Response(text="OK")
+        try:
+            try:
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚪P2P Express:\n✅Заказ №{order_id} на сумму {amount}₽, оплачен на {paid_amount}, в статусе {status}"
+                )
+            except Exception as e:
+                logger.info(f"Ошибка №1: {e}")
+        except Exception as e:   
+                logger.info(f"Ошибка №2: {e}")
+        return web.Response(text="OK", status=200)
+    except Exception as e:
+        logger.error(f"Ошибка: {str(e)}")
+        return web.Response(text=f"Error: {str(e)}", status=500)
 
 async def handle_all_other(request):
     return web.Response(text="Forbidden", status=403)
@@ -198,6 +228,14 @@ async def get_chat_id(order_id, system):
             )
             result = await cursor.fetchone()
             return result
+    elif system == "ep2p":
+        async with connect("/root/paybots/p2pexpress/orders_p2p.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id, amount FROM orders_p2p WHERE order_id = ?", 
+                (order_id,)
+            )
+            result = await cursor.fetchone()
+            return result[0]
 
 async def delorder(order_id, system):
     if system == "corkpay":
@@ -207,10 +245,17 @@ async def delorder(order_id, system):
                 (order_id,)
             )
             await db.commit()
-    if system =="epay":
+    elif system =="epay":
         async with connect("/root/paybots/epay/orders_epay.db") as db:
             await db.execute(
                 "DELETE FROM orders_epay WHERE order_id = ?", 
+                (order_id,)
+            )
+            await db.commit()
+    elif system =="p2p":
+        async with connect("/root/paybots/p2pexpress/orders_p2p.db") as db:
+            await db.execute(
+                "DELETE FROM orders_p2p WHERE order_id = ?", 
                 (order_id,)
             )
             await db.commit()
