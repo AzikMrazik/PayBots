@@ -189,7 +189,7 @@ async def handle_p2p(request: web.Request):
         paid_amount = data['paid_amount']
         status = data['status']
         chat_id = await get_chat_id(order_id, system)
-        if chat_id != False:
+        if chat_id != None:
                 chat_id = int(chat_id)
         else:
                 return web.Response(text="OK")
@@ -206,7 +206,7 @@ async def handle_p2p(request: web.Request):
         return web.Response(text="OK", status=200)
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text=f"Error: {str(e)}", status=500)
+        return web.Response(text="OK", status=200)
 
 async def handle_all_other(request):
     return web.Response(text="Forbidden", status=403)
