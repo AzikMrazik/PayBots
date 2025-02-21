@@ -26,10 +26,13 @@ async def cash_command(message: Message):
         length = len(checkout) - 1
         counter = 1
         for sms in range(length):
-            if counter == 1:
+            if length == 0:
                 await message.reply(checkout[sms])
-                counter += 1
             else:
-                await message.answer(checkout[sms])
+                if counter == 1:
+                    await message.reply(checkout[sms])
+                    counter += 1
+                else:
+                    await message.answer(checkout[sms])
         await bot_msg.delete()
         
