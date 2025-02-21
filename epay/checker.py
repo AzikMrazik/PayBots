@@ -16,14 +16,6 @@ async def addorder(order_id, chat_id, amount):
         )
         await db.commit()
 
-async def delorder(order_id):
-    async with connect("orders_epay.db") as db:
-        await db.execute(
-            "DELETE FROM orders_epay WHERE order_id = ?", 
-            (order_id,)
-        )
-        await db.commit()
-
 async def checklist():
     async with connect("orders_epay.db") as db:
         await db.execute('''
@@ -35,7 +27,6 @@ async def checklist():
         ''')
         await db.commit()
 
-    
 async def get_one_order(order_id):
     async with connect("orders_epay.db") as db:
         cursor = await db.execute(
@@ -47,9 +38,6 @@ async def get_one_order(order_id):
             return result[0]
         else:
             return None
-
-async def send_success(bot: Bot, target_chat):
-    await bot.send_message(chat_id=target_chat[1], text=f"✅Заказ №{target_chat[0]} на сумму {target_chat[2]} успешно оплачен!")
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/check_"))
 async def check_command(message: Message):

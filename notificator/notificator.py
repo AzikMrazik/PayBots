@@ -84,10 +84,6 @@ async def handle_corkpay(request: web.Request):
         cleaned_text = data.lstrip('✅ \n\t')
         parsed_data = parse_qs(cleaned_text)
         data = {k: v[0] for k, v in parsed_data.items()}
-        await bot.send_message(
-                    chat_id=831055006,
-                    text=f"🟣CORKPAY:\n✅{data}"
-                )
         try:
             order_id = data['merchant_order']
             chat_id, amount = await get_chat_id(order_id, system)
@@ -117,8 +113,7 @@ async def handle_epay(request: web.Request):
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
         order_id = data['merchant_order_id']
-        amount = data['amount'] 
-        chat_id = await get_chat_id(order_id, system)
+        chat_id, amount = await get_chat_id(order_id, system)
         if chat_id != False:
                 chat_id = int(chat_id)
         else:
@@ -131,9 +126,9 @@ async def handle_epay(request: web.Request):
                 )
                 await delorder(order_id, system)
             except Exception as e:
-                logger.info(f"Ошибка: {e}")
+                logger.info(f"Ошибка №1: {e}")
         except Exception as e:   
-                logger.info(f"Ошибка: {e}")
+                logger.info(f"Ошибка №2: {e}")
 
         return web.Response(text="OK", status=200)
     
@@ -183,46 +178,13 @@ async def handle_crocopay(request: web.Request):
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text=f"Error: {str(e)}", status=500)
 
-async def handle_platega(request: web.Request):
-    bot: Bot = request.app['bot']
-    system = "platega"
-    try:
-        data = await request.json()
-        status = data['status']
-        if status == "CONFIRMED" or status == "PAID":
-            pass   
-        else:
-            return web.Response(text="OK", status=200) 
-        id = data['id']
-        order_id, chat_id = await get_chat_id(id)
-        amount = data['amount']
-        if chat_id != False:
-                chat_id = int(chat_id)
-        else:
-                return web.Response(text="OK")
-        try:
-            try:
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text=f"⚪Platega:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
-                )
-            except:
-                logger.info(f"Ошибка: {e}")
-        except Exception as e:   
-                logger.info(f"Ошибка: {e}")
-
-        return web.Response(text="OK", status=200)
-    
-    except Exception as e:
-        logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text=f"Error: {str(e)}", status=500)
 
 async def handle_all_other(request):
     return web.Response(text="Forbidden", status=403)
 
 async def get_chat_id(order_id, system):
     if system == "corkpay":
-        async with connect(f"/root/paybots/corkpay/orders_corkpay.db") as db:
+        async with connect("/root/paybots/corkpay/orders_corkpay.db") as db:
             cursor = await db.execute(
                 "SELECT chat_id, amount FROM orders_corkpay WHERE order_id = ?", 
                 (order_id,)
@@ -230,17 +192,9 @@ async def get_chat_id(order_id, system):
             result = await cursor.fetchone()
             return result
     elif system == "epay":
-        async with connect(f"/root/paybots/epay/orders_epay.db") as db:
+        async with connect("/root/paybots/epay/orders_epay.db") as db:
             cursor = await db.execute(
-                "SELECT chat_id FROM orders_epay WHERE order_id = ?", 
-                (order_id,)
-            )
-            result = await cursor.fetchone()
-            return result[0]
-    elif system == "platega":
-        async with connect(f"/root/paybots/platega/orders_platega.db") as db:
-            cursor = await db.execute(
-                "SELECT order_id, chat_id FROM orders_platega WHERE transaction_id = ?", 
+                "SELECT chat_id, amount FROM orders_epay WHERE order_id = ?", 
                 (order_id,)
             )
             result = await cursor.fetchone()
