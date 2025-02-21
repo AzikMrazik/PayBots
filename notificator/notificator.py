@@ -31,11 +31,10 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
     app.router.add_post('/corkpay', handle_corkpay)
-    app.router.add_get('/', handle_root)
+    app.router.add_route('*', '/', handle_root)
     app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay', handle_crocopay)
-    app.router.add_post('/platega', handle_platega)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
