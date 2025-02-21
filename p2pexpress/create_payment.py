@@ -33,8 +33,8 @@ async def create_payment(message: Message,  state: FSMContext):
     await state.clear()
     try:
         amount = int(message.text)
-        if amount < 1000 or amount > 10000:
-            await message.answer("Доступная сумма платежа 1000 - 10000 RUB!")
+        if amount < 2500 or amount > 10000:
+            await message.answer("Доступная сумма платежа 2500 - 10000 RUB!")
             await message.answer("Отправьте новое значение:", reply_markup=back_kb())
             return   
     except:
