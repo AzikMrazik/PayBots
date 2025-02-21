@@ -73,7 +73,7 @@ async def handle_cashinout(request: web.Request):
         return web.Response(text="OK", status=200)
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text=f"Error: {str(e)}", status=500)
+        return web.Response(text="OK", status=200)
 
 async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
@@ -87,7 +87,7 @@ async def handle_corkpay(request: web.Request):
         try:
             order_id = data['merchant_order']
             chat_id, amount = await get_chat_id(order_id, system)
-            if chat_id != False:
+            if chat_id != None:
                 chat_id = int(chat_id)
             else:
                 return web.Response(text="OK")
@@ -104,7 +104,7 @@ async def handle_corkpay(request: web.Request):
         return web.Response(text="OK", status=200)
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text=f"Error: {str(e)}", status=500)
+        return web.Response(text="OK", status=200)
 
 async def handle_epay(request: web.Request):
     bot: Bot = request.app['bot']
@@ -114,7 +114,7 @@ async def handle_epay(request: web.Request):
         logger.info(f"Получен вебхук: {data}")
         order_id = data['transaction_id']
         chat_id, amount = await get_chat_id(order_id, system)
-        if chat_id != False:
+        if chat_id != None:
                 chat_id = int(chat_id)
         else:
                 return web.Response(text="OK")
@@ -134,7 +134,7 @@ async def handle_epay(request: web.Request):
     
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text=f"Error: {str(e)}", status=500)
+        return web.Response(text="OK", status=200)
 
 async def handle_crocopay(request: web.Request):
     bot: Bot = request.app['bot']
@@ -156,7 +156,7 @@ async def handle_crocopay(request: web.Request):
         chat_id = 831055006
         order_id = 10000
         amount = 10000
-        if chat_id != False:
+        if chat_id != None:
                 chat_id = int(chat_id)
         else:
                 return web.Response(text="OK")
@@ -176,7 +176,7 @@ async def handle_crocopay(request: web.Request):
     
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text=f"Error: {str(e)}", status=500)
+        return web.Response(text="OK", status=200)
 
 async def handle_p2p(request: web.Request):
     bot: Bot = request.app['bot']
@@ -195,10 +195,14 @@ async def handle_p2p(request: web.Request):
                 return web.Response(text="OK")
         try:
             try:
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text=f"⚪P2P Express:\n✅Заказ №{order_id} на сумму {amount}₽, оплачен на {paid_amount}, в статусе {status}"
-                )
+                if status == "PAID":
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text=f"⚪P2P Express:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
+                    )
+                    await delorder(order_id, system)
+                elif status == "FAILED":
+                    await delorder(order_id, system)
             except Exception as e:
                 logger.info(f"Ошибка №1: {e}")
         except Exception as e:   
@@ -228,7 +232,7 @@ async def get_chat_id(order_id, system):
             )
             result = await cursor.fetchone()
             return result
-    elif system == "ep2p":
+    elif system == "p2p":
         async with connect("/root/paybots/p2pexpress/orders_p2p.db") as db:
             cursor = await db.execute(
                 "SELECT chat_id, amount FROM orders_p2p WHERE order_id = ?", 
