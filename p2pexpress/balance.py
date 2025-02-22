@@ -58,7 +58,7 @@ async def which_wallet(message: Message, state: FSMContext):
     aval_balance = await check_balance()
     try:
         amount = int(message.text)
-        if amount > aval_balance[0]:
+        if amount > int(aval_balance[0]):
             await message.answer("Вы не можете вывести больше, чем у вас есть!")
             await message.answer(text="Введите сумму снова:", reply_markup=back_kb())
             return
@@ -85,7 +85,7 @@ async def create_order(message: Message, state: FSMContext):
             f"{BASE_URL}/v1/payout/payout",
             headers={'authorization': 'Bearer ' + API_TOKEN},
             json={
-                "amount": amount,
+                "amount": str(amount),
                 "wallet": wallet
                   }
         ):
