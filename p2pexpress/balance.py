@@ -55,18 +55,7 @@ async def how_many(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
 
 @router.message(PaymentStates.WAITING_BALANCE)
 async def which_wallet(message: Message, state: FSMContext):
-    aval_balance = await check_balance()
-    try:
-        amount = int(message.text)
-        if amount > int(aval_balance[0]):
-            await message.answer("Вы не можете вывести больше, чем у вас есть!")
-            await message.answer(text="Введите сумму снова:", reply_markup=back_kb())
-            return
-    except Exception as e:
-        print(e, flush=True)
-        await message.answer("Вы ввели неверное значение!")
-        await message.answer(text="Введите сумму снова:", reply_markup=back_kb())
-        return
+    amount = message.text
     await state.update_data(amount=amount)
     await message.answer(text="Введите адрес вашего кошелька:", reply_markup=back_kb())
     await state.set_state(PaymentStates.WAITING_WALLET)
@@ -85,7 +74,7 @@ async def create_order(message: Message, state: FSMContext):
             f"{BASE_URL}/v1/payout/payout",
             headers={'authorization': 'Bearer ' + API_TOKEN},
             json={
-                "amount": str(amount),
+                "amount": amount,
                 "wallet": wallet
                   }
         ):
