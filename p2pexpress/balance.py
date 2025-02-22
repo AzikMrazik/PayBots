@@ -78,11 +78,7 @@ async def create_order(message: Message, state: FSMContext):
                 "wallet": wallet
                   }
         ):
-            try:
-                await message.answer(f"✅Заявка успешно создана!", reply_markup=last_kb())
-            except:
-                await message.answer(f"{data}")
-                await message.answer("Произошла ошибка отправьте сообщение выше кодеру!")
+            await message.answer(f"✅Заявка успешно создана!", reply_markup=last_kb())
 
 async def check_balance():
     async with ClientSession() as session:
