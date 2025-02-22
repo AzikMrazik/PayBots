@@ -201,8 +201,6 @@ async def handle_p2p(request: web.Request):
                         text=f"⚪P2P Express:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                     )
                     await delorder(order_id, system)
-                elif status == "FAILED":
-                    await delorder(order_id, system)
             except Exception as e:
                 logger.info(f"Ошибка №1: {e}")
         except Exception as e:   

@@ -72,6 +72,7 @@ async def check_command(message: Message):
                         await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
                     else:
                         await message.answer(f"🔔Заказ №{order_id} на сумму {amount}, оплачен на {paid_amount}, в статусе {status}")
+                        await message.answer(f"❓ID заказа: {payment_id}")
     except Exception as e:
             await message.answer(f"⚰️Бот умер! because {e}")
 
