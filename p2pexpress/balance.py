@@ -62,7 +62,8 @@ async def which_wallet(message: Message, state: FSMContext):
             await message.answer("Вы не можете вывести больше, чем у вас есть!")
             await message.answer(text="Введите сумму снова:", reply_markup=back_kb())
             return
-    except:
+    except Exception as e:
+        print(e, flush=True)
         await message.answer("Вы ввели неверное значение!")
         await message.answer(text="Введите сумму снова:", reply_markup=back_kb())
         return
