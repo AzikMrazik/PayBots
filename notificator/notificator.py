@@ -138,35 +138,16 @@ async def handle_epay(request: web.Request):
 
 async def handle_crocopay(request: web.Request):
     bot: Bot = request.app['bot']
-    system = "crocopay"
     try:
-        data = await request.text()
-        await bot.send_message(
-                    chat_id=831055006,
-                    text=f"🟢CrocoPay:\n✅{data}"
-                )
-        try:
-            data = await request.json()
-            await bot.send_message(
-                    chat_id=831055006,
-                    text=f"🟢CrocoPay:\n✅{data}"
-                )     
-        except:
-            pass
-        chat_id = 831055006
-        order_id = 10000
-        amount = 10000
-        if chat_id != None:
-                chat_id = int(chat_id)
-        else:
-                return web.Response(text="OK")
+        data = await request.json()
+        chat_id = -1002486163462
+        amount = data['total']
         try:
             try:
                 await bot.send_message(
                     chat_id=chat_id,
-                    text=f"🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
+                    text=f"🟢CrocoPay:\n✅Заказ на сумму {amount}₽ успешно оплачен!"
                 )
-                await delorder(order_id, system)
             except:
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
