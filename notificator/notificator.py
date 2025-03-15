@@ -199,7 +199,7 @@ async def handle_p2p(request: web.Request):
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text="OK", status=200)
 
-async def handle_crocopay(request: web.Request):
+async def handle_apay(request: web.Request):
     bot: Bot = request.app['bot']
     try:
         data = await request.text()
