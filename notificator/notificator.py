@@ -42,6 +42,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay', handle_crocopay)
     app.router.add_post('/p2p', handle_p2p)
+    app.router.add_post('/apay', handle_apay)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
@@ -194,6 +195,32 @@ async def handle_p2p(request: web.Request):
         except Exception as e:   
                 logger.info(f"Ошибка №2: {e}")
         return web.Response(text="OK", status=200)
+    except Exception as e:
+        logger.error(f"Ошибка: {str(e)}")
+        return web.Response(text="OK", status=200)
+
+async def handle_crocopay(request: web.Request):
+    bot: Bot = request.app['bot']
+    try:
+        data = await request.text()
+        try:
+            data = await request.text()
+        except:
+            pass
+        chat_id = -1002486163462
+        try:
+            try:
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=f"🅰️APay:\n✅Заказ успешно оплачен! {data}"
+                )
+            except:
+                logger.info(f"Ошибка: {e}")
+        except Exception as e:   
+                logger.info(f"Ошибка: {e}")
+
+        return web.Response(text="OK", status=200)
+    
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text="OK", status=200)
