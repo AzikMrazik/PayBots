@@ -8,16 +8,15 @@ from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-import create_payment, group_payment, checker
-from config import BOT_TOKEN, ALLOWED_GROUPS
-from checker import checklist
+import create_payment, group_payment
+from config import BOT_TOKEN
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-dp.include_routers(create_payment.router, group_payment.router, checker.router)
+dp.include_routers(create_payment.router, group_payment.router)
 
 def main_kb():
     keyboard = [
@@ -44,7 +43,6 @@ async def start_command(message: Message):
     await msg.delete()
 
 async def main():
-    await checklist()
     await asyncio.gather(
         dp.start_polling(bot)
     )
