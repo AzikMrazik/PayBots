@@ -7,9 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from config import SECRET, ID, BASE_URL, DOMAIN
-from checker import addorder
 from datetime import datetime
-import re
 
 router = Router()
 

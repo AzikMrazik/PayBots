@@ -5,14 +5,18 @@ from aiogram import Bot, Router, F
 from aiogram.types import Message
 from aiogram.utils.formatting import *
 from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL
+from datetime import datetime
+
 
 router = Router()
 
 async def addorder(order_id, chat_id, amount):
+    await checklist()
+    now = datetime.now().isoformat()
     async with connect("orders_epay.db") as db:
         await db.execute(
-            "INSERT INTO orders_epay (order_id, chat_id, amount) VALUES (?, ?, ?)",
-            (order_id, chat_id, amount)
+            "INSERT INTO orders_epay (order_id, chat_id, amount, timestamp) VALUES (?, ?, ?, ?)",
+            (order_id, chat_id, amount, now)
         )
         await db.commit()
 
@@ -22,7 +26,8 @@ async def checklist():
             CREATE TABLE IF NOT EXISTS orders_epay (
                 order_id TEXT PRIMARY KEY,
                 chat_id TEXT NOT NULL,
-                amount TEXT NOT NULL
+                amount TEXT NOT NULL,
+                timestamp TEXT NOT NULL         
             )
         ''')
         await db.commit()

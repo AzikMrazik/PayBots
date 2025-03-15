@@ -4,15 +4,17 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.utils.formatting import *
 from config import API_TOKEN, ALLOWED_GROUPS, BASE_URL
+from datetime import datetime
 
 router = Router()
 
 async def addorder(order_id, chat_id, amount, payment_id):
     await checklist()
+    now = datetime.now().isoformat()
     async with connect("orders_p2p.db") as db:
         await db.execute(
-            "INSERT INTO orders_p2p (order_id, chat_id, amount, payment_id) VALUES (?, ?, ?, ?)",
-            (order_id, chat_id, amount, payment_id)
+            "INSERT INTO orders_p2p (order_id, chat_id, amount, payment_id, timestamp) VALUES (?, ?, ?, ?, ?)",
+            (order_id, chat_id, amount, payment_id, now)
         )
         await db.commit()
 
@@ -23,7 +25,8 @@ async def checklist():
                 order_id TEXT PRIMARY KEY,
                 chat_id TEXT NOT NULL,
                 amount TEXT NOT NULL,
-                payment_id TEXT NOT NULL
+                payment_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL         
             )
         ''')
         await db.commit()

@@ -5,14 +5,18 @@ from aiogram import Bot, Router, F
 from aiogram.types import Message
 from aiogram.utils.formatting import *
 from config import MERCHANT_TOKEN, ALLOWED_GROUPS, BASE_URL
+from datetime import datetime
+
 
 router = Router()
 
 async def addorder(sign, chat_id, amount, order_id):
+    await checklist()
+    now = datetime.now().isoformat()
     async with connect("orders_corkpay.db") as db:
         await db.execute(
-            "INSERT INTO orders_corkpay (sign, chat_id, amount, order_id) VALUES (?, ?, ?, ?)",
-            (sign, chat_id, amount, order_id)
+            "INSERT INTO orders_corkpay (sign, chat_id, amount, order_id, timestamp) VALUES (?, ?, ?, ?, ?)",
+            (sign, chat_id, amount, order_id, now)
         )
         await db.commit()
 
@@ -31,7 +35,8 @@ async def checklist():
                 sign TEXT PRIMARY KEY,
                 chat_id TEXT NOT NULL,
                 amount TEXT NOT NULL,
-                order_id TEXT NOT NULL         
+                order_id TEXT NOT NULL,
+                timestamp TEXT NOT NULL                  
             )
         ''')
         await db.commit()
