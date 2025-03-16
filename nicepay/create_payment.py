@@ -61,4 +61,5 @@ async def sendpost(amount):
             ) as response:
                 full = await response.json()
                 data = full['data']
+                print(full, flush=True)
                 return f"{data['link']}"
