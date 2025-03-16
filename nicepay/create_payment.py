@@ -56,8 +56,7 @@ async def sendpost(amount):
                     "order_id": "1691",
                     "customer": "user@gmail.com",
                     "amount": amount,
-                    "currency": "RUB",
-                    "method": "sbp_rub"
+                    "currency": "RUB"
                 }
             ) as response:
                 full = await response.json()
