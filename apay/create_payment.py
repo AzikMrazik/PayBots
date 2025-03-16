@@ -1,13 +1,12 @@
-import asyncio
-from aiosqlite import connect
 from aiohttp import ClientSession
 from aiogram import Bot, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import SECRET, ID, BASE_URL, DOMAIN
+from config import SECRET_KEY, BASE_URL, CLIENT_ID
 from datetime import datetime
+from hashlib import md5
 from checker import addorder
 
 router = Router()
@@ -28,8 +27,7 @@ async def how_many(callback_query: CallbackQuery, bot: Bot, state: FSMContext):
     await state.set_state(PaymentStates.WAITING_AMOUNT)
 
 @router.message(PaymentStates.WAITING_AMOUNT)
-async def create_payment(message: Message,  state: FSMContext):
-    await state.clear()
+async def create_payment(message: Message, state: FSMContext):
     try:
         amount = int(message.text)
         if amount < 1000:
@@ -41,29 +39,29 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        bot_msg = await message.reply(f"⌛️Ожидаем реквизиты...")
         checkout = await sendpost(amount, message.from_user.id)
-        await bot_msg.delete()
         await message.reply(checkout[0])
-        await message.answer(checkout[1])
+        await message.reply(checkout[1])
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
 
-async def sendpost(amount, chat_id, counter=1):
+async def sendpost(amount, chat_id):
     order_id = datetime.now().strftime("%d%m%H%M%S")
+    amount = amount * 100
+    sign = f"{order_id}:{amount}:{SECRET_KEY}"
+    sign = md5(sign.encode()).hexdigest()
     async with ClientSession() as session:
-        async with session.post(
-            f"{BASE_URL}",
-            json={"client_id": ID,
-                  "client_secret": SECRET,
-                  "amount": amount,
-                  "currency":"RUB",
-                  "successUrl":"https://t.me/",
-                  "cancelUrl":"https://t.me/",
-                  "callbackUrl":f"https://{DOMAIN}/{order_id}"}
+        async with session.get(
+            f"{BASE_URL}/backend/create_order",
+            params={
+                "client_id": CLIENT_ID,
+                "order_id": order_id,
+                "amount": amount,
+                "sign": sign
+            }
         ) as response:
             data = await response.json()
-            URL = data['redirect_url']
+            print(data, flush=True)
+            URL = data['url']
             await addorder(chat_id, amount, order_id)
             return (f"📄Создан заказ №{order_id}!", f"{URL}")
-

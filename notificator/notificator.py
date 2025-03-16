@@ -40,7 +40,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_route('*', '/', handle_root)
     app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
-    app.router.add_post('/crocopay', handle_crocopay)
+    app.router.add_post('/crocopay/{order_id}', handle_crocopay)
     app.router.add_post('/p2p', handle_p2p)
     app.router.add_post('/apay', handle_apay)
     SimpleRequestHandler(
@@ -146,15 +146,17 @@ async def handle_epay(request: web.Request):
 
 async def handle_crocopay(request: web.Request):
     bot: Bot = request.app['bot']
+    system = "crocopay"
     try:
         data = await request.json()
-        chat_id = -1002486163462
+        order_id = int(request.match_info['order_id'])
         amount = data['total']
+        chat_id = await get_chat_id(order_id, system)
         try:
             try:
                 await bot.send_message(
                     chat_id=chat_id,
-                    text=f"🟢CrocoPay:\n✅Заказ на сумму {amount}₽ успешно оплачен!"
+                    text=f"🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
                 )
                 await add_paid_order(float(amount), chat_id, "crocopay")
             except:
@@ -201,19 +203,18 @@ async def handle_p2p(request: web.Request):
 
 async def handle_apay(request: web.Request):
     bot: Bot = request.app['bot']
+    system = "apay"
     try:
-        data = await request.text()
-        try:
-            data = await request.text()
-        except:
-            pass
-        chat_id = -1002486163462
+        data = await request.json()
+        order_id = data['order_id']
+        chat_id, amount = await get_chat_id(order_id, system)
         try:
             try:
                 await bot.send_message(
                     chat_id=chat_id,
-                    text=f"🅰️APay:\n✅Заказ успешно оплачен! {data}"
+                    text=f"🅰️APay:\n✅Заказ №{order_id} на сумму {amount} успешно оплачен! {data}"
                 )
+                await add_paid_order(float(amount), chat_id, "apay")
             except:
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
@@ -253,6 +254,22 @@ async def get_chat_id(order_id, system):
             )
             result = await cursor.fetchone()
             return result[0]
+    elif system == "crocopay":
+        async with connect("/root/paybots/crocopay/orders_crocopay.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id, amount FROM orders_crocopay WHERE order_id = ?", 
+                (order_id,)
+            )
+            result = await cursor.fetchone()
+            return result[0]
+    elif system == "apay":
+        async with connect("/root/paybots/apay/orders_apay.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id, amount FROM orders_apay WHERE order_id = ?", 
+                (order_id,)
+            )
+            result = await cursor.fetchone()
+            return result    
 
 async def auto_cleanup():
     while True:
@@ -260,7 +277,8 @@ async def auto_cleanup():
             systems = {
                 "corkpay": "/root/paybots/corkpay/orders_corkpay.db",
                 "epay": "/root/paybots/epay/orders_epay.db", 
-                "p2p": "/root/paybots/p2pexpress/orders_p2p.db"
+                "p2p": "/root/paybots/p2pexpress/orders_p2p.db",
+                "crocopay": "/root/paybots/crocopay/orders_crocopay.db",
             }
             
             for system, db_path in systems.items():

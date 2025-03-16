@@ -1,6 +1,5 @@
 import logging
 import asyncio
-from aiosqlite import connect
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command
@@ -31,21 +30,21 @@ async def handle_main_menu_callback(callback_query: CallbackQuery, state: FSMCon
     await callback_query.message.answer(text="Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 @dp.message(Command("start"))
-async def start_command(message: Message, state: FSMContext):
-    await state.clear()
+async def start_command(message: Message):
     await message.answer("Добро пожаловать!")
-    await message.answer(text="Вы в главном меню, выберите действие:", reply_markup=main_kb())
+    await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
-    msg = await message.answer("🟢CrocoPay на связи✅")
-    await asyncio.sleep(5)  
+    msg = await message.answer("🅰️APay на связи✅")
+    await asyncio.sleep(5)
     await msg.delete()
 
 async def main():
+    await bot.delete_webhook()
     await asyncio.gather(
-        dp.start_polling(bot)
-    )
+        dp.start_polling(bot),
+        )
 
 if __name__ == "__main__":
     asyncio.run(main())
