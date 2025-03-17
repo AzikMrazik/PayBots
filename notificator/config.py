@@ -7,3 +7,4 @@ BOT_TOKEN = getenv("WH_BOT_TOKEN")
 DOMAIN = getenv("WH_DOMAIN")
 ALLOWED_GROUPS = [int(id.strip()) for id in getenv("ALLOWED_GROUPS", "").split(",") if id.strip()]
 REPORT_CHAT_ID = 831055006
+ADMINS = [int(id.strip()) for id in getenv("ADMINS", "").split(",") if id.strip()]

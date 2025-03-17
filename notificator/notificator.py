@@ -11,7 +11,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
-from config import BOT_TOKEN, DOMAIN, REPORT_CHAT_ID
+from config import BOT_TOKEN, DOMAIN, REPORT_CHAT_ID, ADMINS
 from aiohttp import web 
 from aiogram.webhook.aiohttp_server import setup_application
 from urllib.parse import parse_qs
@@ -20,6 +20,7 @@ from openpyxl import Workbook
 import pandas as pd
 import aiosqlite
 import os
+from aiogram.types import FSInputFile
 
 
 logging.basicConfig(
@@ -312,9 +313,9 @@ async def generate_report():
                 (start_date.isoformat(), end_date.isoformat()))
             rows = await cursor.fetchall()
         
-        df = pd.DataFrame(rows, columns=['Дата', 'Сумма', 'id', 'Система'])
+        df = pd.DataFrame(rows, columns=['Дата', 'Сумма', 'Chat ID', 'Платежная система'])
         report_path = "/tmp/weekly_report.xlsx"
-        df.to_excel(report_path, index=False)
+        df.to_excel(report_path, index=False, engine='openpyxl')
         
         return report_path
     except Exception as e:
@@ -324,8 +325,6 @@ async def generate_report():
 async def schedule_report():
     while True:
         now = datetime.now()
-        
-        # Рассчет времени до следующего воскресенья 23:59
         days_until_sunday = (6 - now.weekday()) % 7
         next_sunday = now + timedelta(days=days_until_sunday)
         next_sunday = next_sunday.replace(hour=23, minute=59, second=0, microsecond=0)
@@ -339,15 +338,35 @@ async def schedule_report():
         report_path = await generate_report()
         if report_path:
             try:
-                with open(report_path, 'rb') as f:
-                    await bot.send_document(
-                        chat_id=REPORT_CHAT_ID,  # ID вашего чата
-                        document=f,
-                        caption="Еженедельный отчет об оплаченных заказах"
-                    )
+                file = FSInputFile(report_path)
+                await bot.send_document(
+                    chat_id=REPORT_CHAT_ID,
+                    document=file,
+                    caption="Еженедельный отчет об оплаченных заказах"
+                )
                 os.remove(report_path)
             except Exception as e:
                 logger.error(f"Ошибка отправки отчета: {e}")
+
+@dp.message(Command("xls"))
+async def handle_xls_command(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("У вас нет доступа к этому!")
+    else:
+        try:
+            report_path = await generate_report()
+            if report_path:
+                file = FSInputFile(report_path)
+                await message.answer_document(
+                    document=file,
+                    caption="Отчет за последние 7 дней"
+                )
+                os.remove(report_path)
+            else:
+                await message.answer("❌ Не удалось сформировать отчет")
+        except Exception as e:
+            logger.error(f"Ошибка команды /xls: {e}")
+            await message.answer("⚠️ Произошла ошибка при формировании отчета")
 
 async def create_paid_orders_table():
     async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
@@ -372,6 +391,7 @@ async def main():
     asyncio.create_task(auto_cleanup())
     asyncio.create_task(schedule_report())
     await create_paid_orders_table()
+    dp.message.register(handle_xls_command, Command("xls"))
     try:
         logger.info("Удаление старого вебхука...")
         await bot.delete_webhook()
