@@ -318,7 +318,7 @@ async def generate_report():
             date, amount, chat_id, system = row
             formatted_rows.append((
                 date,
-                f"{amount:.2f}₽",
+                f"{amount:.2f}",
                 str(int(chat_id)),  # Явное преобразование в целое число и строку
                 system
             ))
