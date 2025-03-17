@@ -312,26 +312,48 @@ async def generate_report():
                 (start_date.isoformat(), end_date.isoformat()))
             rows = await cursor.fetchall()
         
-        # Преобразуем chat_id в строку и форматируем числа
         formatted_rows = []
         for row in rows:
-            date, amount, chat_id, system = row
+            raw_date, amount, chat_id, system = row
+            # Парсим дату из строки
+            dt = datetime.fromisoformat(raw_date)
+            
+            # Форматируем отдельно дату и время
+            date_str = dt.strftime("%Y-%m-%d")
+            time_str = dt.strftime("%H:%M:%S")
+            
+            # Преобразуем сумму в целое число
+            formatted_amount = int(round(float(amount)))
+            
             formatted_rows.append((
-                date,
-                f"{amount:.2f}",
-                str(int(chat_id)),  # Явное преобразование в целое число и строку
+                date_str,
+                time_str,
+                formatted_amount,
+                str(int(chat_id)),  # ID как строка
                 system
             ))
         
-        df = pd.DataFrame(formatted_rows, columns=['Дата', 'Сумма', 'Chat ID', 'Платежная система'])
+        # Создаем DataFrame с новыми колонками
+        df = pd.DataFrame(
+            formatted_rows, 
+            columns=['Дата', 'Время', 'Сумма', 'Chat ID', 'Платежная система']
+        )
+        
         report_path = "/tmp/weekly_report.xlsx"
         
-        # Сохраняем с явным указанием формата для Chat ID
+        # Сохраняем с правильными форматами
         with pd.ExcelWriter(report_path, engine='openpyxl') as writer:
             df.to_excel(writer, index=False)
+            
             worksheet = writer.sheets['Sheet1']
+            
+            # Формат для ID
+            for cell in worksheet['D']:
+                cell.number_format = '@'
+                
+            # Формат для сумм
             for cell in worksheet['C']:
-                cell.number_format = '@'  # Формат текста для столбца Chat ID
+                cell.number_format = '0'
         
         return report_path
     except Exception as e:
