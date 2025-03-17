@@ -409,6 +409,49 @@ async def handle_xls_command(message: Message):
             logger.error(f"Ошибка команды /xls: {e}")
             await message.answer("⚠️ Произошла ошибка при формировании отчета")
 
+@dp.message(Command("today"))
+async def handle_today_command(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("⛔ Доступ запрещен!")
+        return
+    
+    try:
+        # Получаем данные за последние 24 часа
+        end_date = datetime.now()
+        start_date = end_date - timedelta(hours=24)
+        
+        async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id, SUM(amount) as total "
+                "FROM paid_orders "
+                "WHERE date BETWEEN ? AND ? "
+                "GROUP BY chat_id",
+                (start_date.isoformat(), end_date.isoformat()))
+            
+            results = await cursor.fetchall()
+        
+        # Формируем ответ
+        if not results:
+            await message.answer("ℹ️ За последние 24 часа оплат не было")
+            return
+            
+        response = ["💳 Отчет за последние 24 часа:\n"]
+        for chat_id, total in results:
+            response.append(
+                f"👤 Chat ID: {chat_id}\n"
+                f"➖ Сумма: {int(round(float(total)))}₽\n"
+                f"────────────────────"
+            )
+        
+        # Разбиваем на сообщения по 4096 символов
+        full_text = "\n".join(response)
+        for i in range(0, len(full_text), 4096):
+            await message.answer(full_text[i:i+4096])
+            
+    except Exception as e:
+        logger.error(f"Ошибка команды /today: {e}")
+        await message.answer("⚠️ Ошибка при формировании отчета")
+
 async def create_paid_orders_table():
     async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
         await db.execute('''CREATE TABLE IF NOT EXISTS paid_orders
@@ -432,7 +475,6 @@ async def main():
     asyncio.create_task(auto_cleanup())
     asyncio.create_task(schedule_report())
     await create_paid_orders_table()
-    dp.message.register(handle_xls_command, Command("xls"))
     try:
         logger.info("Удаление старого вебхука...")
         await bot.delete_webhook()
