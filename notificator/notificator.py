@@ -16,7 +16,6 @@ from aiohttp import web
 from aiogram.webhook.aiohttp_server import setup_application
 from urllib.parse import parse_qs
 from datetime import datetime, timedelta
-from openpyxl import Workbook
 import pandas as pd
 import aiosqlite
 import os
@@ -313,9 +312,26 @@ async def generate_report():
                 (start_date.isoformat(), end_date.isoformat()))
             rows = await cursor.fetchall()
         
-        df = pd.DataFrame(rows, columns=['Дата', 'Сумма', 'Chat ID', 'Платежная система'])
+        # Преобразуем chat_id в строку и форматируем числа
+        formatted_rows = []
+        for row in rows:
+            date, amount, chat_id, system = row
+            formatted_rows.append((
+                date,
+                f"{amount:.2f}₽",
+                str(int(chat_id)),  # Явное преобразование в целое число и строку
+                system
+            ))
+        
+        df = pd.DataFrame(formatted_rows, columns=['Дата', 'Сумма', 'Chat ID', 'Платежная система'])
         report_path = "/tmp/weekly_report.xlsx"
-        df.to_excel(report_path, index=False, engine='openpyxl')
+        
+        # Сохраняем с явным указанием формата для Chat ID
+        with pd.ExcelWriter(report_path, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False)
+            worksheet = writer.sheets['Sheet1']
+            for cell in worksheet['C']:
+                cell.number_format = '@'  # Формат текста для столбца Chat ID
         
         return report_path
     except Exception as e:
