@@ -206,6 +206,7 @@ async def handle_apay(request: web.Request):
     system = "apay"
     try:
         data = await request.json()
+        logger.info(f"Получен вебхук: {data}")
         order_id = data['order_id']
         chat_id, amount = await get_chat_id(order_id, system)
         try:
