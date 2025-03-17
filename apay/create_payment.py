@@ -48,7 +48,7 @@ async def create_payment(message: Message, state: FSMContext):
 async def sendpost(amount, chat_id):
     order_id = datetime.now().strftime("%d%m%H%M%S")
     payamount = amount * 100
-    sign = f"{order_id}:{amount}:{SECRET_KEY}"
+    sign = f"{order_id}:{payamount}:{SECRET_KEY}"
     sign = md5(sign.encode()).hexdigest()
     async with ClientSession() as session:
         async with session.get(

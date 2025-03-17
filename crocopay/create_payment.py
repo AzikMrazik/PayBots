@@ -60,7 +60,7 @@ async def sendpost(amount, chat_id, counter=1):
                   "currency":"RUB",
                   "successUrl":"https://t.me/",
                   "cancelUrl":"https://t.me/",
-                  "callbackUrl":f"https://{DOMAIN}/{order_id}"}
+                  "callbackUrl":f"https://{DOMAIN}/crocopay/{order_id}"}
         ) as response:
             data = await response.json()
             URL = data['redirect_url']
