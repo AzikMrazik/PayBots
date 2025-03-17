@@ -208,14 +208,16 @@ async def handle_apay(request: web.Request):
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
         order_id = data['order_id']
+        status = data['status']
         chat_id, amount = await get_chat_id(order_id, system)
         try:
             try:
-                await bot.send_message(
-                    chat_id=chat_id,
-                    text=f"🅰️APay:\n✅Заказ №{order_id} на сумму {amount} успешно оплачен! {data}"
-                )
-                await add_paid_order(float(amount), chat_id, "apay")
+                if status == "approved":
+                    await bot.send_message(
+                        chat_id=chat_id,
+                        text=f"🅰️APay:\n✅Заказ №{order_id} на сумму {amount} успешно оплачен!"
+                    )
+                    await add_paid_order(float(amount), chat_id, "apay")
             except:
                 logger.info(f"Ошибка: {e}")
         except Exception as e:   
