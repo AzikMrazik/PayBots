@@ -20,9 +20,7 @@ import pandas as pd
 import aiosqlite
 import os
 from aiogram.types import FSInputFile
-from pytz import timezone
-
-KIEV_TZ = timezone('Europe/Kiev')
+from datetime import time as dt_time
 
 logging.basicConfig(
     level=logging.INFO,
@@ -412,70 +410,72 @@ async def handle_xls_command(message: Message):
             await message.answer("⚠️ Произошла ошибка при формировании отчета")
 
 @dp.message(Command("today"))
-async def handle_today_command(message: Message):
+async def handle_today(message: Message):
     if message.from_user.id not in ADMINS:
-        await message.answer("🚫 У вас нет доступа к этой команде")
+        await message.answer("У вас нет доступа к этому!")
         return
     
     try:
-        now = datetime.now(KIEV_TZ)
-        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+        now = datetime.now()
+        if now.time() < dt_time(6, 0):
+            start_date = now - timedelta(days=1)
+        else:
+            start_date = now
         
-        report = await generate_daily_report(start_date, end_date)
-        await message.answer(f"📊 Отчет за сегодня ({start_date.strftime('%d.%m.%Y')}):\n{report}")
+        start = start_date.replace(hour=6, minute=0, second=0, microsecond=0)
+        end = start + timedelta(hours=20)
         
-    except Exception as e:
-        logger.error(f"Ошибка команды /today: {e}")
-        await message.answer("⚠️ Ошибка при формировании отчета")
-
-@dp.message(Command("ago"))
-async def handle_ago_command(message: Message):
-    if message.from_user.id not in ADMINS:
-        await message.answer("🚫 У вас нет доступа к этой команде")
-        return
-    
-    try:
-        now = datetime.now(KIEV_TZ)
-        end_date = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
-        start_date = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        report = await generate_daily_report(start_date, end_date)
-        await message.answer(f"📊 Отчет за вчера ({start_date.strftime('%d.%m.%Y')}):\n{report}")
-        
-    except Exception as e:
-        logger.error(f"Ошибка команды /ago: {e}")
-        await message.answer("⚠️ Ошибка при формировании отчета")
-
-async def generate_daily_report(start_dt: datetime, end_dt: datetime):
-    try:
         async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
             cursor = await db.execute(
-                "SELECT chat_id, SUM(amount) as total "
-                "FROM paid_orders "
+                "SELECT chat_id, SUM(amount), COUNT(*) FROM paid_orders "
                 "WHERE date BETWEEN ? AND ? "
-                "GROUP BY chat_id "
-                "ORDER BY total DESC",
-                (start_dt.isoformat(), end_dt.isoformat()))
+                "GROUP BY chat_id",
+                (start.isoformat(), end.isoformat()))
             
             rows = await cursor.fetchall()
+            response = "📊 Отчет за сегодня:\n"
+            for chat_id, total, count in rows:
+                response += f"\n👤 Chat ID: {int(chat_id)}\n💳 Сумма: {int(total)}₽\n🧾 Чеков: {count}\n"
             
-        if not rows:
-            return "Нет данных за указанный период"
+            await message.answer(response)
             
-        report_lines = []
-        for chat_id, total in rows:
-            report_lines.append(
-                f"👤 Chat ID: {chat_id}\n"
-                f"💳 Сумма: {int(round(float(total)))}₽\n"
-                f"────────────────────"
-            )
-            
-        return "\n".join(report_lines)
-        
     except Exception as e:
-        logger.error(f"Ошибка генерации отчета: {e}")
-        raise
+        logger.error(f"Ошибка команды /today: {e}")
+        await message.answer("⚠️ Ошибка формирования отчета")
+
+@dp.message(Command("ago"))
+async def handle_ago(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("У вас нет доступа к этому!")
+        return
+    
+    try:
+        now = datetime.now() - timedelta(days=1)
+        if now.time() < dt_time(6, 0):
+            start_date = now - timedelta(days=1)
+        else:
+            start_date = now
+        
+        start = start_date.replace(hour=6, minute=0, second=0, microsecond=0)
+        end = start + timedelta(hours=20)
+        
+        async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
+            cursor = await db.execute(
+                "SELECT chat_id, SUM(amount), COUNT(*) FROM paid_orders "
+                "WHERE date BETWEEN ? AND ? "
+                "GROUP BY chat_id",
+                (start.isoformat(), end.isoformat()))
+            
+            rows = await cursor.fetchall()
+            response = "📊 Отчет за вчера:\n"
+            for chat_id, total, count in rows:
+                response += f"\n👤 Chat ID: {int(chat_id)}\n💳 Сумма: {int(total)}₽\n🧾 Чеков: {count}\n"
+            
+            await message.answer(response)
+            
+    except Exception as e:
+        logger.error(f"Ошибка команды /ago: {e}")
+        await message.answer("⚠️ Ошибка формирования отчета")
 
 async def create_paid_orders_table():
     async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
