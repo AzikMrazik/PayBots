@@ -33,6 +33,21 @@ bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
+COMMISSION_RATES = {
+    "epay": lambda x: 0.32 if x < 10000 else 0.25,
+    "corkpay": 0.30,
+    "apay": 0.10,
+    "crocopay": 0.15,
+    "cashinout": 0.10,
+    "p2p": 0.26
+}
+
+def calculate_net_amount(system: str, amount: float) -> float:
+    rate = COMMISSION_RATES.get(system)
+    if callable(rate):
+        return amount * (1 - rate(amount))
+    return amount * (1 - rate)
+
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
@@ -42,7 +57,6 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
     app.router.add_post('/p2p', handle_p2p)
-    app.router.add_post('/apay', handle_apay)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
@@ -197,34 +211,6 @@ async def handle_p2p(request: web.Request):
         except Exception as e:   
                 logger.info(f"Ошибка №2: {e}")
         return web.Response(text="OK", status=200)
-    except Exception as e:
-        logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text="OK", status=200)
-
-async def handle_apay(request: web.Request):
-    bot: Bot = request.app['bot']
-    system = "apay"
-    try:
-        data = await request.json()
-        logger.info(f"Получен вебхук: {data}")
-        order_id = data['order_id']
-        status = data['status']
-        chat_id, amount = await get_chat_id(order_id, system)
-        try:
-            try:
-                if status == "approved":
-                    await bot.send_message(
-                        chat_id=chat_id,
-                        text=f"🅰️APay:\n✅Заказ №{order_id} на сумму {amount} успешно оплачен!"
-                    )
-                    await add_paid_order(float(amount), chat_id, "apay")
-            except:
-                logger.info(f"Ошибка: {e}")
-        except Exception as e:   
-                logger.info(f"Ошибка: {e}")
-
-        return web.Response(text="OK", status=200)
-    
     except Exception as e:
         logger.error(f"Ошибка: {str(e)}")
         return web.Response(text="OK", status=200)
@@ -427,15 +413,36 @@ async def handle_today(message: Message):
         
         async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
             cursor = await db.execute(
-                "SELECT chat_id, SUM(amount), COUNT(*) FROM paid_orders "
-                "WHERE date BETWEEN ? AND ? "
-                "GROUP BY chat_id",
+                "SELECT chat_id, amount, system FROM paid_orders "
+                "WHERE date BETWEEN ? AND ?",
                 (start.isoformat(), end.isoformat()))
             
             rows = await cursor.fetchall()
-            response = "📊 Отчет за сегодня:\n"
-            for chat_id, total, count in rows:
-                response += f"\n👤 Chat ID: {int(chat_id)}\n💳 Сумма: {int(total)}₽\n🧾 Чеков: {count}\n"
+            
+            # Группируем и считаем
+            report = {}
+            for chat_id, amount, system in rows:
+                net_amount = calculate_net_amount(system, float(amount))
+                
+                if chat_id not in report:
+                    report[chat_id] = {
+                        'total': 0.0,
+                        'count': 0,
+                        'net_total': 0.0
+                    }
+                
+                report[chat_id]['total'] += amount
+                report[chat_id]['count'] += 1
+                report[chat_id]['net_total'] += net_amount
+            
+            response = "📊 Отчет за сегодня (чистые суммы):\n"
+            for chat_id, data in report.items():
+                response += (
+                    f"\n👤 Chat ID: {chat_id}\n"
+                    f"💳 Общая сумма: {int(data['total'])}₽\n"
+                    f"💵 Чистая сумма: {int(data['net_total'])}₽\n"
+                    f"🧾 Чеков: {data['count']}\n"
+                )
             
             await message.answer(response)
             
@@ -461,15 +468,35 @@ async def handle_ago(message: Message):
         
         async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
             cursor = await db.execute(
-                "SELECT chat_id, SUM(amount), COUNT(*) FROM paid_orders "
-                "WHERE date BETWEEN ? AND ? "
-                "GROUP BY chat_id",
+                "SELECT chat_id, amount, system FROM paid_orders "
+                "WHERE date BETWEEN ? AND ?",
                 (start.isoformat(), end.isoformat()))
             
             rows = await cursor.fetchall()
-            response = "📊 Отчет за вчера:\n"
-            for chat_id, total, count in rows:
-                response += f"\n👤 Chat ID: {int(chat_id)}\n💳 Сумма: {int(total)}₽\n🧾 Чеков: {count}\n"
+            
+            report = {}
+            for chat_id, amount, system in rows:
+                net_amount = calculate_net_amount(system, float(amount))
+                
+                if chat_id not in report:
+                    report[chat_id] = {
+                        'total': 0.0,
+                        'count': 0,
+                        'net_total': 0.0
+                    }
+                
+                report[chat_id]['total'] += amount
+                report[chat_id]['count'] += 1
+                report[chat_id]['net_total'] += net_amount
+            
+            response = "📊 Отчет за вчера (чистые суммы):\n"
+            for chat_id, data in report.items():
+                response += (
+                    f"\n👤 Chat ID: {chat_id}\n"
+                    f"💳 Общая сумма: {int(data['total'])}₽\n"
+                    f"💵 Чистая сумма: {int(data['net_total'])}₽\n"
+                    f"🧾 Чеков: {data['count']}\n"
+                )
             
             await message.answer(response)
             
