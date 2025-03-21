@@ -23,16 +23,10 @@ async def cash_command(message: Message):
     else:
         bot_msg = await message.reply("⌛️Ожидаем реквизиты...")
         checkout = await sendpost(amount, message.chat.id, 1)
-        length = len(checkout) - 1
-        counter = 1
-        for sms in range(length):
-            if length == 0:
-                await message.reply(checkout[sms])
-            else:
-                if counter == 1:
-                    await message.reply(checkout[sms])
-                    counter += 1
-                else:
-                    await message.answer(checkout[sms])
+        if checkout == True:
+            await message.reply("⛔Нет реквизитов!")
+        else:
+            await message.reply(checkout[0])
+            await message.answer(checkout[1])
         await bot_msg.delete()
         
