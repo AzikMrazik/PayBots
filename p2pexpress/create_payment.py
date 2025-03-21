@@ -44,15 +44,14 @@ async def create_payment(message: Message,  state: FSMContext):
     else:
         bot_msg = await message.reply("⌛️Ожидаем реквизиты...")
         checkout = await sendpost(amount, message.from_user.id, 1)
-        length = len(checkout) - 1
         await bot_msg.delete()
-        counter = 1
-        for sms in range(length):
-            if counter == 1:
-                await message.reply(checkout[sms])
-                counter += 1
-            else:
-                await message.answer(checkout[sms])
+        if checkout == True:
+            await message.reply("⛔Нет реквизитов!")
+        else:
+            await message.reply(checkout[0])
+            await message.answer(checkout[1])
+        await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
+        await state.set_state(PaymentStates.WAITING_AMOUNT)
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
 
@@ -129,7 +128,7 @@ async def sendpost(amount, chat_id, counter):
                             await asyncio.sleep(3)
                             return await sendpost(amount, chat_id, counter)
                         else:
-                            return ("⛔Нет реквизитов!") 
+                            return True
                 else:
                         print("again no",flush=True)
                         print(counter)
@@ -138,6 +137,6 @@ async def sendpost(amount, chat_id, counter):
                             await asyncio.sleep(3)
                             return await sendpost(amount, chat_id, counter)
                         else:
-                            return ("⛔Нет реквизитов!")                   
+                            return True               
 
 
