@@ -51,6 +51,7 @@ async def check_command(message: Message):
     except (IndexError, ValueError) as e:
         await message.answer("Неверный формат команды. Используйте: /check_1000")
         return
+    await message.answer(f"❓ID заказа: <code>{payment_id}</code>")
     try:
         payment_id = await get_one_order(ordercheck_id)
         if payment_id == None:
@@ -65,19 +66,25 @@ async def check_command(message: Message):
                     try:
                         data = await response.json()
                         print(data, flush=True)
-                        order_id = data['client_order_id']
-                        amount = data['amount']
-                        paid_amount = data['paid_amount']
-                        status = data['status']
-                        if status == "payment_success":
-                            await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
-                        elif status == "payment_canceled":
-                            await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
-                        elif status == "payment_wait":
-                            await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
-                        else:
-                            await message.answer(f"🔔Заказ №{order_id} на сумму {amount}, оплачен на {paid_amount}, в статусе {status}")
-                            await message.answer(f"❓ID заказа: <code>{payment_id}</code>")
+                        try:
+                            error = data['error']
+                            if error == "Not Found":
+                                await message.answer(f"⭕Статус не найден")
+                            else:
+                                await message.answer(f"⛔Ошибка")
+                        except:
+                            order_id = data['client_order_id']
+                            amount = data['amount']
+                            paid_amount = data['paid_amount']
+                            status = data['status']
+                            if status == "payment_success":
+                                await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                            elif status == "payment_canceled":
+                                await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                            elif status == "payment_wait":
+                                await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                            else:
+                                await message.answer(f"🔔Заказ №{order_id} на сумму {amount}, оплачен на {paid_amount}, в статусе {status}")
                     except Exception as e:
                         await message.answer(f"⚰️P2P отправил труп! {e}")
     except Exception as e:
