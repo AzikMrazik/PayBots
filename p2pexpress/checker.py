@@ -62,20 +62,23 @@ async def check_command(message: Message):
                     headers={'authorization': 'Bearer ' + API_TOKEN},
                     params={"id": payment_id}
                 ) as response:
-                    data = await response.json()
-                    order_id = data['client_order_id']
-                    amount = data['amount']
-                    paid_amount = data['paid_amount']
-                    status = data['status']
-                    if status == "payment_success":
-                        await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
-                    elif status == "payment_canceled":
-                        await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
-                    elif status == "payment_wait":
-                        await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
-                    else:
-                        await message.answer(f"🔔Заказ №{order_id} на сумму {amount}, оплачен на {paid_amount}, в статусе {status}")
-                        await message.answer(f"❓ID заказа: <code>{payment_id}</code>")
+                    try:
+                        data = await response.json()
+                        order_id = data['client_order_id']
+                        amount = data['amount']
+                        paid_amount = data['paid_amount']
+                        status = data['status']
+                        if status == "payment_success":
+                            await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                        elif status == "payment_canceled":
+                            await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                        elif status == "payment_wait":
+                            await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                        else:
+                            await message.answer(f"🔔Заказ №{order_id} на сумму {amount}, оплачен на {paid_amount}, в статусе {status}")
+                            await message.answer(f"❓ID заказа: <code>{payment_id}</code>")
+                    except Exception as e:
+                        await message.answer(f"⚰️P2P отправил труп! {e}")
     except Exception as e:
             await message.answer(f"⚰️Бот умер! because {e}")
 

@@ -91,7 +91,10 @@ async def sendpost(amount, chat_id, counter):
                     bank = data['bank']
                     card = data['credentials']
                     card = re.sub(r'\s+', '', card)
-                    card_name = data['account_owner_name']
+                    try:
+                        card_name = data['account_owner_name']
+                    except:
+                        card_name = "Нет"
                     precise_amount = data['need_to_pay']
                     try:
                         comment = data['comment']
