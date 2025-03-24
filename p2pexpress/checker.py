@@ -64,6 +64,7 @@ async def check_command(message: Message):
                 ) as response:
                     try:
                         data = await response.json()
+                        print(data, flush=True)
                         order_id = data['client_order_id']
                         amount = data['amount']
                         paid_amount = data['paid_amount']
