@@ -50,10 +50,10 @@ async def check_command(message: Message):
         ordercheck_id = int(message.text.split("_")[1])
     except (IndexError, ValueError) as e:
         await message.answer("Неверный формат команды. Используйте: /check_1000")
-        return
-    await message.answer(f"❓ID заказа: <code>{payment_id}</code>")
+        return 
     try:
         payment_id = await get_one_order(ordercheck_id)
+        await message.answer(f"❓ID заказа: <code>{payment_id}</code>")
         if payment_id == None:
             await message.answer("⭕Заказ не найден!")
         else:
