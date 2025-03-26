@@ -105,8 +105,8 @@ async def sendpost(amount, chat_id, msg, counter):
                                 await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
                                 await asyncio.sleep(3)
                                 return await sendpost(amount, chat_id, msg, counter)
-                        else:
-                            return ("⛔Нет реквизитов!",)
+                            else:
+                                return ("⛔Нет реквизитов!",)
                         try:
                             bank_name = await check_bank(bin)
                         except:
