@@ -57,8 +57,7 @@ async def check_name(bin):
             (bin,)
         )
         result = await cursor.fetchone()
-        resultend = result[0]
-        return resultend
+        return result[0]
 
 async def sendpost(amount, chat_id, msg, counter):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
@@ -76,7 +75,7 @@ async def sendpost(amount, chat_id, msg, counter):
                 data = await response.json()
             except:
                 data = await response.text()
-                return (f"⚰️", f"E-Pay отправил труп!", {data}, "Отправьте сообщение выше кодеру!")
+                return (f"⚰️", f"E-Pay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
             else:
                 order_status = data['status']
                 print(data, flush=True)
@@ -95,23 +94,28 @@ async def sendpost(amount, chat_id, msg, counter):
                         bank_name = await check_name(bin)
                         bank_type = "карты"
                         if bin[:3] != "220":
-                            await asyncio.sleep(3)
-                            if counter < 6:
+                            if counter < 5:
                                 counter += 1
                                 await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
+                                await asyncio.sleep(3)
                                 return await sendpost(amount, chat_id, msg, counter)
                             else:
-                                return ("⛔Нет реквизитов",)
+                                return ("⛔Нет реквизитов!",)
                     else:
                         bank_type = "телефона"
                     await addorder(order_id, chat_id, precise_amount)
-                    return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
+                    return (f"📄 Создан заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
                 else:
-                        if counter < 6:
+                    desc = data['error_desc']
+                    if desc == "no_requisites":
+                        if counter < 5:
                                 counter += 1
                                 await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
+                                await asyncio.sleep(3)
                                 return await sendpost(amount, chat_id, msg, counter)
                         else:
-                            return ("⛔Нет реквизитов",)                
+                            return ("⛔Нет реквизитов!",)
+                    else:
+                        return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")                
 
 

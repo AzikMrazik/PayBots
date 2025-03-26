@@ -21,12 +21,9 @@ async def cash_command(message: Message):
         await message.answer("Неверный формат команды. Используйте: /cork_1000")
         return
     else:
-        bot_msg = await message.reply("⌛️Ожидаем реквизиты...")
-        checkout = await sendpost(amount, message.chat.id, 1)
-        await bot_msg.delete()
-        if checkout == True:
-            await message.reply("⛔Нет реквизитов!")
-        else:
-            await message.reply(checkout[0])
-            await message.answer(checkout[1])
+        msg = await message.reply("⌛️Ожидаем реквизиты...")
+        order = await sendpost(amount, message.from_user.id, msg, 1)
+        await msg.delete()
+        for i in order:
+            await message.answer(i)
         

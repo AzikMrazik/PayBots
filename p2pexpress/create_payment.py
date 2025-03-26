@@ -42,14 +42,11 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Отправьте новое значение:", reply_markup=back_kb())
         return
     else:
-        bot_msg = await message.reply("⌛️Ожидаем реквизиты...")
-        checkout = await sendpost(amount, message.from_user.id, 1)
-        await bot_msg.delete()
-        if checkout == True:
-            await message.reply("⛔Нет реквизитов!")
-        else:
-            await message.reply(checkout[0])
-            await message.answer(checkout[1])
+        msg = await message.reply("⌛️Ожидаем реквизиты...")
+        order = await sendpost(amount, message.from_user.id, msg, 1)
+        await msg.delete()
+        for i in order:
+            await message.answer(i)
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
@@ -58,13 +55,13 @@ async def create_payment(message: Message,  state: FSMContext):
 async def check_bank(bin):
     async with connect("bins.db") as db:
         cursor = await db.execute(
-            "SELECT bank_name, note FROM bins WHERE bin = ?", 
+            "SELECT bank_name FROM bins WHERE bin = ?", 
             (bin,)
         )
         result = await cursor.fetchone()
-        return result
+        return result[0]
 
-async def sendpost(amount, chat_id, counter):
+async def sendpost(amount, chat_id, msg, counter):
     client_order_id = datetime.now().strftime("%d%m%H%M%S")
     async with ClientSession() as session:
         async with session.post(
@@ -80,66 +77,63 @@ async def sendpost(amount, chat_id, counter):
             try:
                 data = await response.json()
                 print(data, flush=True)
-                status = data['status']
             except:
-                return (f"⚰️", f"P2PExpress отправил труп!")
+                data = await response.text()    
+                return ("⚰️P2PExpress отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
             else:
+                status = data['status']
                 if status != "error":
                     data = data['data']
                     payment_id = data['payment_id']
                     type = data['type']
-                    bank = data['bank']
+                    bank_name = data['bank']
                     card = data['credentials']
                     card = re.sub(r'\s+', '', card)
                     try:
                         card_name = data['account_owner_name']
                     except:
-                        card_name = "Нет"
+                        card_name = None
                     precise_amount = data['need_to_pay']
-                    try:
-                        comment = data['comment']
-                    except:
-                        comment = None
                     if type == "sbp":
                         bank_type = "телефона"
                     elif type == "card":
                         bank_type = "карты"
+                        bin = card[:6]
+                        if bin[:3] != "220":
+                            if counter < 5:
+                                counter += 1
+                                await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
+                                await asyncio.sleep(3)
+                                return await sendpost(amount, chat_id, msg, counter)
+                        else:
+                            return ("⛔Нет реквизитов!",)
+                        try:
+                            bank_name = await check_bank(bin)
+                        except:
+                            pass
                     else:
                         bank_type = "счёта"
-                    if type == "card":
-                        bin = card[:6]
-                        try:
-                            bank_name, bank_status = await check_bank(bin)
-                        except:
-                            bank_status = "Good"
+                    await addorder(client_order_id, chat_id, precise_amount, payment_id)
+                    if card_name:
+                        return (f"📄Создана заявка: №<code>{client_order_id}</code>\n\n💳Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.",
+                                f"🙍‍♂️Получатель: {card_name}\n🏦Банк: {bank_name}")
+                    elif card_name == "none":
+                        return (f"📄Создана заявка: №<code>{client_order_id}</code>\n\n💳Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.",
+                                f"🏦Банк: {bank_name}")
                     else:
-                        bank_status = "N/A"
-                    if bank_status != "RIP":
-                        await addorder(client_order_id, chat_id, precise_amount, payment_id)
-                        if comment == None:
-                            return (f"📄Создан заказ: №<code>{client_order_id}</code>\n\n💳Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.",
-                                    F"🙍‍♂️Получатель: {card_name}\n🏦Банк: {bank}")
-                        else:
-                            return (f"📄Создан заказ: №<code>{client_order_id}</code>\n\n💳Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.",
-                                    f"🙍‍♂️Получатель: {card_name}\n🏦Банк: {bank}",
-                                    f"🗨️Комментарий: {comment}")
-                    else:
-                        print("again RIP",flush=True)
-                        await asyncio.sleep(3)
-                        if counter < 5:
-                            counter += 1
-                            await asyncio.sleep(3)
-                            return await sendpost(amount, chat_id, counter)
-                        else:
-                            return True
+                        return (f"📄Создана заявка: №<code>{client_order_id}</code>\n\n💳Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.",
+                                f"🏦Банк: {bank_name}")
                 else:
-                        print("again no",flush=True)
-                        print(counter)
+                    desc = data['error']
+                    if desc == "NO_PAYMENTS_AVAILABLE":
                         if counter < 5:
-                            counter += 1
-                            await asyncio.sleep(3)
-                            return await sendpost(amount, chat_id, counter)
+                                counter += 1
+                                await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
+                                await asyncio.sleep(3)
+                                return await sendpost(amount, chat_id, msg, counter)
                         else:
-                            return True               
+                            return ("⛔Нет реквизитов!",)
+                    else:
+                        return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")              
 
 
