@@ -22,7 +22,7 @@ async def cash_command(message: Message):
         return
     else:
         msg = await message.reply("⌛️Ожидаем реквизиты...")
-        order = await sendpost(amount, message.from_user.id, msg, 1)
+        order = await sendpost(amount, message.chat.id, msg, 1)
         await msg.delete()
         for i in order:
             await message.answer(i)
