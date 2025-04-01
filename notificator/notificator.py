@@ -195,7 +195,7 @@ async def auto_cleanup():
                 cutoff = (datetime.now() - timedelta(days=10)).isoformat()
                 async with aiosqlite.connect(db_path) as db:
                     await db.execute(
-                        f"DELETE FROM orders_{system} WHERE created_at < ?",
+                        f"DELETE FROM orders_{system} WHERE timestamp < ?",
                         (cutoff,))
                     await db.commit()
             
