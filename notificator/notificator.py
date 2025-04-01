@@ -163,6 +163,7 @@ async def handle_crocopay(request: web.Request):
     system = "crocopay"
     try:
         data = await request.json()
+        logger.info(f"Получен вебхук: {data}")
         order_id = int(request.match_info['order_id'])
         amount = data['total']
         chat_id = await get_chat_id(order_id, system)
@@ -174,14 +175,14 @@ async def handle_crocopay(request: web.Request):
                 )
                 await add_paid_order(float(amount), chat_id, "crocopay")
             except:
-                logger.info(f"Ошибка: {e}")
+                logger.info(f"Ошибка1: {e}")
         except Exception as e:   
-                logger.info(f"Ошибка: {e}")
+                logger.info(f"Ошибка2: {e}")
 
         return web.Response(text="OK", status=200)
     
     except Exception as e:
-        logger.error(f"Ошибка: {str(e)}")
+        logger.error(f"Ошибка3: {str(e)}")
         return web.Response(text="OK", status=200)
 
 async def handle_p2p(request: web.Request):
