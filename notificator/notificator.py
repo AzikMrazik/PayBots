@@ -53,10 +53,8 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app['bot'] = bot
     app.router.add_post('/corkpay', handle_corkpay)
     app.router.add_route('*', '/', handle_root)
-    app.router.add_post('/cashinout', handle_cashinout)
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
-    app.router.add_post('/p2p', handle_p2p)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
@@ -66,36 +64,6 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
 
 async def handle_root(request):
     return web.Response(text="Forbidden", status=403)
-
-async def handle_cashinout(request: web.Request):
-    bot: Bot = request.app['bot']
-    try:
-        data = await request.json()
-        logger.info(f"Получен вебхук: {data}")
-        if 'externalText' not in data or not data['externalText']:
-            return web.Response(text="Error: externalText is missing", status=400)
-        external_text = data['externalText'].split(',')
-        if len(external_text) != 2:
-            return web.Response(text="Error: invalid externalText format", status=400)
-        order_id, chat_id = external_text
-        chat_id = int(chat_id)  # Преобразуем в число
-        try:
-            if data['type'] == 'payment':
-                amount = data['amount']
-                try:
-                    await bot.send_message(
-                        chat_id=chat_id,
-                        text=f"🔵CASHINOUT:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
-                    )
-                    await add_paid_order(float(amount), chat_id, "cashinout")
-                except:
-                    logger.info(f"Ошибка: {e}")
-        except Exception as e:   
-                logger.info(f"Ошибка: {e}")
-        return web.Response(text="OK", status=200)
-    except Exception as e:
-        logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text="OK", status=200)
 
 async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
@@ -185,37 +153,6 @@ async def handle_crocopay(request: web.Request):
         logger.error(f"Ошибка3: {str(e)}")
         return web.Response(text="OK", status=200)
 
-async def handle_p2p(request: web.Request):
-    bot: Bot = request.app['bot']
-    system = "p2p"
-    try:
-        data = await request.json()
-        logger.info(f"Получен вебхук: {data}")
-        order_id = data['client_order_id']
-        amount = data['amount']
-        status = data['status']
-        chat_id = await get_chat_id(order_id, system)
-        if chat_id != None:
-                chat_id = int(chat_id)
-        else:
-                return web.Response(text="OK")
-        try:
-            try:
-                if status == "PAID":
-                    await bot.send_message(
-                        chat_id=chat_id,
-                        text=f"⚪P2P Express:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!"
-                    )
-                    await add_paid_order(float(amount), chat_id, "p2p")
-            except Exception as e:
-                logger.info(f"Ошибка №1: {e}")
-        except Exception as e:   
-                logger.info(f"Ошибка №2: {e}")
-        return web.Response(text="OK", status=200)
-    except Exception as e:
-        logger.error(f"Ошибка: {str(e)}")
-        return web.Response(text="OK", status=200)
-
 async def handle_all_other(request):
     return web.Response(text="Forbidden", status=403)
 
@@ -236,14 +173,6 @@ async def get_chat_id(order_id, system):
             )
             result = await cursor.fetchone()
             return result
-    elif system == "p2p":
-        async with connect("/root/paybots/p2pexpress/orders_p2p.db") as db:
-            cursor = await db.execute(
-                "SELECT chat_id, amount FROM orders_p2p WHERE order_id = ?", 
-                (order_id,)
-            )
-            result = await cursor.fetchone()
-            return result[0]
     elif system == "crocopay":
         async with connect("/root/paybots/crocopay/orders_crocopay.db") as db:
             cursor = await db.execute(
@@ -251,23 +180,14 @@ async def get_chat_id(order_id, system):
                 (order_id,)
             )
             result = await cursor.fetchone()
-            return result[0]
-    elif system == "apay":
-        async with connect("/root/paybots/apay/orders_apay.db") as db:
-            cursor = await db.execute(
-                "SELECT chat_id, amount FROM orders_apay WHERE order_id = ?", 
-                (order_id,)
-            )
-            result = await cursor.fetchone()
-            return result    
+            return result[0] 
 
 async def auto_cleanup():
     while True:
         try:
             systems = {
                 "corkpay": "/root/paybots/corkpay/orders_corkpay.db",
-                "epay": "/root/paybots/epay/orders_epay.db", 
-                "p2p": "/root/paybots/p2pexpress/orders_p2p.db",
+                "epay": "/root/paybots/epay/orders_epay.db",
                 "crocopay": "/root/paybots/crocopay/orders_crocopay.db",
             }
             
