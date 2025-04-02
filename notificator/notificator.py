@@ -132,6 +132,12 @@ async def handle_crocopay(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
+        try:
+            QR = data['qr_sbp_url']
+            if QR:
+                return (f"Вам выпал QR!", f"{QR}")
+        except:
+            QR = None
         order_id = request.match_info['order_id']
         amount = data['total']
         logger.info(f"{order_id}")
