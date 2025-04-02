@@ -137,7 +137,11 @@ async def handle_crocopay(request: web.Request):
         except:
             logger.info(f"Beda")
             return web.Response(text="OK", status=200)
-        amount = data['total']
+        try:
+            amount = data['total']
+        except:
+            logger.info(f"Beda")
+            return web.Response(text="OK", status=200)
         chat_id = await get_chat_id(order_id, system)
         try:
             try:
