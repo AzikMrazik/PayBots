@@ -132,17 +132,11 @@ async def handle_crocopay(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
-        try:
-            order_id = int(request.match_info['order_id'])
-        except:
-            logger.info(f"Beda")
-            return web.Response(text="OK", status=200)
-        try:
-            amount = data['total']
-        except:
-            logger.info(f"Beda")
-            return web.Response(text="OK", status=200)
+        order_id = int(request.match_info['order_id'])
+        amount = data['total']
+        logger.info(f"{order_id}")
         chat_id = await get_chat_id(order_id, system)
+        logger.info(f"{chat_id}")
         try:
             try:
                 await bot.send_message(
@@ -172,7 +166,6 @@ async def get_chat_id(order_id, system):
                 (order_id,)
             )
             result = await cursor.fetchone()
-            return result
     elif system == "epay":
         async with connect("/root/paybots/epay/orders_epay.db") as db:
             cursor = await db.execute(
@@ -180,7 +173,6 @@ async def get_chat_id(order_id, system):
                 (order_id,)
             )
             result = await cursor.fetchone()
-            return result
     elif system == "crocopay":
         async with connect("/root/paybots/crocopay/orders_crocopay.db") as db:
             cursor = await db.execute(
@@ -188,7 +180,9 @@ async def get_chat_id(order_id, system):
                 (order_id,)
             )
             result = await cursor.fetchone()
-            return result[0] 
+            result = result[0]
+    logger.info(f"{result}")
+    return result
 
 async def auto_cleanup():
     while True:
