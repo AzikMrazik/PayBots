@@ -132,7 +132,11 @@ async def handle_crocopay(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
-        order_id = int(request.match_info['order_id'])
+        try:
+            order_id = int(request.match_info['order_id'])
+        except:
+            logger.info(f"Beda")
+            return web.Response(text="OK", status=200)
         amount = data['total']
         chat_id = await get_chat_id(order_id, system)
         try:
@@ -143,7 +147,7 @@ async def handle_crocopay(request: web.Request):
                 )
                 await add_paid_order(float(amount), chat_id, "crocopay")
             except:
-                logger.info(f"Ошибка1: {e}")
+                logger.info(f"Ошибка1: {e}")    
         except Exception as e:   
                 logger.info(f"Ошибка2: {e}")
 
