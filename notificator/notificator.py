@@ -132,7 +132,7 @@ async def handle_crocopay(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук: {data}")
-        order_id = int(request.match_info['order_id'])
+        order_id = request.match_info['order_id']
         amount = data['total']
         logger.info(f"{order_id}")
         chat_id = await get_chat_id(order_id, system)
