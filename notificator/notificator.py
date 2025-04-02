@@ -184,7 +184,7 @@ async def get_chat_id(order_id, system):
     elif system == "crocopay":
         async with connect("/root/paybots/crocopay/orders_crocopay.db") as db:
             cursor = await db.execute(
-                "SELECT chat_id, amount FROM orders_crocopay WHERE order_id = ?", 
+                "SELECT chat_id FROM orders_crocopay WHERE order_id = ?", 
                 (order_id,)
             )
             result = await cursor.fetchone()
