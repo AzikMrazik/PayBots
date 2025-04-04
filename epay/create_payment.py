@@ -84,8 +84,8 @@ async def sendpost(amount, chat_id, msg, counter):
                     card = data['card_number']
                     card = re.sub(r'\s+', '', card)
                     order_id = data['order_id']
-                    bank_name = data['bank']
-                    if card[:1] == "+" or card[:1] == "8" or card[:1] == "7":
+                    num_prefixes = ["+", "7", "8", "9", "3"]
+                    if card[:1] in num_prefixes:
                         sbp = True
                     else:
                         sbp = False
@@ -102,8 +102,16 @@ async def sendpost(amount, chat_id, msg, counter):
                             else:
                                 return ("⛔Нет реквизитов!",)
                     else:
+                        country = data['countryName']
+                        bank_name = data['bank']
+                        if country == None or country == "null" or country == "none":
+                            country == "По номеру"
+                        if bank_name == None or bank_name == "null" or bank_name == "none":
+                            bank_name == "Любой"
                         bank_type = "телефона"
                     await addorder(order_id, chat_id, precise_amount)
+                    if sbp:
+                        return (f"📄 Создан заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
                     return (f"📄 Создан заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
                 else:
                     desc = data['error_desc']
