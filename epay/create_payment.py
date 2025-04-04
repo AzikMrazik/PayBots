@@ -85,7 +85,7 @@ async def sendpost(amount, chat_id, msg, counter):
                     card = re.sub(r'\s+', '', card)
                     order_id = data['order_id']
                     try:
-                        QR = data{'qr_sbp_url'}
+                        QR = data['qr_sbp_url']
                         if QR:
                             return (f"Ваша ссылка:", f"{QR}")
                     except:

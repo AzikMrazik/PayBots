@@ -69,7 +69,7 @@ async def get_domain():
 
 async def sendpost(amount, chat_id, msg, counter):
     domain = await get_domain()
-    order_id = datetime.now().strftime("%d%m%H%M")
+    order_id = datetime.now().strftime("%d%m%H%M%S")
     async with ClientSession() as session:
         async with session.post(
             f"https://{domain}/h2h/p2p",
