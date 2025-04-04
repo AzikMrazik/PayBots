@@ -87,7 +87,7 @@ async def sendpost(amount, chat_id, msg, counter):
                     try:
                         QR = data['qr_sbp_url']
                         if QR:
-                            return (f"Ваша ссылка:", f"{QR}")
+                            return (f"🔗Ваша ссылка:", f"{QR}")
                     except:
                         pass
                     num_prefixes = ["+", "7", "8", "9", "3"]
@@ -117,9 +117,9 @@ async def sendpost(amount, chat_id, msg, counter):
                         bank_type = "телефона"
                     await addorder(order_id, chat_id, precise_amount)
                     if sbp:
-                        return (f"📄 Создан заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}\n🏳️Страна: {country}")
+                        return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}\n🏳️Страна: {country}")
                     else:
-                        return (f"📄 Создан заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
+                        return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}")
                 else:
                     desc = data['error_desc']
                     if desc == "no_requisites":

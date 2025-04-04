@@ -105,7 +105,7 @@ async def sendpost(amount, chat_id, msg, counter):
                             return ("⛔Нет реквизитов!",)
                     bank_name = await check_name(bin)
                     await addorder(sign, chat_id, amount, order_id)
-                    return (f"📄 Создан заказ: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 20 мин.", f"🏦Банк: {bank_name}")
+                    return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 20 мин.", f"🏦Банк: {bank_name}")
                 else:
                     desc = data['reason']
                     if desc:
