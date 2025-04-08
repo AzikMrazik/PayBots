@@ -9,6 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from config import BOT_TOKEN, DOMAIN, REPORT_CHAT_ID, ADMINS
 from urllib.parse import parse_qs
+from aiogram.webhook.aiohttp_server import setup_application
 from datetime import datetime, timedelta
 import pandas as pd
 import aiosqlite
