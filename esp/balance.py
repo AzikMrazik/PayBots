@@ -17,8 +17,9 @@ async def balance_menu(callback_query: CallbackQuery, bot: Bot):
     await bot.answer_callback_query(callback_query.id)
     if callback_query.from_user.id not in ADMINS:
         await callback_query.message.answer("У вас нет доступа к этому разделу!", reply_markup=menu_kb())
-    balance = await check_balance()
-    await callback_query.message.answer(f"{balance}", reply_markup=menu_kb())
+    else:
+        balance = await check_balance()
+        await callback_query.message.answer(f"{balance}", reply_markup=menu_kb())
 
 async def check_balance():
     async with ClientSession() as session:
