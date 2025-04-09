@@ -132,7 +132,8 @@ async def get_chat_id(order_id, system):
         return None, None
 
     async with aiosqlite.connect(db_path) as db:
-        query = "SELECT chat_id, amount FROM orders_{system} WHERE order_id = ?"
+        # Fix: Add f-string prefix to properly format the table name
+        query = f"SELECT chat_id, amount FROM orders_{system} WHERE order_id = ?"
         cursor = await db.execute(query, (order_id,))
         result = await cursor.fetchone()
 
