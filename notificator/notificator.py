@@ -63,12 +63,15 @@ async def process_webhook(request: web.Request, system: str, message_template: s
             order_id = data['id']
             amount = data['amount']
             status = data['status']
-            if status != "SUCCESS":
+            if status == "SUCCESS":
+                chat_id = request.match_info.get('chat_id')
+                await bot.send_message(
+                    chat_id=int(chat_id),
+                    text=message_template.format(order_id=order_id, amount=amount)
+                )
+                await add_paid_order(float(amount), int(chat_id), system)
                 return web.Response(text="OK", status=200)
             else:
-                await bot.send_message(
-                chat_id=int(chat_id),
-                text=message_template.format(order_id=order_id, amount=amount))
                 return web.Response(text="OK")
 
         order_id = data.get('transaction_id') or data.get('merchant_order') or request.match_info.get('order_id')
@@ -76,7 +79,7 @@ async def process_webhook(request: web.Request, system: str, message_template: s
 
         chat_id, amount = await get_chat_id(order_id, system)
         if chat_id is None:
-            
+            return web.Response(text="OK")
 
         await bot.send_message(
             chat_id=int(chat_id),
