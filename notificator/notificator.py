@@ -31,7 +31,7 @@ dp = Dispatcher(storage=storage)
 COMMISSION_RATES = {
     "epay": 0.35,
     "corkpay": 0.30,
-    "apay": 0.10,
+    "esp": 0.30,
     "crocopay": 0.15,
 }
 
@@ -58,12 +58,25 @@ async def process_webhook(request: web.Request, system: str, message_template: s
             parsed_data = parse_qs(cleaned_text)
             data = {k: v[0] for k, v in parsed_data.items()}
 
+        elif system == "esp":
+            data = data['data']
+            order_id = data['id']
+            amount = data['amount']
+            status = data['status']
+            if status != "SUCCESS":
+                return web.Response(text="OK", status=200)
+            else:
+                await bot.send_message(
+                chat_id=int(chat_id),
+                text=message_template.format(order_id=order_id, amount=amount))
+                return web.Response(text="OK")
+
         order_id = data.get('transaction_id') or data.get('merchant_order') or request.match_info.get('order_id')
         amount = data.get('total') or data.get('amount')
 
         chat_id, amount = await get_chat_id(order_id, system)
         if chat_id is None:
-            return web.Response(text="OK")
+            
 
         await bot.send_message(
             chat_id=int(chat_id),
@@ -85,6 +98,9 @@ async def handle_epay(request: web.Request):
 async def handle_crocopay(request: web.Request):
     return await process_webhook(request, "crocopay", "🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
 
+async def handle_esp(request: web.Request):
+    return await process_webhook(request, "esp", "🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
@@ -92,6 +108,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_route('*', '/', handle_root)
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
+    app.router.add_post('/espay/{chat_id}', handle_esp)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
