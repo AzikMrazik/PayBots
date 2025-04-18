@@ -57,7 +57,10 @@ async def check_name(bin):
             (bin,)
         )
         result = await cursor.fetchone()
-        return result[0]
+        if result[0]:
+            return result[0]
+        else:
+            return "Неизвестный банк"
 
 async def sendpost(amount, chat_id, msg, counter):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
