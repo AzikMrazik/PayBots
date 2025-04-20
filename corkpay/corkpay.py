@@ -9,7 +9,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
 import create_payment, group_payment, checker
-from config import BOT_TOKEN, ALLOWED_GROUPS
+from config import BOT_TOKEN, ALLOWED_GROUPS, ADMINS
 from checker import checklist
 
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +33,7 @@ async def handle_main_menu_callback(callback_query: CallbackQuery, state: FSMCon
 
 @dp.message(Command("start"))
 async def start_command(message: Message, state: FSMContext):
-    if message.from_user.id not in ALLOWED_GROUPS:
+    if message.from_user.id not in ADMINS:
         await message.answer("У вас нет доступа к этому!")
         return
     await state.clear()
@@ -42,7 +42,7 @@ async def start_command(message: Message, state: FSMContext):
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
-    if message.from_user.id not in ALLOWED_GROUPS:
+    if message.from_user.id not in ADMINS:
         await message.answer("У вас нет доступа к этому!")
         return
     msg = await message.answer("🟣CorkPay на связи✅")
