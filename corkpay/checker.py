@@ -81,13 +81,13 @@ async def check_command(message: Message):
                     status = data.get('status')
                     print(data, flush=True)
                     if status == "success":
-                        await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount} оплачен!")
+                        await message.answer(f"✅Заказ №{ordercheck_id} на сумму {amount}₽ оплачен!")
                     elif status == "fail":
-                        await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount} отменен!")
+                        await message.answer(f"⛔Заказ №{ordercheck_id} на сумму {amount}₽ отменен!")
                     elif status == "wait":
-                        await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount} ожидает оплаты!")
+                        await message.answer(f"⚠️Заказ №{ordercheck_id} на сумму {amount}₽ ожидает оплаты!")
                     else:
-                        await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount} умер! по причине {status}")
+                        await message.answer(f"⚰️Заказ №{ordercheck_id} на сумму {amount}₽ умер! по причине {status}")
     except Exception as e:
             await message.answer(f"⚰️Бот умер! because {e}")
 
