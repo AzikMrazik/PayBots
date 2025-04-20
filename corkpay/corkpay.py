@@ -33,12 +33,18 @@ async def handle_main_menu_callback(callback_query: CallbackQuery, state: FSMCon
 
 @dp.message(Command("start"))
 async def start_command(message: Message, state: FSMContext):
+    if message.from_user.id not in ALLOWED_GROUPS:
+        await message.answer("У вас нет доступа к этому!")
+        return
     await state.clear()
     await message.answer("Добро пожаловать!")
     await message.answer(text="Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
+    if message.from_user.id not in ALLOWED_GROUPS:
+        await message.answer("У вас нет доступа к этому!")
+        return
     msg = await message.answer("🟣CorkPay на связи✅")
     await asyncio.sleep(5)
     await msg.delete()

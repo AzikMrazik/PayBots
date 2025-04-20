@@ -1,16 +1,14 @@
 import logging
 import asyncio
-from aiohttp import ClientSession as session
-from aiogram import Bot, Dispatcher, Router, F
+from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.filters import Command
 from aiogram.utils.formatting import *
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 import create_payment, group_payment
-from config import BOT_TOKEN
+from config import BOT_TOKEN, ADMINS
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,11 +31,17 @@ async def handle_main_menu_callback(callback_query: CallbackQuery, state: FSMCon
 
 @dp.message(Command("start"))
 async def start_command(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("У вас нет доступа к этому!")
+        return
     await message.answer("Добро пожаловать!")
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=main_kb())
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("У вас нет доступа к этому!")
+        return
     msg = await message.answer("🎲Nicepay на связи✅")
     await asyncio.sleep(5)
     await msg.delete()

@@ -10,3 +10,4 @@ MERCHANT_TOKEN = getenv("CP_MERCHANT_TOKEN")
 MERCHANT_ID = getenv("CP_MERCHANT_ID")
 DOMAIN = getenv("WH_DOMAIN")
 ALLOWED_GROUPS = [int(id.strip()) for id in getenv("ALLOWED_GROUPS", "").split(",") if id.strip()]
+ADMINS = [int(id.strip()) for id in getenv("ADMINS", "").split(",") if id.strip()]

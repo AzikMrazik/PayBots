@@ -3,7 +3,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import Message
 from BINs import bin_database
-from config import BOT_TOKEN
+from config import BOT_TOKEN, ADMINS
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -14,12 +14,17 @@ def extract_bins(text):
 
 @dp.message(Command("ping"))
 async def start_command(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("У вас нет доступа к этому!")
+        return
     msg = await message.answer("🗑️BinChecker на связи✅")
     await asyncio.sleep(5)
     await msg.delete()
 
 @dp.message()
 async def handle_message(message: types.Message):
+    if message.from_user.id not in ADMINS:
+        return
     bins = extract_bins(message.text)
     if not bins:
         return

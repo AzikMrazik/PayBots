@@ -8,3 +8,4 @@ SECRET = getenv("NP_SECRET")
 MERCHANT_ID = getenv("NP_MERCHANT_ID")
 BASE_URL = getenv("NP_BASE_URL")
 ALLOWED_GROUPS = [int(id.strip()) for id in getenv("ALLOWED_GROUPS", "").split(",") if id.strip()]
+ADMINS = [int(id.strip()) for id in getenv("ADMINS", "").split(",") if id.strip()]
