@@ -93,6 +93,12 @@ async def sendpost(amount, chat_id, msg, counter):
                             return (f"🔗Ваша ссылка:", f"{QR}")
                     except:
                         pass
+                    try:
+                        ZDS = data['card_form_url']
+                        if ZDS:
+                            return (f"🔗Ваша ссылка:", f"{ZDS}")
+                    except:
+                        pass
                     num_prefixes = ["+", "7", "8", "9", "3"]
                     if card[:1] in num_prefixes:
                         sbp = True
