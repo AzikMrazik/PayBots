@@ -84,10 +84,7 @@ async def sendpost(amount, chat_id, msg, counter):
                 print(data, flush=True)
                 if order_status != "error":
                     precise_amount = data['amount']
-                    card = data['card_number']
-                    card = re.sub(r'\s+', '', card)
-                    order_id = data['order_id']
-                    try:
+																							try:
                         QR = data['qr_sbp_url']
                         if QR:
                             return (f"🔗Ваша ссылка:", f"{QR}")
@@ -99,6 +96,9 @@ async def sendpost(amount, chat_id, msg, counter):
                             return (f"🔗Ваша ссылка:", f"{ZDS}")
                     except:
                         pass
+                    card = data['card_number']
+                    card = re.sub(r'\s+', '', card)
+                    order_id = data['order_id']
                     num_prefixes = ["+", "7", "8", "9", "3"]
                     if card[:1] in num_prefixes:
                         sbp = True
