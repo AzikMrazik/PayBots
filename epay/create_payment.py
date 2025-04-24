@@ -84,7 +84,7 @@ async def sendpost(amount, chat_id, msg, counter):
                 print(data, flush=True)
                 if order_status != "error":
                     precise_amount = data['amount']
-																							try:
+		    try:
                         QR = data['qr_sbp_url']
                         if QR:
                             return (f"🔗Ваша ссылка:", f"{QR}")
