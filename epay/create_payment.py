@@ -62,8 +62,12 @@ async def check_name(bin):
         else:
             return "Неизвестный банк"
 
-async def sendpost(amount, chat_id, msg, counter):
+async def sendpost(amount, chat_id, msg, counter, type="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
+    if type == "p2p":
+        get3ds = 1
+    else:
+        get3ds = 0
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}/request/requisites",
@@ -71,7 +75,8 @@ async def sendpost(amount, chat_id, msg, counter):
                 "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
-                "notice_url": f"https://{DOMAIN}/epay"
+                "notice_url": f"https://{DOMAIN}/epay",
+                "get_card_form_url_3ds": get3ds
             }
         ) as response:
             try:
