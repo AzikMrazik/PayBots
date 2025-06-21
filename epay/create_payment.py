@@ -80,11 +80,11 @@ async def sendpost(amount, chat_id, msg, counter, type="p2p"):
         async with session.post(
             f"{BASE_URL}/request/requisites",
             json={
-                "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
-                "notice_url": f"https://{DOMAIN}/epay",
-                "get_card_form_url_3ds": get3ds
+                "api_key": API_TOKEN,
+                "get_card_form_url_3ds": get3ds,
+                "notice_url": f"https://{DOMAIN}/epay"
             }
         ) as response:
             try:
