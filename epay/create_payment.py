@@ -68,6 +68,14 @@ async def sendpost(amount, chat_id, msg, counter, type="p2p"):
         get3ds = 0
     else:
         get3ds = 1
+    json={
+                "api_key": API_TOKEN,
+                "amount": amount,
+                "merchant_order_id": merchant_order_id,
+                "notice_url": f"https://{DOMAIN}/epay",
+                "get_card_form_url_3ds": get3ds
+            }
+    print(json, flush=True)
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}/request/requisites",
