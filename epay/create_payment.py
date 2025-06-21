@@ -89,6 +89,7 @@ async def sendpost(amount, chat_id, msg, counter, type="p2p"):
             try:
                 data = await response.json()
             except:
+                print(response)
                 data = await response.text()
                 print(data, flush=True)
                 return (f"⚰️E-Pay отправил труп!", f"error: {data}", "Отправьте сообщение выше кодеру!")
