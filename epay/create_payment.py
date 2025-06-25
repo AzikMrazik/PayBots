@@ -64,13 +64,12 @@ async def check_name(bin):
 
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
+    get3ds = 0
+    getqr = 0
     if typ == "zds":
         get3ds = 1
     elif typ == "qr":
         getqr = 1
-    else:
-        get3ds = 0
-        getqr = 0
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
