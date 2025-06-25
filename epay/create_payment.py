@@ -64,26 +64,23 @@ async def check_name(bin):
 
 async def sendpost(amount, chat_id, msg, counter, type="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
-    if type == "p2p":
-        get3ds = 0
-    else:
+    if type == "zds":
         get3ds = 1
-    json={
+    elif type == "qr":
+        getqr = 1
+    else:
+        get3ds = 0
+        getqr = 0
+    async with ClientSession() as session:
+        async with session.post(
+            f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
+            json={
                 "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
                 "notice_url": f"https://{DOMAIN}/epay",
-                "get_card_form_url_3ds": get3ds
-            }
-    print(json, flush=True)
-    async with ClientSession() as session:
-        async with session.post(
-            f"{BASE_URL}/request/requisites",
-            json={
-                "amount": amount,
-                "merchant_order_id": merchant_order_id,
-                "api_key": API_TOKEN,
-                "notice_url": f"https://{DOMAIN}/epay"
+                "3dsUrl": get3ds,
+                "get_qr_sbp_requisites": getqr
             }
         ) as response:
             try:
@@ -99,15 +96,9 @@ async def sendpost(amount, chat_id, msg, counter, type="p2p"):
                 if order_status != "error":
                     precise_amount = data['amount']
                     try:
-                        QR = data['qr_sbp_url']
-                        if QR:
-                            return (f"🔗Ваша ссылка:", f"{QR}")
-                    except:
-                        pass
-                    try:
-                        ZDS = data['card_form_url']
-                        if ZDS:
-                            return (f"🔗Ваша ссылка:", f"{ZDS}")
+                        URL = data['card_form_url']
+                        if URL:
+                            return (f"🔗Ваша ссылка:", f"{URL}")
                     except:
                         pass
                     card = data['card_number']
