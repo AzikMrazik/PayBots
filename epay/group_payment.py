@@ -15,6 +15,7 @@ async def cash_command(message: Message):
         return
     try:
         typ = message.text.split("_")[0]
+        typ = typ.replace("/", "")
         amount = int(message.text.split("_")[1])
         if amount < 300 and typ != "qr":
             await message.answer("Минимальная сумма: 300 RUB")
