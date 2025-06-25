@@ -16,8 +16,14 @@ async def cash_command(message: Message):
     try:
         typ = message.text.split("_")[0]
         amount = int(message.text.split("_")[1])
-        if amount < 300:
+        if amount < 300 and typ != "qr":
             await message.answer("Минимальная сумма: 300 RUB")
+            return
+        if amount < 2500 and typ == "qr":
+            await message.answer("Минимальная сумма: 2500 RUB")
+            return
+        if typ == "zds":
+            await message.answer("Метод отключен!")
             return
     except:
         await message.answer("Неверный формат команды. Используйте: /pay_1000 /zds_1000 /qr_1000")

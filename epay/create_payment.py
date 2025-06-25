@@ -62,11 +62,11 @@ async def check_name(bin):
         else:
             return "Неизвестный банк"
 
-async def sendpost(amount, chat_id, msg, counter, type="p2p"):
+async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
-    if type == "zds":
+    if typ == "zds":
         get3ds = 1
-    elif type == "qr":
+    elif typ == "qr":
         getqr = 1
     else:
         get3ds = 0
