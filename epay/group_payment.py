@@ -99,7 +99,7 @@ async def temp_command(message: Message):
 🕑Время на оплату: 20 мин.
         """
         try:
-            await message.answer_photo(text=template)
+            await message.answer(text=template)
         except Exception as e:
             await message.answer("Произошла ошибка: " + str(e))
     
