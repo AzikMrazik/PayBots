@@ -54,26 +54,24 @@ async def gen_command(message: Message):
         link = p[2]
         amt = p[1]
         
-        qr = qrcode.QRCode(version=1, box_size=15, border=6)
+        qr = qrcode.QRCode(version=1, box_size=20, border=8)
         qr.add_data(link)
         qr.make(fit=True)
         
         img = qr.make_image(fill_color="black", back_color="white")
         
-        # Загрузка лого из интернета
         try:
             resp = requests.get("https://i.otzovik.com/objects/b/2340000/2335986.png", timeout=5)
             logo = Image.open(io.BytesIO(resp.content))
-            logo = logo.resize((60, 60))
+            logo = logo.convert("RGBA")
+            logo = logo.resize((80, 80))
         except:
-            # Создаем простой лого если загрузка не удалась
-            logo = Image.new('RGB', (60, 60), 'white')
+            logo = Image.new('RGBA', (80, 80), (255, 255, 255, 255))
             d = ImageDraw.Draw(logo)
-            d.rectangle([50, 50, 100, 100], fill='blue')
+            d.rectangle([10, 10, 70, 70], fill=(0, 100, 255, 255))
         
-        # Вставляем в центр
         pos = ((img.size[0] - logo.size[0]) // 2, (img.size[1] - logo.size[1]) // 2)
-        img.paste(logo, pos)
+        img.paste(logo, pos, logo if logo.mode == 'RGBA' else None)
         
         bio = io.BytesIO()
         img.save(bio, format='PNG')
