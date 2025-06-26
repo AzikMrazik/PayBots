@@ -5,6 +5,8 @@ from create_payment import sendpost
 from config import ALLOWED_GROUPS
 import qrcode
 import io
+from PIL import Image, ImageDraw
+import requests
 from aiogram.types import BufferedInputFile
 
 router = Router()
@@ -45,41 +47,51 @@ async def gen_command(message: Message):
         await message.answer("Бот не активирован в этой группе!")
         return
     try:
-        parts = message.text.split("_")
-        if len(parts) < 3:
+        p = message.text.split("_")
+        if len(p) < 3:
             await message.answer("Неверный формат команды. Используйте: /gen_ссылка")
             return
-        link = message.text.split("_")[2]
-        amount = message.text.split("_")[1]
+        link = p[2]
+        amt = p[1]
         
-        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr = qrcode.QRCode(version=1, box_size=15, border=6)
         qr.add_data(link)
         qr.make(fit=True)
         
-        # Создание изображения
         img = qr.make_image(fill_color="black", back_color="white")
         
-        # Сохранение в байты
+        # Загрузка лого из интернета
+        try:
+            resp = requests.get("https://avatars.mds.yandex.net/i?id=9e1c0e11c2266ea44a36ede9e88c1466a00a79a3-3193980-images-thumbs&n=13", timeout=5)
+            logo = Image.open(io.BytesIO(resp.content))
+            logo = logo.resize((60, 60))
+        except:
+            # Создаем простой лого если загрузка не удалась
+            logo = Image.new('RGB', (60, 60), 'white')
+            d = ImageDraw.Draw(logo)
+            d.rectangle([10, 10, 50, 50], fill='blue')
+        
+        # Вставляем в центр
+        pos = ((img.size[0] - logo.size[0]) // 2, (img.size[1] - logo.size[1]) // 2)
+        img.paste(logo, pos)
+        
         bio = io.BytesIO()
         img.save(bio, format='PNG')
         bio.seek(0)
         
-        # Отправка фото
-        photo = BufferedInputFile(bio.read(), filename="qrcode.png")
-        await message.answer_photo(photo,
-                caption=f"""
+        photo = BufferedInputFile(bio.read(), filename="qr.png")
+        await message.answer_photo(photo, caption=f"""
 📄Оплата по QR-коду.
 
-💰К оплате: <code>{amount}</code> рублей
+💰К оплате: <code>{amt}</code> рублей
 
 <i>Если не работает QR👇</i>
-🔗Ссылка - <a href="{link}">[КНОПКА]</a>                
-                """)
+🔗Ссылка - <a href="{link}">[КНОПКА]</a>""", parse_mode="HTML")
         
     except IndexError:
         await message.answer("Неверный формат команды. Используйте: /gen_ссылка")
     except Exception as e:
-        await message.answer(f"Ошибка при генерации QR-кода: {str(e)}")
+        await message.answer(f"Ошибка: {str(e)}")
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/temp_"))
 async def temp_command(message: Message):
