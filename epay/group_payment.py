@@ -68,12 +68,12 @@ async def gen_command(message: Message):
         photo = BufferedInputFile(bio.read(), filename="qrcode.png")
         await message.answer_photo(photo,
                 caption=f"""
-                📄Оплата по QR-коду.
+📄Оплата по QR-коду.
 
-                💰К оплате: <code>{amount}</code> рублей
+💰К оплате: <code>{amount}</code> рублей
 
-                <i>Если не работает QR👇</i>
-                🔗Ссылка - <a href="{link}">[КНОПКА]</a>                
+<i>Если не работает QR👇</i>
+🔗Ссылка - <a href="{link}">[КНОПКА]</a>                
                 """)
         
     except IndexError:
@@ -91,12 +91,12 @@ async def temp_command(message: Message):
         card = parts[2]
         amount = parts[1]
         template = f"""
-        📄Создана заявка на оплату!
+📄Создана заявка на оплату!
 
-        💳Номер карты для оплаты: <code>{card}</code>
-        💰Сумма платежа: <code>{amount}</code> рублей
+💳Номер карты для оплаты: <code>{card}</code>
+💰Сумма платежа: <code>{amount}</code> рублей
 
-        🕑Время на оплату: 20 мин.
+🕑Время на оплату: 20 мин.
         """
         try:
             await message.answer_photo(text=template)
