@@ -3,6 +3,9 @@ from aiogram.types import Message
 from aiogram.utils.formatting import *
 from create_payment import sendpost
 from config import ALLOWED_GROUPS
+import qrcode
+import io
+from aiogram.types import BufferedInputFile
 
 router = Router()
 
@@ -26,7 +29,7 @@ async def cash_command(message: Message):
         if typ == "zds":
             await message.answer("Метод отключен!")
             return
-    except:
+    except Exception:
         await message.answer("Неверный формат команды. Используйте: /pay_1000 /zds_1000 /qr_1000")
         return
     else:
@@ -36,3 +39,67 @@ async def cash_command(message: Message):
         for i in order:
             await message.answer(i)
         
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/gen_"))
+async def gen_command(message: Message):
+    if message.chat.id not in ALLOWED_GROUPS:
+        await message.answer("Бот не активирован в этой группе!")
+        return
+    try:
+        parts = message.text.split("_")
+        if len(parts) < 3:
+            await message.answer("Неверный формат команды. Используйте: /gen_ссылка")
+            return
+        link = message.text.split("_")[2]
+        amount = message.text.split("_")[1]
+        
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(link)
+        qr.make(fit=True)
+        
+        # Создание изображения
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Сохранение в байты
+        bio = io.BytesIO()
+        img.save(bio, format='PNG')
+        bio.seek(0)
+        
+        # Отправка фото
+        photo = BufferedInputFile(bio.read(), filename="qrcode.png")
+        await message.answer_photo(photo,
+                caption=f"""
+                📄Оплата по QR-коду.
+
+                💰К оплате: <code>{amount}</code> рублей
+
+                <i>Если не работает QR👇</i>
+                🔗Ссылка - <a href="{link}">[КНОПКА]</a>                
+                """)
+        
+    except IndexError:
+        await message.answer("Неверный формат команды. Используйте: /gen_ссылка")
+    except Exception as e:
+        await message.answer(f"Ошибка при генерации QR-кода: {str(e)}")
+
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/temp_"))
+async def temp_command(message: Message):
+        parts = message.text.split("_")
+        if len(parts) < 3:
+            await message.answer("Неверный формат команды. Используйте: /temp_сумма_карта")
+            return
+        
+        card = parts[2]
+        amount = parts[1]
+        template = f"""
+        📄Создана заявка на оплату!
+
+        💳Номер карты для оплаты: <code>{card}</code>
+        💰Сумма платежа: <code>{amount}</code> рублей
+
+        🕑Время на оплату: 20 мин.
+        """
+        try:
+            await message.answer_photo(text=template)
+        except Exception as e:
+            await message.answer("Произошла ошибка: " + str(e))
+    

@@ -1,3 +1,7 @@
 corkpay/bins.db
 epay/bins.db
 esp/bins.db
+ubisoft/.env
+ubisoft/logs/errors.log
+ubisoft/db/users.db
+/ubisoft/__pycache__
