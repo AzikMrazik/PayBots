@@ -62,14 +62,14 @@ async def gen_command(message: Message):
         
         # Загрузка лого из интернета
         try:
-            resp = requests.get("https://avatars.mds.yandex.net/i?id=9e1c0e11c2266ea44a36ede9e88c1466a00a79a3-3193980-images-thumbs&n=13", timeout=5)
+            resp = requests.get("https://i.otzovik.com/objects/b/2340000/2335986.png", timeout=5)
             logo = Image.open(io.BytesIO(resp.content))
             logo = logo.resize((60, 60))
         except:
             # Создаем простой лого если загрузка не удалась
             logo = Image.new('RGB', (60, 60), 'white')
             d = ImageDraw.Draw(logo)
-            d.rectangle([10, 10, 50, 50], fill='blue')
+            d.rectangle([50, 50, 100, 100], fill='blue')
         
         # Вставляем в центр
         pos = ((img.size[0] - logo.size[0]) // 2, (img.size[1] - logo.size[1]) // 2)
