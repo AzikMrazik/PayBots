@@ -74,7 +74,7 @@ async def process_webhook(request: web.Request, system: str, message_template: s
             else:
                 return web.Response(text="OK")
 
-        order_id = data.get('transaction_id') or data.get('merchant_order') or request.match_info.get('order_id')
+        order_id = data.get('transaction_id') or data.get('merchant_order') or request.match_info.get('order_id') or request.match_info.get('transaction_id')
         amount = data.get('total') or data.get('amount')
 
         chat_id, amount = await get_chat_id(order_id, system)
