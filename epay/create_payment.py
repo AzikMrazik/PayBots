@@ -97,6 +97,8 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                     try:
                         URL = data['card_form_url']
                         if URL:
+                            order_id = data['order_id']
+                            await addorder(order_id, chat_id, precise_amount)
                             return (f"🔗Ваша ссылка:", f"{URL}")
                     except:
                         pass
