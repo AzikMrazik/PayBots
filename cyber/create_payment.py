@@ -7,11 +7,11 @@ import aiohttp
 router = Router()
 
 
-def payment_kb(order_id, amount):
+def payment_kb(order_id, amount, msg):
     kb = [
-        [types.InlineKeyboardButton(text="✅Оплачено", callback_data=f"order_paid_{order_id}")],
-        [types.InlineKeyboardButton(text="⛔Отмена", callback_data=f"order_cancel_{order_id}"),
-         types.InlineKeyboardButton(text="♻️Пересоздать", callback_data=f"order_recreate_{order_id}_{amount}")]
+        [types.InlineKeyboardButton(text="✅Оплачено", callback_data=f"order_paid_{order_id}_{msg.message_id}")],
+        [types.InlineKeyboardButton(text="⛔Отмена", callback_data=f"order_cancel_{order_id}_{msg.message_id}"),
+         types.InlineKeyboardButton(text="♻️Пересоздать", callback_data=f"order_recreate_{order_id}_{msg.message_id}_{amount}")]
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=kb)
 
@@ -46,14 +46,14 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 order_id = data.get("request_id")
                 card = data.get("num")
                 amt = data.get("sum")
-                await bot.send_message(chat_id, f"""
+                msg = await bot.send_message(chat_id, f"""
 📄Создана заявка на оплату!
 
 💳Номер карты для оплаты: <code>{card}</code>
 💰Сумма платежа: <code>{amt}</code> рублей
 
 🕑Время на оплату: 30 мин.
-""", reply_markup=payment_kb(order_id, amt))
+""", reply_markup=payment_kb(order_id, amt, msg))
                 return
             else:
                 data = data.get("request")
@@ -67,21 +67,25 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
     data = callback_query.data.split("_")
     action = data[1]
     order_id = data[2]
+    msg_id = int(data[3]) 
     if action == "paid":
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
+            await bot.edit_message_text("✅Оплата подтверждена!", chat_id=callback_query.message.chat.id, message_id=msg_id)
             logging.info(f"Order {order_id} confirmed")   
         return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
+            await bot.edit_message_text("⛔Оплата отменена!", chat_id=callback_query.message.chat.id, message_id=msg_id)
             logging.info(f"Order {order_id} cancelled")
         return
     elif action == "recreate":
-        amount = data[3]
+        amount = data[4]
         logging.info(f"Recreating order {order_id} with amount {amount}")
+        await bot.edit_message_text("♻️Оплата пересоздана!", chat_id=callback_query.message.chat.id, message_id=msg_id)
         await create_payment(callback_query, bot, state, amount)
 
 
