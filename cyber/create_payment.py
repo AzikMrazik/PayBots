@@ -17,7 +17,7 @@ async def payment_kb(order_id, amount):
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/cyb_")) 
 async def create_payment(message: types.Message | types.CallbackQuery, bot: Bot, state: FSMContext, amount: str = None):
-    chat_id = message.from_user.id
+    chat_id = message.chat.id
     amount = message.text.split("_")[1]
     chat_id = message.from_user.id
     msg = await bot.send_message(chat_id, "⌛Ожидаем реквизиты...")
