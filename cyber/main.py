@@ -25,7 +25,7 @@ async def handle_balance_command(message: types.Message):
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=balance_kb())
     return
 
-@dp.message_handler(commands=['ping'])
+@dp.message(commands=['ping'])
 async def handle_ping_command(message: types.Message):
     msg = await message.answer("Cyber-Money:\n🏓Pong...")
     await asyncio.sleep(5)
