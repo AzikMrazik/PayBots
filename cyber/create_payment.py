@@ -1,11 +1,11 @@
 from aiogram import Bot, types, Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 import logging
 import config
 import aiohttp
 
 router = Router()
+
 
 async def payment_kb(order_id, amount):
     keyboard = [
@@ -26,7 +26,7 @@ async def create_payment(message: types.Message | types.CallbackQuery, bot: Bot,
                                 headers={"Authorization": f"Bearer {config.API_TOKEN}"},
                                 json={"sum": amount,
                                         "payment_method": "ccard",
-                                        "callback_url": f"{DOMAIN}/{chat_id}"}) as response:
+                                        "callback_url": f"{config.DOMAIN}/cyber/{chat_id}"}) as response:
             try:
                 data = await response.json()
                 logging.error(f"Answer: {data}")
@@ -70,16 +70,17 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
     order_id = data[2]
     if action == "paid":
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", Authorization=f"Bearer {config.API_TOKEN}")
-            return
+            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"Bearer {config.API_TOKEN}"}) as response:
+                pass
+        return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", Authorization=f"Bearer {  config.API_TOKEN}")
-            return
+            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"Bearer {config.API_TOKEN}"}) as response:
+                pass
+        return
     elif action == "recreate":
         amount = data[3]
         await create_payment(callback_query, bot, state, amount)
 
 
 
-            

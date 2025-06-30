@@ -95,6 +95,16 @@ async def process_webhook(request: web.Request, system: str, message_template: s
 async def handle_corkpay(request: web.Request):
     return await process_webhook(request, "corkpay", "🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
 
+async def handle_cyber(request: web.Request):
+    bot: Bot = request.app['bot']
+    try:
+        data = await request.json()
+        logger.info(f"Получен вебхук для cyber: {data}")
+        await bot.send_message(chat_id=int(data['chat_id']), text=data)
+    except Exception as e:
+        logger.error(f"Ошибка обработки вебхука для cyber: {e}")
+    return web.Response(text="OK", status=200)
+
 async def handle_epay(request: web.Request):
     return await process_webhook(request, "epay", "🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
 
@@ -112,6 +122,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_post('/epay', handle_epay)
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
     app.router.add_post('/espay/{chat_id}', handle_esp)
+    app.router.add_post('/cyber/{chat_id}', handle_cyber)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
