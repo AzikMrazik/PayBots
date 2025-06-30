@@ -100,7 +100,14 @@ async def handle_cyber(request: web.Request):
     try:
         data = await request.json()
         logger.info(f"Получен вебхук для cyber: {data}")
-        await bot.send_message(chat_id=int(data['chat_id']), text=data)
+        chat_id = request.match_info.get('chat_id')
+        status = data.get('status')
+        order_id = data.get('request_id')
+        amount = data.get('sum')
+        if status == "success":
+            await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+        else:
+            pass
     except Exception as e:
         logger.error(f"Ошибка обработки вебхука для cyber: {e}")
     return web.Response(text="OK", status=200)

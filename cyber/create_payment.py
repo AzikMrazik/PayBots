@@ -72,20 +72,19 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
-            await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=msg_id)
+            await bot.send_message(chat_id=callback_query.message.chat.id, text="✅Оплата подтверждена!")
             logging.info(f"Order {order_id} confirmed")   
         return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
-            await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=msg_id)
+            await bot.send_message(chat_id=callback_query.message.chat.id, text="⛔Оплата отменена!")
             logging.info(f"Order {order_id} cancelled")
         return
     elif action == "recreate":
         amount = data[4]
         logging.info(f"Recreating order {order_id} with amount {amount}")
-        await bot.delete_message(chat_id=callback_query.message.chat.id, message_id=msg_id)
         await create_payment(callback_query, bot, state, amount)
 
 
