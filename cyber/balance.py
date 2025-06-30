@@ -12,16 +12,18 @@ class PaymentStates(StatesGroup):
     WAITING_AMOUNT = State()
     WAITING_WALLET = State()
 
-@router.message(callback_query=F.data == 'balance')
+@router.callback_query(F.data == 'balance')
 async def show_balance(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     await bot.answer_callback_query(callback_query.id)
     await callback_query.message.answer("Укажите сумму для вывода в TRX:")
+    await state.set_state(PaymentStates.WAITING_AMOUNT)
 
 @router.message(PaymentStates.WAITING_AMOUNT)
 async def get_amount(message: types.Message, state: FSMContext):
     amount = message.text.strip()
     await state.update_data(amount=amount)
     await message.answer("Укажите кошелек для вывода:")
+    await state.set_state(PaymentStates.WAITING_WALLET)
 
 @router.message(PaymentStates.WAITING_WALLET)
 async def get_wallet(message: types.Message, state: FSMContext):
@@ -29,7 +31,8 @@ async def get_wallet(message: types.Message, state: FSMContext):
         await message.answer("⛔Ошибка! Неверный формат кошелька. Пожалуйста, введите корректный кошелек TRX.")
         return
     wallet = message.text.strip()
-    amount = state.get_data().get("amount")
+    data = await state.get_data()
+    amount = data.get("amount")
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/payout",
                                 headers={"Authorization": f"Bearer {config.API_TOKEN}"},
@@ -40,10 +43,12 @@ async def get_wallet(message: types.Message, state: FSMContext):
                 try:
                     status = data.get("status")
                     await message.answer("✅Выплата запрошена успешно!")
+                    await state.clear()
                     return
                 except Exception as e:
                     for key, value in data.items():
                         await message.answer(f"⛔Ошибка!\n{key}: {value}")
+                    await state.clear()
                     return
-                
+
 
