@@ -28,7 +28,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                                         "callback_url": f"{config.DOMAIN}/cyber/{chat_id}"}) as resp:
             try:
                 data = await resp.json()
-                logging.error(f"Answer: {data}")
+                logging.info(f"Answer: {data}")
             except:
                 try:
                     data = await resp.text()
@@ -41,7 +41,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                     return
             await loading_msg.delete()
             error = data.get("error")
-            if error == "false" or error is None:
+            if error == "false" or error is None or error == "False" or error == False:
                 data = data.get("request")
                 order_id = data.get("request_id")
                 card = data.get("num")
