@@ -43,7 +43,7 @@ async def get_wallet(message: types.Message, state: FSMContext):
                 data = await response.json()
                 logging.info(f"Response: {data}")
                 try:
-                    status = data.get("status")
+                    status = data["status"]
                     await message.answer("✅Выплата запрошена успешно!")
                     await state.clear()
                     return
