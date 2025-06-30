@@ -7,15 +7,8 @@ import config
 import keyboards
 from lexicon import get_text
 
-logger = logging.getLogger(__name__)
-
-_file_logging_initialized = False
-
 ## Настройка логирования в файл с ротацией
 def setup_file_logging():
-    global _file_logging_initialized
-    if _file_logging_initialized:
-        return
     log_dir = "logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -48,21 +41,17 @@ async def handle_all_errors(event, exception: Exception):
     
     ## Получаем информацию об обновлении
     update = getattr(event, 'update', None)
-    user_id = None
-    username = None
+    chat_id = None
 
     if update and update.message:
-        user_id = update.message.from_user.id
-        username = update.message.from_user.username or update.message.from_user.first_name
+        chat_id = update.message.chat.id
     elif update and update.callback_query:
-        user_id = update.callback_query.from_user.id
-        username = update.callback_query.from_user.username or update.callback_query.from_user.first_name
+        chat_id = update.callback_query.chat.id
     
     ## Формируем детальное сообщение об ошибке
     error_details = f"""
 Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-User ID: {user_id}
-Username: {username}
+chat ID: {chat_id}
 Exception Type: {type(exception).__name__}
 Exception Message: {str(exception)}
 Update Type: {type(update).__name__ if update else 'Unknown'}
@@ -72,24 +61,24 @@ Update Type: {type(update).__name__ if update else 'Unknown'}
     logging.error(error_details, exc_info=True)
     
     ## Отправляем сообщение пользователю об ошибке
-    if user_id:
+    if chat_id:
         try:
             from main import bot, main_menu_handler
             
-            await bot.send_message(user_id, text=await get_text("error_occurred", user_id), reply_markup=keyboards.error_kb())
-            logging.info(f"Error message sent to user {user_id} ({username})")
+            await bot.send_message(chat_id, text=await get_text("error_occurred", chat_id), reply_markup=keyboards.error_kb())
+            logging.info(f"Error message sent to chat {chat_id}")
             if update.callback_query:
                 await bot.answer_callback_query(update.callback_query.id)
 
         except Exception as send_error:
-            logging.error(f"Failed to send error message to user {user_id}: {send_error}")
+            logging.error(f"Failed to send error message to chat {chat_id}: {send_error}")
     
     ## Отправляем уведомление администратору/технарю
     try:
         from main import bot
         admin_message = f"""
 <b>Время:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-<b>Пользователь:</b> @{username} (ID: {user_id})
+<b>Пользователь:</b> (ID: {chat_id})
 <b>Тип ошибки:</b> <code>{type(exception).__name__}</code>
 <b>Сообщение:</b> <code>{str(exception)}</code>
             """

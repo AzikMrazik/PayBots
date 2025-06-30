@@ -11,7 +11,6 @@ from aiogram.filters import Command
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.context import FSMContext
-from aiogram.utils.formatting import Text, Bold, Italic, Code, Pre, Underline, Strikethrough
 
 import config
 from lexicon import get_text
@@ -41,9 +40,12 @@ async def set_commands():
 @dp.message(Command("menu"))
 @dp.callback_query(F.data == "main_menu")
 async def main_menu_handler(message: Message | CallbackQuery, state: FSMContext):
+    if message.chat.id < 0:
+        await message.answer(text=await get_text("error_nochat", message.chat.id))
+        return
     await state.clear()
     await bot.answer_callback_query(message.id) if isinstance(message, CallbackQuery) else None
-    await message.answer(text=await get_text("main_menu", message.from_user.id), reply_markup=keyboards.main_kb())
+    await message.answer(text=await get_text("main_menu", message.chat.id), reply_markup=keyboards.main_kb())
 
 @dp.message(Command("ping"))
 async def ping_command(message: Message):
@@ -51,18 +53,18 @@ async def ping_command(message: Message):
 
 @dp.message(Command("help"))
 async def help_command(message: Message):
-    await message.answer(text=await get_text("help", message.from_user.id), reply_markup=keyboards.help_kb())
+    await message.answer(text=await get_text("help", message.chat.id), reply_markup=keyboards.help_kb())
     raise ValueError("This is a test error")  # Example of raising an error to test error handling
 
 @dp.message(Command("lang"))
 async def lang_command(message: Message):
-    userinfo = await dbworker.get_userinfo(message.from_user.id)
-    lang = userinfo.get('lang')
+    chatinfo = await dbworker.get_chatinfo(message.chat.id)
+    lang = chatinfo.get('lang')
     if lang == 'ru':
-        await dbworker.change_userinfo(message.from_user.id, lang='en')
+        await dbworker.change_chatinfo(message.chat.id, lang='en')
     elif lang == 'en':
-        await dbworker.change_userinfo(message.from_user.id, lang='ru')
-    await message.answer(text=await get_text("lang_changed", message.from_user.id))
+        await dbworker.change_chatinfo(message.chat.id, lang='ru')
+    await message.answer(text=await get_text("lang_changed", message.chat.id))
 
 @dp.error()
 async def error_handler(event):
@@ -89,4 +91,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logging.info("Bot stopped by user.")
+        logging.info("Bot stopped by chat.")
