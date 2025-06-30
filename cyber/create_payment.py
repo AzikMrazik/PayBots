@@ -17,7 +17,7 @@ def payment_kb(order_id, amount):
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/cyb_")) 
 async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, state: FSMContext, amt: str = None):
-    chat_id = msg.from_user.id
+    chat_id = msg.chat.id
     amt = msg.text.split("_")[1]
     loading_msg = await bot.send_message(chat_id, "⌛Ожидаем реквизиты...")
     async with aiohttp.ClientSession() as session:
