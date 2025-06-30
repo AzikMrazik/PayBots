@@ -19,7 +19,7 @@ def balance_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
-@dp.message_handler(lambda message: message.text.startswith("347"))
+@dp.message(lambda message: message.text.startswith("347"))
 async def handle_balance_command(message: types.Message):
     chat_id = message.from_user.id
     await message.answer("Вы в главном меню, выберите действие:", reply_markup=balance_kb())
