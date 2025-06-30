@@ -35,7 +35,7 @@ async def get_wallet(message: types.Message, state: FSMContext):
     amount = data.get("amount")
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/payout",
-                                headers={"Authorization": f"Bearer {config.API_TOKEN}"},
+                                headers={"Authorization": f"{config.API_TOKEN}"},
                                 json={"data": [{"sum": str(amount)}],
                                 "wallet": wallet,
                                 "method_id": "37"}) as response:

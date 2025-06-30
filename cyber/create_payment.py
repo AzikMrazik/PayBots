@@ -22,8 +22,8 @@ async def create_payment(message: types.Message | types.CallbackQuery, bot: Bot,
     msg = await bot.send_message(chat_id, "⌛Ожидаем реквизиты...")
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/v1/ast/request",
-                                headers={"Authorization": f"Bearer {config.API_TOKEN}"},
-                                json={"sum": amount,
+                                headers={"Authorization": f"{config.API_TOKEN}"},
+                                params={"sum": amount,
                                         "payment_method": "ccard",
                                         "callback_url": f"{config.DOMAIN}/cyber/{chat_id}"}) as response:
             try:
@@ -69,12 +69,12 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
     order_id = data[2]
     if action == "paid":
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"Bearer {config.API_TOKEN}"}) as response:
+            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
         return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"Bearer {config.API_TOKEN}"}) as response:
+            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
         return
     elif action == "recreate":
