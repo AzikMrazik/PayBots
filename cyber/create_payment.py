@@ -28,7 +28,7 @@ async def create_payment(message: types.Message | types.CallbackQuery, bot: Bot,
                                         "callback_url": f"{config.DOMAIN}/cyber/{chat_id}"}) as response:
             try:
                 data = await response.json()
-                logging.error(f"Answer: {data}")
+                logging.info(f"Answer: {data}")
             except:
                 try:
                     data = await response.text()
