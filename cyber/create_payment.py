@@ -22,7 +22,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
     loading_msg = await bot.send_message(chat_id, "⌛Ожидаем реквизиты...")
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/v1/ast/request",
-                                headers={"Authorization": f"Bearer {config.API_TOKEN}"},
+                                headers={"Authorization": f"{config.API_TOKEN}"},
                                 json={"sum": amt,
                                         "payment_method": "ccard",
                                         "callback_url": f"{config.DOMAIN}/cyber/{chat_id}"}) as resp:
