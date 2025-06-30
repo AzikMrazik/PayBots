@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
-dp.include_routers(balance.router, create_payment.router, balance.router)
+dp.include_routers(balance.router, create_payment.router)
 
 def balance_kb():
     keyboard = [
