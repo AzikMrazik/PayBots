@@ -41,7 +41,7 @@ async def create_payment(message: types.Message | types.CallbackQuery, bot: Bot,
                     return
             msg.delete()
             error = data.get("error")
-            if error == "false" or error is None:
+            if error == "false" or error is None or error == "False" or error == False:
                 data = data.get("request")
                 order_id = data.get("request_id")
                 card = data.get("num")
@@ -71,14 +71,17 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
+            logging.info(f"Order {order_id} confirmed")   
         return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
+            logging.info(f"Order {order_id} cancelled")
         return
     elif action == "recreate":
         amount = data[3]
+        logging.info(f"Recreating order {order_id} with amount {amount}")
         await create_payment(callback_query, bot, state, amount)
 
 
