@@ -73,14 +73,14 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
     logging.info(f"Action: {action}, Order ID: {order_id}, Message ID: {msg_id}")
     if action == "paid":
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
+            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
             await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="✅Оплата подтверждена!")
             logging.info(f"Order {order_id} confirmed")   
         return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
+            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
             await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="⛔Оплата отменена!")
             logging.info(f"Order {order_id} cancelled")
