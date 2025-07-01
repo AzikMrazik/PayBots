@@ -65,10 +65,12 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
 @router.callback_query(F.data.startswith("order"))
 async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
     await bot.answer_callback_query(callback_query.id)
+    logging.info(f"Callback data: {callback_query.data}")
     data = callback_query.data.split("_")
     action = data[1]
     order_id = data[2]
     msg_id = int(data[3]) 
+    logging.info(f"Action: {action}, Order ID: {order_id}, Message ID: {msg_id}")
     if action == "paid":
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
