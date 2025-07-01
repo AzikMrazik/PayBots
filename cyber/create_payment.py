@@ -9,9 +9,9 @@ router = Router()
 
 def payment_kb(order_id, amount, msg):
     kb = [
-        [types.InlineKeyboardButton(text="✅Оплачено", callback_data=f"order_paid_{order_id}_{msg.message_id}")],
-        [types.InlineKeyboardButton(text="⛔Отмена", callback_data=f"order_cancel_{order_id}_{msg.message_id}"),
-         types.InlineKeyboardButton(text="♻️Пересоздать", callback_data=f"order_recreate_{order_id}_{msg.message_id}_{amount}")]
+        [types.InlineKeyboardButton(text="✅Оплачено", callback_data=f"order_paid_{order_id}_{msg}")],
+        [types.InlineKeyboardButton(text="⛔Отмена", callback_data=f"order_cancel_{order_id}_{msg}"),
+         types.InlineKeyboardButton(text="♻️Пересоздать", callback_data=f"order_recreate_{order_id}_{msg}_{amount}")]
     ]
     return types.InlineKeyboardMarkup(inline_keyboard=kb)
 
@@ -53,7 +53,8 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
 💰Сумма платежа: <code>{amt}</code> рублей
 
 🕑Время на оплату: 30 мин.
-""", reply_markup=payment_kb(order_id, amt, msg))
+""")
+                await bot.send_message(chat_id, f"Заявка №<code>{order_id}</code>", reply_markup=payment_kb(order_id, amt, msg.message_id))
                 return
             else:
                 data = data.get("request")
@@ -72,19 +73,20 @@ async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, s
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
-            await bot.send_message(chat_id=callback_query.message.chat.id, text="✅Оплата подтверждена!")
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="✅Оплата подтверждена!")
             logging.info(f"Order {order_id} confirmed")   
         return
     elif action == "cancel":
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
                 pass
-            await bot.send_message(chat_id=callback_query.message.chat.id, text="⛔Оплата отменена!")
+            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="⛔Оплата отменена!")
             logging.info(f"Order {order_id} cancelled")
         return
     elif action == "recreate":
         amount = data[4]
         logging.info(f"Recreating order {order_id} with amount {amount}")
+        await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="♻️Пересоздание заказа...")
         await create_payment(callback_query, bot, state, amount)
 
 
