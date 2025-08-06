@@ -4,6 +4,7 @@ import logging
 import config
 import aiohttp
 import aiosqlite
+import re
 
 router = Router()
 
@@ -37,7 +38,8 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 data = data.get("request")
                 order_id = data.get("request_id")
                 card = data.get("num")
-                name = await check_name(card[3])
+                card = re.sub(r'\s+', '', card)
+                name = await check_name(card[6])
                 amt = data.get("sum")
                 await bot.send_message(chat_id, f"""
 📄Создана заявка на оплату!
