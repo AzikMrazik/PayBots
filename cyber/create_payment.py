@@ -39,6 +39,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 order_id = data.get("request_id")
                 card = data.get("num")
                 card = re.sub(r'\s+', '', card)
+                logging.info(f"{type(card[6])}: {card[6]}")
                 name = await check_name(card[6])
                 amt = data.get("sum")
                 await bot.send_message(chat_id, f"""
@@ -74,7 +75,7 @@ async def check_name(bin):
             (bin,)
         )
         result = await cursor.fetchone()
-        if result[0]:
+        if result:
             return result[0]
         else:
             return "Неизвестный банк"
