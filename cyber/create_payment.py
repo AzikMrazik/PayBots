@@ -54,7 +54,6 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 await bot.send_message(chat_id, f"Заявка №<code>{order_id}</code>")
                 return
             else:
-                data = data.get("request")
                 try:
                     error = data.get("message")
                     await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
