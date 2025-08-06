@@ -56,16 +56,18 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
             else:
                 try:
                     error = data.get("message")
-                    await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
-                    return
-                except:
-                    error = data.get("request")
-                    if error == "no_requisites":
-                        await msg.answer(f"⛔Нет реквизитов!")
-                        return
-                    else:
+                    if error:
                         await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
                         return
+                    else:
+                        error = data.get("request")
+                        if error == "no_requisites":
+                            await msg.answer(f"⛔Нет реквизитов!")
+                        else:
+                            await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}") 
+                except:
+                    await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {data}")
+                    pass
 
 async def check_name(bin):
     async with aiosqlite.connect("bins.db") as db:
