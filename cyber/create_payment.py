@@ -37,7 +37,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 data = data.get("request")
                 order_id = data.get("request_id")
                 card = data.get("num")
-                name = check_name(card[3])
+                name = await check_name(card[3])
                 amt = data.get("sum")
                 await bot.send_message(chat_id, f"""
 📄Создана заявка на оплату!
