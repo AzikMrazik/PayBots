@@ -29,7 +29,7 @@ storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 COMMISSION_RATES = {
-    "epay": 0.35,
+    "epay": 0.30,
     "corkpay": 0.30,
     "esp": 0.30,
     "crocopay": 0.15,
@@ -98,6 +98,7 @@ async def handle_corkpay(request: web.Request):
 async def handle_cyber(request: web.Request):
     bot: Bot = request.app['bot']
     try:
+        system = "cyber"
         data = await request.json()
         logger.info(f"Получен вебхук для cyber: {data}")
         chat_id = request.match_info.get('chat_id')
@@ -108,6 +109,7 @@ async def handle_cyber(request: web.Request):
             await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
         else:
             pass
+        await add_paid_order(float(amount), int(chat_id), system)
     except Exception as e:
         logger.error(f"Ошибка обработки вебхука для cyber: {e}")
     return web.Response(text="OK", status=200)

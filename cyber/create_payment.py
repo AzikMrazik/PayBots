@@ -3,17 +3,9 @@ from aiogram.fsm.context import FSMContext
 import logging
 import config
 import aiohttp
+import aiosqlite
 
 router = Router()
-
-
-def payment_kb(order_id, amount, msg):
-    kb = [
-        [types.InlineKeyboardButton(text="✅Оплачено", callback_data=f"order_paid_{order_id}_{msg}")],
-        [types.InlineKeyboardButton(text="⛔Отмена", callback_data=f"order_cancel_{order_id}_{msg}"),
-         types.InlineKeyboardButton(text="♻️Пересоздать", callback_data=f"order_recreate_{order_id}_{msg}_{amount}")]
-    ]
-    return types.InlineKeyboardMarkup(inline_keyboard=kb)
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/cyb_")) 
 async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, state: FSMContext, amt: str = None):
@@ -45,51 +37,42 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 data = data.get("request")
                 order_id = data.get("request_id")
                 card = data.get("num")
+                name = check_name(card[3])
                 amt = data.get("sum")
-                msg = await bot.send_message(chat_id, f"""
+                await bot.send_message(chat_id, f"""
 📄Создана заявка на оплату!
 
 💳Номер карты для оплаты: <code>{card}</code>
 💰Сумма платежа: <code>{amt}</code> рублей
 
-🕑Время на оплату: 30 мин.
+🕑Время на оплату: 25 мин.
 """)
-                await bot.send_message(chat_id, f"Заявка №<code>{order_id}</code>", reply_markup=payment_kb(order_id, amt, msg.message_id))
+                await bot.send_message(chat_id, f"🏦Банк: {name}")
+                await bot.send_message(chat_id, f"Заявка №<code>{order_id}</code>")
                 return
             else:
                 data = data.get("request")
-                error = data.get("message")
-                await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
-                return
-            
-@router.callback_query(F.data.startswith("order"))
-async def handle_order_callback(callback_query: types.CallbackQuery, bot: Bot, state: FSMContext):
-    await bot.answer_callback_query(callback_query.id)
-    logging.info(f"Callback data: {callback_query.data}")
-    data = callback_query.data.split("_")
-    action = data[1]
-    order_id = data[2]
-    msg_id = int(data[3]) 
-    logging.info(f"Action: {action}, Order ID: {order_id}, Message ID: {msg_id}")
-    if action == "paid":
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/confirm", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
-                pass
-            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="✅Оплата подтверждена!")
-            logging.info(f"Order {order_id} confirmed")   
-        return
-    elif action == "cancel":
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{config.BASE_URL}/api/v1/ast/{order_id}/cancel", headers={"Authorization": f"{config.API_TOKEN}"}) as response:
-                pass
-            await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="⛔Оплата отменена!")
-            logging.info(f"Order {order_id} cancelled")
-        return
-    elif action == "recreate":
-        amount = data[4]
-        logging.info(f"Recreating order {order_id} with amount {amount}")
-        await bot.edit_message_text(chat_id=callback_query.message.chat.id, message_id=msg_id, text="♻️Пересоздание заказа...")
-        await create_payment(callback_query, bot, state, amount)
+                try:
+                    error = data.get("message")
+                    await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
+                    return
+                except:
+                    error = data.get("request")
+                    if error == "no_requisites":
+                        await msg.answer(f"⛔Нет реквизитов!")
+                        return
+                    else:
+                        await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
+                        return
 
-
-
+async def check_name(bin):
+    async with aiosqlite.connect("bins.db") as db:
+        cursor = await db.execute(
+            "SELECT bank_name FROM bins WHERE bin = ?", 
+            (bin,)
+        )
+        result = await cursor.fetchone()
+        if result[0]:
+            return result[0]
+        else:
+            return "Неизвестный банк"
