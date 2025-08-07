@@ -33,6 +33,7 @@ COMMISSION_RATES = {
     "corkpay": 0.30,
     "esp": 0.30,
     "crocopay": 0.15,
+    "cyber": 0.15
 }
 
 DB_PATHS = {
