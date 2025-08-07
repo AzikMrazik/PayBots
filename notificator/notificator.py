@@ -370,6 +370,9 @@ async def handle_ago(message: Message):
             
             report = {}
             for chat_id, amount, system in rows:
+                if amount is None:
+                    logger.warning(f"Пропущена запись с пустой суммой для chat_id={chat_id}, system={system}")
+                    continue
                 net_amount = calculate_net_amount(system, float(amount))
                 
                 if chat_id not in report:
