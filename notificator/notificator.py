@@ -43,9 +43,21 @@ DB_PATHS = {
 
 def calculate_net_amount(system: str, amount: float) -> float:
     rate = COMMISSION_RATES.get(system)
+    # If we don't know the rate, assume no commission
+    if rate is None:
+        return float(amount)
+    # If rate is a callable (dynamic), call it with amount
     if callable(rate):
-        return amount * (1 - rate(amount))
-    return amount * (1 - rate)
+        try:
+            r = rate(float(amount))
+        except Exception:
+            return float(amount)
+        return float(amount) * (1 - float(r))
+    try:
+        r = float(rate)
+    except Exception:
+        return float(amount)
+    return float(amount) * (1 - r)
 
 async def process_webhook(request: web.Request, system: str, message_template: str):
     bot: Bot = request.app['bot']
@@ -107,9 +119,9 @@ async def handle_cyber(request: web.Request):
         amount = data.get('sum')
         if status == "success":
             await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+            await add_paid_order(float(amount), int(chat_id), system)
         else:
-            pass
-        await add_paid_order(float(amount), int(chat_id), system)
+            pass 
     except Exception as e:
         logger.error(f"Ошибка обработки вебхука для cyber: {e}")
     return web.Response(text="OK", status=200)
@@ -316,16 +328,20 @@ async def handle_today(message: Message):
             # Группируем и считаем
             report = {}
             for chat_id, amount, system in rows:
-                net_amount = calculate_net_amount(system, float(amount))
-                
+                if amount is None:
+                    logger.warning(f"Пропущена запись с пустой суммой для chat_id={chat_id}, system={system}")
+                    continue
+                amt = float(amount)
+                net_amount = calculate_net_amount(system, amt)
+
                 if chat_id not in report:
                     report[chat_id] = {
                         'total': 0.0,
                         'count': 0,
                         'net_total': 0.0
                     }
-                
-                report[chat_id]['total'] += amount
+
+                report[chat_id]['total'] += amt
                 report[chat_id]['count'] += 1
                 report[chat_id]['net_total'] += net_amount
             
@@ -373,16 +389,17 @@ async def handle_ago(message: Message):
                 if amount is None:
                     logger.warning(f"Пропущена запись с пустой суммой для chat_id={chat_id}, system={system}")
                     continue
-                net_amount = calculate_net_amount(system, float(amount))
-                
+                amt = float(amount)
+                net_amount = calculate_net_amount(system, amt)
+
                 if chat_id not in report:
                     report[chat_id] = {
                         'total': 0.0,
                         'count': 0,
                         'net_total': 0.0
                     }
-                
-                report[chat_id]['total'] += amount
+
+                report[chat_id]['total'] += amt
                 report[chat_id]['count'] += 1
                 report[chat_id]['net_total'] += net_amount
             
