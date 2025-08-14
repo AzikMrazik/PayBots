@@ -43,7 +43,7 @@ async def create_payment(message: Message,  state: FSMContext):
         return
     else:
         msg = await message.reply("⌛️Ожидаем реквизиты...")
-        order = await sendpost(amount, message.from_user.id, msg, 1)
+        order = await sendpost(amount, message.from_user.id)
         await msg.delete()
         for i in order:
             await message.answer(i)
