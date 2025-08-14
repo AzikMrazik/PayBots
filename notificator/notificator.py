@@ -118,6 +118,7 @@ async def handle_cyber(request: web.Request):
         status = data.get('status')
         order_id = data.get('request_id')
         amount = data.get('sum')
+        amount = int(amount)
         if status == "success":
             await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
             await add_paid_order(float(amount), int(chat_id), system)
