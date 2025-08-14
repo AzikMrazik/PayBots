@@ -33,7 +33,7 @@ async def create_payment(message: Message,  state: FSMContext):
     await state.clear()
     try:
         amount = int(message.text)
-        if amount < 1000 or amount > 10000:
+        if amount < 1000:
             await message.answer("Доступная сумма: 1000 - 10.000 RUB!")
             await message.answer("Отправьте новое значение:", reply_markup=back_kb())
             return   
@@ -67,7 +67,7 @@ async def get_domain():
             domain = await response.text()
             return domain
 
-async def sendpost(amount, chat_id, msg, counter):
+async def sendpost(amount, chat_id):
     domain = await get_domain()
     order_id = datetime.now().strftime("%d%m%H%M%S")
     async with ClientSession() as session:
@@ -96,14 +96,6 @@ async def sendpost(amount, chat_id, msg, counter):
                     card = re.sub(r'\s+', '', card)
                     sign = data['sign']
                     bin = card[:6]
-                    if bin[:3] != "220":
-                        if counter < 5:
-                            counter += 1
-                            await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
-                            await asyncio.sleep(3)
-                            return await sendpost(amount, chat_id, msg, counter)
-                        else:
-                            return ("⛔Нет реквизитов!",)
                     bank_name = await check_name(bin)
                     await addorder(sign, chat_id, amount, order_id)
                     return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 20 мин.", f"🏦Банк: {bank_name}")
@@ -112,12 +104,6 @@ async def sendpost(amount, chat_id, msg, counter):
                     if desc:
                         return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")   
                     else:
-                        if counter < 5:
-                            counter += 1
-                            await msg.edit_text(f"⌛️Ожидаем реквизиты...({counter}/5)")
-                            await asyncio.sleep(3)
-                            return await sendpost(amount, chat_id, msg, counter)
-                        else:
-                            return ("⛔Нет реквизитов!",)                
+                        return ("⛔Нет реквизитов!",)                
 
 
