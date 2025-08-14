@@ -87,6 +87,7 @@ async def sendpost(amount, chat_id, msg, counter):
                 print(data, flush=True)
             except:
                 data = await response.text()
+                print(data, flush=True)
                 return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
             else:
                 order_status = data['status']
