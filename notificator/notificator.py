@@ -118,10 +118,16 @@ async def handle_cyber(request: web.Request):
         status = data.get('status')
         order_id = data.get('request_id')
         amount = data.get('sum')
-        amount = int(amount)
+        try:
+            amount_float = float(amount)
+        except Exception as e:
+            logger.error(f"Ошибка преобразования суммы для cyber: {amount} ({e})")
+            amount_int = amount
+        else:
+            amount_int = int(amount_float)
         if status == "success":
-            await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
-            await add_paid_order(float(amount), int(chat_id), system)
+            await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount_int}₽ успешно оплачен!")
+            await add_paid_order(amount_float, int(chat_id), system)
         else:
             pass 
     except Exception as e:
