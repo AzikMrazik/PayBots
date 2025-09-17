@@ -21,13 +21,13 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot):
         pay_types = "currency"
         pay_type = "rub"
     loading_msg = await bot.send_message(chat_id, "⌛Ожидаем реквизиты...")
-    json = {"externail_id": order_id,
+    json = {"external_id": order_id,
             "amount": amount,
             f"{pay_types}": f"{pay_type}",
             "merchant_id": f"{config.MERCHANT_ID}",
             "callback_url": f"{config.DOMAIN}/amore/{chat_id}"}
-    if msg.text.split("_")[0] == "card":
-        json.append("card_number": "card")
+    if msg.text.split("_")[0] == "/card":
+        json["card_number"] = "card"
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/h2h/order",
                                 headers={"Accept": "application/json", "Access-Token": f"{config.API_TOKEN}"},
