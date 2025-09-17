@@ -25,7 +25,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot):
             "amount": amount,
             f"{pay_types}": f"{pay_type}",
             "merchant_id": f"{config.MERCHANT_ID}",
-            "callback_url": f"{config.DOMAIN}/amore/{chat_id}"}
+            "callback_url": f"https://{config.DOMAIN}/amore/{chat_id}"}
     if msg.text.split("_")[0] == "/card":
         json["card_number"] = "card"
     async with aiohttp.ClientSession() as session:
