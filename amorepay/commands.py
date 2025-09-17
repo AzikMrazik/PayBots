@@ -6,7 +6,7 @@ import aiohttp
 
 router = Router()
 
-@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/types_"))
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/types"))
 async def types_command(msg: Message):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{config.BASE_URL}/api/payment-gateways",
