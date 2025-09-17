@@ -1,5 +1,4 @@
 from aiogram import Bot, types, Router, F
-from aiogram.fsm.context import FSMContext
 import logging
 import config
 import aiohttp
@@ -9,8 +8,9 @@ from datetime import datetime
 
 router = Router()
 
-@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/cyb_")) 
-async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, state: FSMContext, amt: str = None):
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/card_")) 
+@router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/amore_")) 
+async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot):
     order_id = datetime.now().strftime("%d%m%H%M")
     chat_id = msg.chat.id
     amount = msg.text.split("_")[1]
@@ -21,14 +21,17 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
         pay_types = "currency"
         pay_type = "rub"
     loading_msg = await bot.send_message(chat_id, "⌛Ожидаем реквизиты...")
+    json = {"externail_id": order_id,
+            "amount": amount,
+            f"{pay_types}": f"{pay_type}",
+            "merchant_id": f"{config.MERCHANT_ID}",
+            "callback_url": f"{config.DOMAIN}/amore/{chat_id}"}
+    if msg.text.split("_")[0] == "card":
+        json.append("card_number": "card")
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/h2h/order",
                                 headers={"Accept": "application/json", "Access-Token": f"{config.API_TOKEN}"},
-                                json={"externail_id": order_id,
-                                    "amount": amount,
-                                    f"{pay_types}": f"{pay_type}",
-                                    "merchant_id": f"{config.MERCHANT_ID}",
-                                    "callback_url": f"{config.DOMAIN}/amore/{chat_id}"}) as resp:
+                                json=json) as resp:
             try:
                 data = await resp.json()
                 logging.info(f"Answer: {data}")
@@ -68,16 +71,16 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot, sta
                 try:
                     error = data.get("message")
                     if error:
-                        await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}")
+                        await msg.answer(f"⚰️Amore Pay отправил труп!\nОшибка: {error}")
                         return
                     else:
-                        error = data.get("request")
+                        error = data.get("message")
                         if error == "no_requisites":
                             await msg.answer(f"⛔Нет реквизитов!")
                         else:
-                            await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {error}") 
+                            await msg.answer(f"⚰️Amore Pay отправил труп!\nОшибка: {error}") 
                 except:
-                    await msg.answer(f"⚰️Cyber-Money отправил труп!\nОшибка: {data}")
+                    await msg.answer(f"⚰️Amore Pay отправил труп!\nОшибка: {data}")
                     pass
 
 async def check_name(bin):

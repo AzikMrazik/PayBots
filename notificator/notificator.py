@@ -33,7 +33,8 @@ COMMISSION_RATES = {
     "corkpay": 0.30,
     "esp": 0.30,
     "crocopay": 0.15,
-    "cyber": 0.25
+    "cyber": 0.25,
+    "amore": 0.275
 }
 
 DB_PATHS = {
@@ -134,6 +135,26 @@ async def handle_cyber(request: web.Request):
         logger.error(f"Ошибка обработки вебхука для cyber: {e}")
     return web.Response(text="OK", status=200)
 
+async def handle_amore(request: web.Request):
+    bot: Bot = request.app['bot']
+    try:
+        system = "amore"
+        data = await request.json()
+        data = data.get('data')
+        logger.info(f"Получен вебхук для cyber: {data}")
+        chat_id = request.match_info.get('chat_id')
+        order_id = data.get('external_id')
+        amount = data.get('amount')
+        status = data.get('status')
+        if status == "success":
+            await bot.send_message(chat_id=chat_id, text=f"⚪AmorePay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+            await add_paid_order(amount, int(chat_id), system)
+        else:
+            pass 
+    except Exception as e:
+        logger.error(f"Ошибка обработки вебхука для cyber: {e}")
+    return web.Response(text="OK", status=200)
+
 async def handle_epay(request: web.Request):
     return await process_webhook(request, "epay", "🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
 
@@ -152,6 +173,7 @@ async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
     app.router.add_post('/espay/{chat_id}', handle_esp)
     app.router.add_post('/cyber/{chat_id}', handle_cyber)
+    app.router.add_post('/amore/{chat_id}', handle_amore)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
