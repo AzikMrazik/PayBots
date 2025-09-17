@@ -33,9 +33,8 @@ async def types_command(msg: Message):
                 commission = data[i].get('service_commission_rate')
                 rate = data[i].get('conversion_price')
                 method = f"""
-Метод: <b>{name}</b> 
+💠Метод: <b>{name}</b> 
 Код: <code>{code}</code>
-
 Лимиты: {min_limit}₽-{max_limit}₽
 Комиссия: {commission}%
 Курс: {rate}₽ за USDT
