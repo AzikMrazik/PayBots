@@ -13,6 +13,7 @@ async def types_command(msg: Message):
                                 headers={"Accept": "application/json", "Access-Token": f"{config.API_TOKEN}"}) as resp:
             data = await resp.json()
             data = data.get("data")
+            text_parts = []
             for i in range(len(data)):
                 if data[i].get('currency') != "rub":
                     continue
@@ -31,17 +32,20 @@ async def types_command(msg: Message):
                     types_list.append("по номеру счёта")
                 commission = data[i].get('service_commission_rate')
                 rate = data[i].get('conversion_price')
-                await msg.answer(f"""
-                Метод: {name} 
-                Код: {code}
+                method = f"""
+Метод: {name} 
+Код: {code}
 
-                Лимиты: {min_limit} - {max_limit}
-                Время на оплату: {reserve_time}
-                Типы: {', '.join(types_list)}
+Лимиты: {min_limit} - {max_limit}
+Время на оплату: {reserve_time}
+Типы: {', '.join(types_list)}
 
-                Комиссия: {commission}
-                Курс: {rate}
-                """)
+Комиссия: {commission}
+Курс: {rate}
+                """
+                text_parts.append(method)
+            if text_parts:
+                await msg.answer(", ".join(text_parts))
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/check_"))
 async def check_command(msg: Message):
@@ -66,12 +70,12 @@ async def check_command(msg: Message):
             await msg.answer(f"{sign}Заказ №{order_id} на сумму {amount}₽ {status}!")
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/cancel_"))
-async def check_command(msg: Message):
+async def cancel_command(msg: Message):
     order_id = msg.text.split("_")[1]
     async with aiohttp.ClientSession() as session:
         async with session.patch(f"{config.BASE_URL}/api/h2h/order/{order_id}/cancel",
                                 headers={"Accept": "application/json", "Access-Token": f"{config.API_TOKEN}"}) as resp:
-                                pass
+            await msg.answer("❎Заявка отменена!")
 
 
 
