@@ -33,19 +33,16 @@ async def types_command(msg: Message):
                 commission = data[i].get('service_commission_rate')
                 rate = data[i].get('conversion_price')
                 method = f"""
-Метод: {name} 
-Код: {code}
+Метод: <b>{name}</b> 
+Код: <code>{code}</code>
 
-Лимиты: {min_limit} - {max_limit}
-Время на оплату: {reserve_time}
-Типы: {', '.join(types_list)}
-
-Комиссия: {commission}
-Курс: {rate}
+Лимиты: {min_limit}₽-{max_limit}₽
+Комиссия: {commission}%
+Курс: {rate}₽ за USDT
                 """
                 text_parts.append(method)
             if text_parts:
-                await msg.answer(", ".join(text_parts))
+                await msg.answer("".join(text_parts))
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/check_"))
 async def check_command(msg: Message):
