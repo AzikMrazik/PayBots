@@ -16,6 +16,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot):
     amount = msg.text.split("_")[1]
     try:
         pay_type = msg.text.split("_")[2]
+        pay_type = pay_type.replace(".", "_")
         pay_types = "payment_gateway"      
     except:
         pay_types = "currency"
@@ -27,7 +28,7 @@ async def create_payment(msg: types.Message | types.CallbackQuery, bot: Bot):
             "merchant_id": f"{config.MERCHANT_ID}",
             "callback_url": f"https://{config.DOMAIN}/amore/{chat_id}"}
     if msg.text.split("_")[0] == "/card":
-        json["card_number"] = "card"
+        json["payment_detail_type"] = "card"
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{config.BASE_URL}/api/h2h/order",
                                 headers={"Accept": "application/json", "Access-Token": f"{config.API_TOKEN}"},
