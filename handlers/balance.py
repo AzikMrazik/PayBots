@@ -4,11 +4,12 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from aiogram.types import Message
-from aiogram.filters import Command
 from aiogram import Router
+from aiogram.filters import Command
+from aiogram.types import Message, CallbackQuery
 from database import Database
 from utils import format_money, parse_decimal
+from keyboards import main_menu_kb
 
 
 router = Router()
@@ -36,4 +37,14 @@ async def cmd_refill(message: Message) -> None:
         )
     except Exception as e:
         await message.answer(f"Ошибка пополнения: {e}")
+
+
+@router.callback_query(lambda c: c.data == "menu:balance")
+async def cb_balance(call: CallbackQuery) -> None:
+    db: Database = call.message.bot.dispatcher.get("db")  # type: ignore[attr-defined]
+    balance = await db.get_balance(call.from_user.id)  # type: ignore[union-attr]
+    await call.message.edit_text(
+        f"Ваш баланс: <b>{format_money(balance)}</b>", reply_markup=main_menu_kb().as_markup()
+    )
+    await call.answer()
 

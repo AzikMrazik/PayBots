@@ -1,6 +1,7 @@
 from aiogram import Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
+from keyboards import main_menu_kb
 
 
 router = Router()
@@ -10,15 +11,15 @@ router = Router()
 async def cmd_start(message: Message) -> None:
     text = (
         "👋 Добро пожаловать в <b>RF x TSA</b>!\n\n"
-        "Этот бот помогает экономить на комиссиях в сети Tron с помощью сервиса re:fee.bot.\n\n"
-        "Доступные команды:\n"
-        "/balance — показать баланс\n"
-        "/refill <сумма> — пополнить баланс (виртуально)\n"
-        "/buyenergy <адрес> <энергия> — купить энергию\n"
-        "/buybandwidth <адрес> <кол-во> — купить bandwidth\n"
-        "/calculate — калькулятор энергии/стоимости\n"
-        "/addwallet <метка> <адрес> — сохранить адрес Tron\n"
-        "/mywallets — список моих адресов\n"
+        "Выберите действие с помощью кнопок ниже."
     )
-    await message.answer(text)
+    await message.answer(text, reply_markup=main_menu_kb().as_markup())
+
+
+@router.callback_query(lambda c: c.data == "back:main")
+async def cb_back_main(call: CallbackQuery) -> None:
+    await call.message.edit_text(
+        "Главное меню. Выберите действие:", reply_markup=main_menu_kb().as_markup()
+    )
+    await call.answer()
 

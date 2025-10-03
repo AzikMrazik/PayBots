@@ -107,3 +107,23 @@ class Database:
                 rows = await cur.fetchall()
                 return [(row["id"], row["wallet_address"], row["label"]) for row in rows]
 
+    async def get_wallet(self, user_id: int, wallet_id: int) -> Optional[Tuple[int, str, Optional[str]]]:
+        async with self.connection() as db:
+            async with db.execute(
+                "SELECT id, wallet_address, label FROM wallets WHERE user_id = ? AND id = ?",
+                (user_id, wallet_id),
+            ) as cur:
+                row = await cur.fetchone()
+                if not row:
+                    return None
+                return (row["id"], row["wallet_address"], row["label"])  # type: ignore[return-value]
+
+    async def delete_wallet(self, user_id: int, wallet_id: int) -> bool:
+        async with self.connection() as db:
+            cur = await db.execute(
+                "DELETE FROM wallets WHERE user_id = ? AND id = ?",
+                (user_id, wallet_id),
+            )
+            await db.commit()
+            return cur.rowcount > 0
+
