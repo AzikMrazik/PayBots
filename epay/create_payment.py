@@ -65,6 +65,7 @@ async def check_name(bin):
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
     if typ == "qr":
+        amount = amount * 0.926
         urls = f"{BASE_URL_QR}/api/request"
     else:
         urls = f"{BASE_URL}/request/requisites"
@@ -93,7 +94,7 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                     precise_amount = data['amount']
                     try:
                         if typ == "qr":
-                            URL = data.get('url') or data.get('payment_url') or data.get('order_url') or data.get('card_number')
+                            URL = str(response.url)
                             order_id = data['order_id']
                             await addorder(order_id, chat_id, precise_amount)
                             return (f"🔗Ваша ссылка:", f"{URL}")
