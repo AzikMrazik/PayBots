@@ -86,8 +86,8 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                 print(data, flush=True)
                 return (f"⚰️E-Pay отправил труп!", f"error: {data}", "Отправьте сообщение выше кодеру!")
             else:
-                order_status = data['status']
                 print(data, flush=True)
+                order_status = data['status']
                 if order_status != "error":
                     precise_amount = data['amount']
                     try:
