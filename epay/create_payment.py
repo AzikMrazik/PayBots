@@ -91,8 +91,8 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                 if order_status != "error":
                     precise_amount = data['amount']
                     try:
-                        URL = data['card_form_url']
-                        if URL:
+                        if typ == "qr":
+                            URL = data['card_number']
                             order_id = data['order_id']
                             await addorder(order_id, chat_id, precise_amount)
                             return (f"🔗Ваша ссылка:", f"{URL}")
