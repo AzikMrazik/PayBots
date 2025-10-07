@@ -84,9 +84,30 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                 data = await response.json()
             except:
                 print(response)
-                data = await response.text()
-                print(data, flush=True)
-                return (f"⚰️E-Pay отправил труп!", f"error: {data}", "Отправьте сообщение выше кодеру!")
+                response_text = await response.text()
+                print(response_text, flush=True)
+                
+                # Обработка HTML ответа для QR-кода
+                if typ == "qr" and (response_text.strip().startswith('<!DOCTYPE') or response_text.strip().startswith('<html')):
+                    # Извлекаем URL из response.url или из HTML
+                    order_url = str(response.url)
+                    # Используем regex для извлечения ссылки на заказ
+                    url_pattern = r'(https://infopayments\.click/order/[^\s\)]+)'
+                    match = re.search(url_pattern, order_url)
+                    if match:
+                        extracted_url = match.group(1)
+                        # Извлекаем order_id из URL
+                        order_id_match = re.search(r'/order/([a-f0-9\-]+)', extracted_url)
+                        if order_id_match:
+                            order_id = order_id_match.group(1)
+                            await addorder(order_id, chat_id, amount)
+                        return (f"🔗Ваша ссылка:", extracted_url)
+                    else:
+                        return (f"⚰️E-Pay отправил HTML, но не удалось найти ссылку!", "Отправьте сообщение выше кодеру!")
+                
+                # Для других случаев возвращаем ошибку
+                error_preview = response_text[:200] + "..." if len(response_text) > 200 else response_text
+                return (f"⚰️E-Pay отправил труп!", f"error: {error_preview}", "Отправьте сообщение выше кодеру!")
             else:
                 print(data, flush=True)
                 order_status = data['status']
