@@ -6,7 +6,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import API_TOKEN, BASE_URL, DOMAIN
+from config import API_TOKEN, BASE_URL, DOMAIN, BASE_URL_QR
 from checker import addorder
 from datetime import datetime
 import re
@@ -64,22 +64,18 @@ async def check_name(bin):
 
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
-    get3ds = 0
-    getqr = 0
-    if typ == "zds":
-        get3ds = 1
-    elif typ == "qr":
-        getqr = 1
+    if typ == "qr":
+        urls = BASE_URL_QR
+    else:
+        urls = BASE_URL
     async with ClientSession() as session:
         async with session.post(
-            f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
+            f"{urls}/request/requisites", headers={"Content-Type": "application/json"},
             json={
                 "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
                 "notice_url": f"https://{DOMAIN}/epay",
-                "3dsUrl": get3ds,
-                "get_qr_sbp_requisites": getqr
             }
         ) as response:
             try:
