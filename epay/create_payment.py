@@ -93,7 +93,7 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                     precise_amount = data['amount']
                     try:
                         if typ == "qr":
-                            URL = data['card_number']
+                            URL = data.get('url') or data.get('payment_url') or data.get('order_url') or data.get('card_number')
                             order_id = data['order_id']
                             await addorder(order_id, chat_id, precise_amount)
                             return (f"🔗Ваша ссылка:", f"{URL}")
