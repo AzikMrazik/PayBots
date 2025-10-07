@@ -65,12 +65,12 @@ async def check_name(bin):
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
     if typ == "qr":
-        urls = BASE_URL_QR
+        urls = f"{BASE_URL_QR}/api/request"
     else:
-        urls = BASE_URL
+        urls = f"{BASE_URL}/request/requisites"
     async with ClientSession() as session:
         async with session.post(
-            f"{urls}/request/requisites", headers={"Content-Type": "application/json"},
+            urls, headers={"Content-Type": "application/json"},
             json={
                 "api_key": API_TOKEN,
                 "amount": amount,
