@@ -89,7 +89,7 @@ async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
     chat_id = request.match_info.get('chat_id')
     data = await request.json()
-    order_id = data.get('order')
+    order_id = data.get('external_uui')
     amount = data.get('amount')
     await bot.send_message(chat_id=chat_id, text=f"🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
     await add_paid_order(float(amount), int(chat_id), "corkpay")

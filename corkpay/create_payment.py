@@ -125,7 +125,9 @@ async def sendpost2(order_id, counter = 1):
                     bank = payment['bank']
                     price = data['price']
                     amount = price['buyer_paid']
-                    return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}")
+                    merchant = data['merchant']
+                    merchant_order_id = merchant['external_uui']
+                    return (f"📄 Создана заявка: №<code>{merchant_order_id}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}")
                     
 
 
