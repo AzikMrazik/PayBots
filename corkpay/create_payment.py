@@ -105,7 +105,7 @@ async def sendpost2(order, counter = 1):
                 print(data, flush=True)
                 return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
             else:
-                success = data['status']
+                success = data['success']
                 if not success:
                     return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
                 order = data['order']
