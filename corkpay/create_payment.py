@@ -92,7 +92,7 @@ async def sendpost2(order_id, counter = 1):
         async with session.post(
             endpoint,
             json={
-                "order": order,
+                "order": order_id,
                 "merchant_id": int(MERCHANT_ID),
                 "api_key": MERCHANT_TOKEN
             }
