@@ -51,6 +51,7 @@ async def create_payment(message: Message,  state: FSMContext):
 
 async def sendpost(amount, chat_id):
     order_id = datetime.now().strftime("%d%m%H%M%S")
+    ip = datetime.now().strftime("%m.%H.%M.%S")
     async with ClientSession() as session:
         # Normalize BASE_URL and DOMAIN to ensure single scheme
         base = BASE_URL if BASE_URL.startswith(("http://", "https://")) else f"https://{BASE_URL}"
@@ -61,7 +62,7 @@ async def sendpost(amount, chat_id):
         async with session.post(
             endpoint,
             json={
-                    "ip": order_id,
+                    "ip": ip,
                     "merchant_id": int(MERCHANT_ID),
                     "external_uui": order_id,
                     "amount": str(amount),
