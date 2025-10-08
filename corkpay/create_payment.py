@@ -7,6 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
 from config import BASE_URL, MERCHANT_ID, MERCHANT_TOKEN, DOMAIN
 from datetime import datetime
+from urllib.parse import urljoin
 
 router = Router()
 
@@ -51,8 +52,14 @@ async def create_payment(message: Message,  state: FSMContext):
 async def sendpost(amount, chat_id):
     order_id = datetime.now().strftime("%d%m%H%M%S")
     async with ClientSession() as session:
+        # Normalize BASE_URL and DOMAIN to ensure single scheme
+        base = BASE_URL if BASE_URL.startswith(("http://", "https://")) else f"https://{BASE_URL}"
+        endpoint = urljoin(base.rstrip("/") + "/", "api/v1/createOrderMerchants")
+        domain_base = DOMAIN if DOMAIN.startswith(("http://", "https://")) else f"https://{DOMAIN}"
+        callback_url = urljoin(domain_base.rstrip("/") + "/", f"corkpay/{chat_id}")
+
         async with session.post(
-            f"https://{BASE_URL}/api/v1/createOrderMerchants",
+            endpoint,
             json={
                     "ip": order_id,
                     "merchant_id": int(MERCHANT_ID),
@@ -60,7 +67,7 @@ async def sendpost(amount, chat_id):
                     "amount": str(amount),
                     "payment_method": "P2P_CARD",
                     "api_key": MERCHANT_TOKEN,
-                    "callback_url": f"https://{DOMAIN}/corkpay/{chat_id}"
+                    "callback_url": callback_url
                 }
         ) as response:
             try:
@@ -79,8 +86,10 @@ async def sendpost(amount, chat_id):
 
 async def sendpost2(order, counter = 1):
     async with ClientSession() as session:
+        base = BASE_URL if BASE_URL.startswith(("http://", "https://")) else f"https://{BASE_URL}"
+        endpoint = urljoin(base.rstrip("/") + "/", "api/v1/get-merchant-order")
         async with session.post(
-            f"https://{BASE_URL}/api/v1/get-merchant-order",
+            endpoint,
             json={
                 "order": order,
                 "merchant_id": int(MERCHANT_ID),
