@@ -72,14 +72,39 @@ async def sendpost(amount, chat_id):
     order_id = datetime.now().strftime("%d%m%H%M%S")
     async with ClientSession() as session:
         async with session.post(
-            f"https://{domain}/h2h/p2p",
+            f"https://{BASE_URL}/api/v1/createOrderMerchants",
             json={
-                "merchant_id": MERCHANT_ID,
-                "merchant_token": MERCHANT_TOKEN,
-                "ip": order_id,
-                "amount": amount,
-                "merchant_order": order_id,
-                "callback_url": f"https://{DOMAIN}/corkpay"
+                    "ip": order_id,
+                    "merchant_id": int(MERCHANT_ID),
+                    "external_uui": order_id,
+                    "amount": str(amount),
+                    "payment_method": "P2P_CARD",
+                    "api_key": MERCHANT_TOKEN,
+                    "callback_url": f"https://{DOMAIN}/corkpay/{chat_id}"
+                }
+        ) as response:
+            try:
+                data = await response.json()
+                print(data, flush=True)
+            except:
+                data = await response.text()
+                print(data, flush=True)
+                return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
+            else:
+                success = data['status']
+                if not success:
+                    return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
+                order = data['order']
+                await sendpost2(order)
+
+async def sendpost2(order, counter = 1):
+    async with ClientSession() as session:
+        async with session.post(
+            f"https://{BASE_URL}/api/v1/get-merchant-order",
+            json={
+                "order": order,
+                "merchant_id": int(MERCHANT_ID),
+                "api_key": MERCHANT_TOKEN
             }
         ) as response:
             try:
@@ -90,21 +115,29 @@ async def sendpost(amount, chat_id):
                 print(data, flush=True)
                 return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
             else:
-                order_status = data['status']
-                if order_status == "success":
-                    card = data['card']
-                    card = re.sub(r'\s+', '', card)
-                    sign = data['sign']
-                    bin = card[:6]
-                    bank_name = await check_name(bin)
-                    await addorder(sign, chat_id, amount, order_id)
-                    return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер карты для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 20 мин.", f"🏦Банк: {bank_name}")
-                else:
-                    desc = data['reason']
-                    print(data, flush=True)
-                    if desc:
-                        return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")   
+                success = data['status']
+                if not success:
+                    return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
+                order = data['order']
+                status = order['status']
+                if status == "CREATE":
+                    if counter < 60:
+                        counter += 5
+                        await asyncio.sleep(counter)
+                        return await sendpost2(order, counter)
                     else:
-                        return ("⛔Нет реквизитов!",)                
+                        return ("⛔Нет реквизитов!")
+                elif status != "WAIT":
+                    return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
+                else:
+                    payment = data['payment']
+                    details = payment['details']
+                    bank = payment['bank']
+                    price = data['price']
+                    amount = price['buyer_paid']
+                    return (f"📄 Создана заявка: №<code>{order}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}")
+                    
+
+
 
 

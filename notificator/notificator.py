@@ -67,27 +67,6 @@ async def process_webhook(request: web.Request, system: str, message_template: s
         data = await request.json() if system != "corkpay" else await request.text()
         logger.info(f"Получен вебхук для {system}: {data}")
 
-        if system == "corkpay":
-            cleaned_text = data.lstrip('✅ \n\t')
-            parsed_data = parse_qs(cleaned_text)
-            data = {k: v[0] for k, v in parsed_data.items()}
-
-        elif system == "esp":
-            data = data['data']
-            order_id = data['id']
-            amount = data['amount']
-            status = data['status']
-            if status == "SUCCESS":
-                chat_id = request.match_info.get('chat_id')
-                await bot.send_message(
-                    chat_id=int(chat_id),
-                    text=message_template.format(order_id=order_id, amount=amount)
-                )
-                await add_paid_order(float(amount), int(chat_id), system)
-                return web.Response(text="OK", status=200)
-            else:
-                return web.Response(text="OK")
-
         order_id = data.get('transaction_id') or data.get('merchant_order') or request.match_info.get('order_id') or request.match_info.get('transaction_id')
         amount = data.get('total') or data.get('amount')
 
@@ -107,7 +86,14 @@ async def process_webhook(request: web.Request, system: str, message_template: s
         return web.Response(text="OK", status=200)
 
 async def handle_corkpay(request: web.Request):
-    return await process_webhook(request, "corkpay", "🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+    bot: Bot = request.app['bot']
+    chat_id = request.match_info.get('chat_id')
+    data = await request.json()
+    order_id = data.get('order')
+    amount = data.get('amount')
+    await bot.send_message(chat_id=chat_id, text=f"🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+    await add_paid_order(float(amount), int(chat_id), "corkpay")
+    return web.Response(text="OK", status=200)
 
 async def handle_cyber(request: web.Request):
     bot: Bot = request.app['bot']
