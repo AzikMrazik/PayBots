@@ -114,7 +114,7 @@ async def sendpost2(order, counter = 1):
                     if counter < 60:
                         counter += 5
                         await asyncio.sleep(counter)
-                        return await sendpost2(order, counter)
+                        await sendpost2(order, counter)
                     else:
                         return ("⛔Нет реквизитов!")
                 elif status != "WAIT":
