@@ -85,7 +85,7 @@ async def sendpost(amount, chat_id):
                 order = data['order']
                 await sendpost2(order)
 
-async def sendpost2(order, counter = 1):
+async def sendpost2(order_id, counter = 1):
     async with ClientSession() as session:
         base = BASE_URL if BASE_URL.startswith(("http://", "https://")) else f"https://{BASE_URL}"
         endpoint = urljoin(base.rstrip("/") + "/", "api/v1/get-merchant-order")
@@ -114,7 +114,7 @@ async def sendpost2(order, counter = 1):
                     if counter < 60:
                         counter += 5
                         await asyncio.sleep(counter)
-                        await sendpost2(order, counter)
+                        await sendpost2(order_id, counter)
                     else:
                         return ("⛔Нет реквизитов!")
                 elif status != "WAIT":
@@ -125,7 +125,7 @@ async def sendpost2(order, counter = 1):
                     bank = payment['bank']
                     price = data['price']
                     amount = price['buyer_paid']
-                    return (f"📄 Создана заявка: №<code>{order}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}")
+                    return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}")
                     
 
 
