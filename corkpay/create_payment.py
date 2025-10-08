@@ -1,14 +1,11 @@
 import asyncio
-import re
-from aiosqlite import connect
 from aiohttp import ClientSession
 from aiogram import Bot, Router, F
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import API_TOKEN, BASE_URL, MERCHANT_ID, MERCHANT_TOKEN, DOMAIN
-from checker import addorder
+from config import BASE_URL, MERCHANT_ID, MERCHANT_TOKEN, DOMAIN
 from datetime import datetime
 
 router = Router()
@@ -50,25 +47,8 @@ async def create_payment(message: Message,  state: FSMContext):
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
     
-async def check_name(bin):
-    async with connect("bins.db") as db:
-        cursor = await db.execute(
-            "SELECT bank_name FROM bins WHERE bin = ?", 
-            (bin,)
-        )
-        result = await cursor.fetchone()
-        return result[0]
-
-async def get_domain():
-    async with ClientSession() as session:
-        async with session.get(
-            f"{BASE_URL}/api/getPayApiDomain/{API_TOKEN}"
-        ) as response:
-            domain = await response.text()
-            return domain
 
 async def sendpost(amount, chat_id):
-    domain = await get_domain()
     order_id = datetime.now().strftime("%d%m%H%M%S")
     async with ClientSession() as session:
         async with session.post(
