@@ -63,23 +63,23 @@ async def check_name(bin):
 
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
-    get3ds = 0
-    getqr = 0
-    if typ == "zds":
-        get3ds = 1
-    elif typ == "qr":
-        getqr = 1
-    print("type:", typ, flush=True)
-    async with ClientSession() as session:
-        async with session.post(
-            f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
-            json={
+    json={
                 "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
                 "notice_url": f"https://{DOMAIN}/epay/{chat_id}",
-                "3dsUrl": get3ds,
             }
+    if typ == "zds":
+        get3ds = 1
+        json["3dsUrl"] = get3ds
+    elif typ == "qr":
+        getqr = 1
+        json["get_qr_sbp_requisites"] = getqr
+    print("type:", typ, flush=True)
+    async with ClientSession() as session:
+        async with session.post(
+            f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
+            json=json
         ) as response:
             try:
                 data = await response.json()
