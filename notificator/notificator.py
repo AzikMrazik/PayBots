@@ -184,8 +184,10 @@ async def handle_ago(message: Message):
     
     try:
         if message.text == "/ago":
+            days = "вчера"
             now = datetime.now() - timedelta(days=1)
         else:
+            days = "сегодня"
             now = datetime.now()
         if now.time() < dt_time(6, 0):
             start_date = now - timedelta(days=1)
@@ -222,7 +224,7 @@ async def handle_ago(message: Message):
                 report[chat_id]['count'] += 1
                 report[chat_id]['net_total'] += net_amount
             
-            response = "📊 Отчет за вчера (чистые суммы):\n"
+            response = f"📊 Отчет за {days}:\n"
             for chat_id, data in report.items():
                 response += (
                     f"\n👤 Chat ID: {chat_id}\n"
