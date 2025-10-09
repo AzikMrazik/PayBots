@@ -75,6 +75,8 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     elif typ == "qr":
         getqr = 1
         json["get_qr_sbp_requisites"] = getqr
+        amount = amount * 0.8818
+        json["amount"] = amount
     print("type:", typ, flush=True)
     async with ClientSession() as session:
         async with session.post(
