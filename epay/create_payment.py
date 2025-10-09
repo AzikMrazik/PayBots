@@ -95,16 +95,11 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                 order_status = data['status']
                 if order_status != "error":
                     precise_amount = data['amount']
-                    try:
-                        URL = data['card_form_url']
-                        if URL:
-                            order_id = data['order_id']
-                            return (f"🔗Ваша ссылка:", f"{URL}")
-                    except:
-                        pass
                     card = data['card_number']
-                    card = re.sub(r'\s+', '', card)
                     order_id = data['order_id']
+                    if card[:3] == "htt":
+                        return (f"🔗Ваша ссылка:", f"{card}", f"❓Номер заказа: <code>{order_id}</code>, cумма: <code>{precise_amount}₽</code>")
+                    card = re.sub(r'\s+', '', card)                    
                     num_prefixes = ["+", "7", "8", "9", "3"]
                     if card[:1] in num_prefixes:
                         sbp = True
