@@ -9,7 +9,7 @@ from aiogram.utils.formatting import *
 from config import API_TOKEN, BASE_URL, DOMAIN
 from datetime import datetime
 import re
-from group_payment import generate_qr
+from qr_utils import generate_qr
 
 router = Router()
 
