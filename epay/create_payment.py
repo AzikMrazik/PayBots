@@ -67,6 +67,7 @@ async def check_name(bin):
 
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
+    template_amount = amount
     json={
                 "api_key": API_TOKEN,
                 "amount": amount,
@@ -103,7 +104,7 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                     card = data['card_number']
                     order_id = data['order_id']
                     if typ == "qr":
-                        photo, caption = await generate_qr(card, amount)
+                        photo, caption = await generate_qr(card, template_amount)
                         return (f"🔗Ваша ссылка:", f"{card}", f"❓Номер заказа: №<code>{order_id}</code>", {"photo": photo, "caption": caption})
                     card = re.sub(r'\s+', '', card)                    
                     num_prefixes = ["+", "7", "8", "9", "3"]
