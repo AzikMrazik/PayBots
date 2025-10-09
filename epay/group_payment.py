@@ -39,21 +39,27 @@ async def cash_command(message: Message):
         order = await sendpost(amount, message.chat.id, msg, 1, typ)
         await msg.delete()
         for i in order:
-            await message.answer(i)
+            if isinstance(i, dict) and 'photo' in i:
+                await message.answer_photo(i['photo'], caption=i.get('caption'), parse_mode="HTML")
+            else:
+                await message.answer(i)
         
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/gen_"))
 async def gen_command(message: Message):
     if message.chat.id not in ALLOWED_GROUPS:
         await message.answer("Бот не активирован в этой группе!")
         return
-    try:
-        p = message.text.split("_")
-        if len(p) < 3:
-            await message.answer("Неверный формат команды. Используйте: /gen_ссылка")
-            return
-        link = p[2]
-        amt = p[1]
-        
+    p = message.text.split("_")
+    if len(p) < 3:
+        await message.answer("Неверный формат команды. Используйте: /gen_сумма_ссылка")
+        return
+    link = p[2]
+    amt = p[1]
+    photo, caption = await generate_qr(link, amt)
+    await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
+    return
+
+async def generate_qr(link, amt):
         qr = qrcode.QRCode(version=1, box_size=25, border=6)
         qr.add_data(link)
         qr.make(fit=True)
@@ -79,18 +85,15 @@ async def gen_command(message: Message):
         bio.seek(0)
         
         photo = BufferedInputFile(bio.read(), filename="qr.png")
-        await message.answer_photo(photo, caption=f"""
+        caption = f"""
 📄Оплата по QR-коду.
 
 💰К оплате: <code>{amt}</code> рублей
 
 <i>Если не работает QR👇</i>
-🔗Ссылка - <a href="{link}">[КНОПКА]</a>""", parse_mode="HTML")
-        
-    except IndexError:
-        await message.answer("Неверный формат команды. Используйте: /gen_ссылка")
-    except Exception as e:
-        await message.answer(f"Ошибка: {str(e)}")
+🔗Ссылка - <a href="{link}">[КНОПКА]</a>"""
+        return photo, caption
+
 
 @router.message(F.chat.type.in_({"group", "supergroup"}), F.text.startswith("/temp_"))
 async def temp_command(message: Message):

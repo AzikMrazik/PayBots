@@ -9,6 +9,7 @@ from aiogram.utils.formatting import *
 from config import API_TOKEN, BASE_URL, DOMAIN
 from datetime import datetime
 import re
+from group_payment import generate_qr
 
 router = Router()
 
@@ -45,7 +46,10 @@ async def create_payment(message: Message,  state: FSMContext):
         order = await sendpost(amount, message.from_user.id, msg, 1)
         await msg.delete()
         for i in order:
-            await message.answer(i)
+            if isinstance(i, dict) and 'photo' in i:
+                await message.answer_photo(i['photo'], caption=i.get('caption'), parse_mode="HTML")
+            else:
+                await message.answer(i)
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
     
@@ -99,7 +103,8 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                     card = data['card_number']
                     order_id = data['order_id']
                     if typ == "qr":
-                        return (f"🔗Ваша ссылка:", f"{card}", f"❓Номер заказа: №<code>{order_id}</code>")
+                        photo, caption = await generate_qr(card, amount)
+                        return (f"🔗Ваша ссылка:", f"{card}", f"❓Номер заказа: №<code>{order_id}</code>", {"photo": photo, "caption": caption})
                     card = re.sub(r'\s+', '', card)                    
                     num_prefixes = ["+", "7", "8", "9", "3"]
                     if card[:1] in num_prefixes:
