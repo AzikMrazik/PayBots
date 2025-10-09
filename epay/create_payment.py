@@ -79,7 +79,6 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                 "merchant_order_id": merchant_order_id,
                 "notice_url": f"https://{DOMAIN}/epay/{chat_id}",
                 "3dsUrl": get3ds,
-                "get_qr_sbp_requisites": getqr
             }
         ) as response:
             try:
