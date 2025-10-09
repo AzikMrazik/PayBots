@@ -69,6 +69,7 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
         get3ds = 1
     elif typ == "qr":
         getqr = 1
+    print("type:", typ, flush=True)
     async with ClientSession() as session:
         async with session.post(
             f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
@@ -83,21 +84,21 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
         ) as response:
             try:
                 data = await response.json()
+                print(data, flush=True)
             except:
                 print(response)
                 data = await response.text()
                 print(data, flush=True)
                 return (f"⚰️E-Pay отправил труп!", f"error: {data}", "Отправьте сообщение выше кодеру!")
             else:
-                order_status = data['status']
                 print(data, flush=True)
+                order_status = data['status']
                 if order_status != "error":
                     precise_amount = data['amount']
                     try:
                         URL = data['card_form_url']
                         if URL:
                             order_id = data['order_id']
-                            await addorder(order_id, chat_id, precise_amount)
                             return (f"🔗Ваша ссылка:", f"{URL}")
                     except:
                         pass
@@ -144,4 +145,4 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                         else:
                             return ("⛔Нет реквизитов!",)
                     else:
-                        return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")                
+                        return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")             
