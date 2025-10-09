@@ -98,8 +98,8 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                     precise_amount = data['amount']
                     card = data['card_number']
                     order_id = data['order_id']
-                    if card[:3] == "htt":
-                        return (f"🔗Ваша ссылка:", f"{card}", f"❓Номер заказа: <code>{order_id}</code>, cумма: <code>{precise_amount}₽</code>")
+                    if typ == "qr":
+                        return (f"🔗Ваша ссылка:", f"{card}", f"❓Номер заказа: №<code>{order_id}</code>")
                     card = re.sub(r'\s+', '', card)                    
                     num_prefixes = ["+", "7", "8", "9", "3"]
                     if card[:1] in num_prefixes:
