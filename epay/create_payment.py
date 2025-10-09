@@ -6,8 +6,7 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
-from config import API_TOKEN, BASE_URL, DOMAIN, BASE_URL_QR
-from checker import addorder
+from config import API_TOKEN, BASE_URL, DOMAIN
 from datetime import datetime
 import re
 
@@ -64,58 +63,39 @@ async def check_name(bin):
 
 async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
     merchant_order_id = datetime.now().strftime("%d%m%H%M")
-    if typ == "qr":
-        amount = amount * 0.926
-        urls = f"{BASE_URL_QR}/api/request"
-    else:
-        urls = f"{BASE_URL}/request/requisites"
+    get3ds = 0
+    getqr = 0
+    if typ == "zds":
+        get3ds = 1
+    elif typ == "qr":
+        getqr = 1
     async with ClientSession() as session:
         async with session.post(
-            urls, headers={"Content-Type": "application/json"},
+            f"{BASE_URL}/request/requisites", headers={"Content-Type": "application/json"},
             json={
                 "api_key": API_TOKEN,
                 "amount": amount,
                 "merchant_order_id": merchant_order_id,
-                "notice_url": f"https://{DOMAIN}/epay",
-                "use_card_payment": "RUB"
+                "notice_url": f"https://{DOMAIN}/epay/{chat_id}",
+                "3dsUrl": get3ds,
+                "get_qr_sbp_requisites": getqr
             }
         ) as response:
             try:
                 data = await response.json()
             except:
                 print(response)
-                response_text = await response.text()
-                print(response_text, flush=True)
-                
-                # Обработка HTML ответа для QR-кода
-                if typ == "qr" and (response_text.strip().startswith('<!DOCTYPE') or response_text.strip().startswith('<html')):
-                    # Извлекаем URL из response.url или из HTML
-                    order_url = str(response.url)
-                    # Используем regex для извлечения ссылки на заказ
-                    url_pattern = r'(https://infopayments\.click/order/[^\s\)]+)'
-                    match = re.search(url_pattern, order_url)
-                    if match:
-                        extracted_url = match.group(1)
-                        # Извлекаем order_id из URL
-                        order_id_match = re.search(r'/order/([a-f0-9\-]+)', extracted_url)
-                        if order_id_match:
-                            order_id = order_id_match.group(1)
-                            await addorder(order_id, chat_id, amount)
-                        return (f"🔗Ваша ссылка:", extracted_url)
-                    else:
-                        return (f"⚰️E-Pay отправил HTML, но не удалось найти ссылку!", "Отправьте сообщение выше кодеру!")
-                
-                # Для других случаев возвращаем ошибку
-                error_preview = response_text[:200] + "..." if len(response_text) > 200 else response_text
-                return (f"⚰️E-Pay отправил труп!", f"error: {error_preview}", "Отправьте сообщение выше кодеру!")
-            else:
+                data = await response.text()
                 print(data, flush=True)
+                return (f"⚰️E-Pay отправил труп!", f"error: {data}", "Отправьте сообщение выше кодеру!")
+            else:
                 order_status = data['status']
+                print(data, flush=True)
                 if order_status != "error":
                     precise_amount = data['amount']
                     try:
-                        if typ == "qr":
-                            URL = r'(https://infopayments\.click/order/[^\s\)]+)'
+                        URL = data['card_form_url']
+                        if URL:
                             order_id = data['order_id']
                             await addorder(order_id, chat_id, precise_amount)
                             return (f"🔗Ваша ссылка:", f"{URL}")
@@ -149,7 +129,6 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                         if bank_name == None or bank_name == "null" or bank_name == "none":
                             bank_name == "Любой"
                         bank_type = "телефона"
-                    await addorder(order_id, chat_id, precise_amount)
                     if sbp:
                         return (f"📄 Создана заявка: №<code>{order_id}</code>\n\n💳 Номер {bank_type} для оплаты: <code>{card}</code>\n💰Сумма платежа: <code>{precise_amount}</code> рублей\n\n🕑 Время на оплату: 30 мин.", F"🏦Банк: {bank_name}\n🏳️Страна: {country}")
                     else:
@@ -166,5 +145,3 @@ async def sendpost(amount, chat_id, msg, counter, typ="p2p"):
                             return ("⛔Нет реквизитов!",)
                     else:
                         return ("❓Неизвестная ошибка", f"{desc}", "Отправьте сообщение выше кодеру!")                
-
-

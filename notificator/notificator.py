@@ -7,14 +7,10 @@ from aiogram.types import Message
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
-from config import BOT_TOKEN, DOMAIN, REPORT_CHAT_ID, ADMINS
-from urllib.parse import parse_qs
+from config import BOT_TOKEN, DOMAIN, ADMINS
 from aiogram.webhook.aiohttp_server import setup_application
 from datetime import datetime, timedelta
-import pandas as pd
 import aiosqlite
-import os
-from aiogram.types import FSInputFile
 from datetime import time as dt_time
 
 logging.basicConfig(
@@ -29,26 +25,20 @@ storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 COMMISSION_RATES = {
-    "epay": 0.30,
+    "epay": 0.30, 
     "corkpay": 0.30,
-    "esp": 0.30,
-    "crocopay": 0.15,
     "cyber": 0.25,
-    "amore": 0.275
+    "crocopay": 0.15
 }
 
 DB_PATHS = {
-    "corkpay": "/root/paybots/corkpay/orders_corkpay.db",
-    "epay": "/root/paybots/epay/orders_epay.db",
     "crocopay": "/root/paybots/crocopay/orders_crocopay.db"
 }
 
 def calculate_net_amount(system: str, amount: float) -> float:
     rate = COMMISSION_RATES.get(system)
-    # If we don't know the rate, assume no commission
     if rate is None:
         return float(amount)
-    # If rate is a callable (dynamic), call it with amount
     if callable(rate):
         try:
             r = rate(float(amount))
@@ -97,69 +87,43 @@ async def handle_corkpay(request: web.Request):
 
 async def handle_cyber(request: web.Request):
     bot: Bot = request.app['bot']
-    try:
-        system = "cyber"
-        data = await request.json()
-        logger.info(f"Получен вебхук для cyber: {data}")
-        chat_id = request.match_info.get('chat_id')
-        status = data.get('status')
-        order_id = data.get('request_id')
-        amount = data.get('sum')
-        try:
-            amount_float = float(amount)
-        except Exception as e:
-            logger.error(f"Ошибка преобразования суммы для cyber: {amount} ({e})")
-            amount_int = amount
-        else:
-            amount_int = int(amount_float)
-        if status == "success":
-            await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount_int}₽ успешно оплачен!")
-            await add_paid_order(amount_float, int(chat_id), system)
-        else:
-            pass 
-    except Exception as e:
-        logger.error(f"Ошибка обработки вебхука для cyber: {e}")
-    return web.Response(text="OK", status=200)
-
-async def handle_amore(request: web.Request):
-    bot: Bot = request.app['bot']
-    try:
-        system = "amore"
-        data = await request.json()
-        data = data.get('data')
-        logger.info(f"Получен вебхук для cyber: {data}")
-        chat_id = request.match_info.get('chat_id')
-        order_id = data.get('external_id')
-        amount = data.get('amount')
-        status = data.get('status')
-        if status == "success":
-            await bot.send_message(chat_id=chat_id, text=f"⚪AmorePay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
-            await add_paid_order(amount, int(chat_id), system)
-        else:
-            pass 
-    except Exception as e:
-        logger.error(f"Ошибка обработки вебхука для cyber: {e}")
+    logger.info(f"Получен вебхук для cyber: {data}")
+    chat_id = request.match_info.get('chat_id')
+    data = await request.json()
+    status = data.get('status')
+    order_id = data.get('request_id')
+    amount = data.get('sum')
+    amount_float = float(amount)
+    amount_int = int(amount_float)
+    if status == "success":
+        await bot.send_message(chat_id=chat_id, text=f"🟠CyberMoney:\n✅Заказ №{order_id} на сумму {amount_int}₽ успешно оплачен!")
+        await add_paid_order(amount_float, int(chat_id), "cyber")
+    else:
+        pass 
+    await add_paid_order(float(amount), int(chat_id), "cyber")
     return web.Response(text="OK", status=200)
 
 async def handle_epay(request: web.Request):
-    return await process_webhook(request, "epay", "🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+    bot: Bot = request.app['bot']
+    chat_id = request.match_info.get('chat_id')
+    data = await request.json()
+    order_id = data.get('transaction_id')
+    amount = data.get('amount')
+    await bot.send_message(chat_id=chat_id, text=f"🟡E-PAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
+    await add_paid_order(float(amount), int(chat_id), "epay")
+    return web.Response(text="OK", status=200)
 
 async def handle_crocopay(request: web.Request):
     return await process_webhook(request, "crocopay", "🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
-
-async def handle_esp(request: web.Request):
-    return await process_webhook(request, "esp", "🟢CrocoPay:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
 
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
     app.router.add_post('/corkpay', handle_corkpay)
     app.router.add_route('*', '/', handle_root)
-    app.router.add_post('/epay', handle_epay)
+    app.router.add_post('/epay/{chat_id}', handle_epay)
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
-    app.router.add_post('/espay/{chat_id}', handle_esp)
     app.router.add_post('/cyber/{chat_id}', handle_cyber)
-    app.router.add_post('/amore/{chat_id}', handle_amore)
     SimpleRequestHandler(
         dispatcher=dispatcher,
         bot=bot,
@@ -211,179 +175,18 @@ async def start_command(message: Message):
     await asyncio.sleep(5)
     await msg.delete()
 
-async def generate_report():
-    try:
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=7)
-        
-        async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
-            cursor = await db.execute(
-                "SELECT date, amount, chat_id, system FROM paid_orders "
-                "WHERE date BETWEEN ? AND ?",
-                (start_date.isoformat(), end_date.isoformat()))
-            rows = await cursor.fetchall()
-        
-        formatted_rows = []
-        for row in rows:
-            raw_date, amount, chat_id, system = row
-            # Парсим дату из строки
-            dt = datetime.fromisoformat(raw_date)
-            
-            # Форматируем отдельно дату и время
-            date_str = dt.strftime("%Y-%m-%d")
-            time_str = dt.strftime("%H:%M:%S")
-            
-            # Преобразуем сумму в целое число
-            formatted_amount = int(round(float(amount)))
-            
-            formatted_rows.append((
-                date_str,
-                time_str,
-                formatted_amount,
-                str(int(chat_id)),  # ID как строка
-                system
-            ))
-        
-        # Создаем DataFrame с новыми колонками
-        df = pd.DataFrame(
-            formatted_rows, 
-            columns=['Дата', 'Время', 'Сумма', 'Chat ID', 'Платежная система']
-        )
-        
-        report_path = "/tmp/weekly_report.xlsx"
-        
-        # Сохраняем с правильными форматами
-        with pd.ExcelWriter(report_path, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False)
-            
-            worksheet = writer.sheets['Sheet1']
-            
-            # Формат для ID
-            for cell in worksheet['D']:
-                cell.number_format = '@'
-                
-            # Формат для сумм
-            for cell in worksheet['C']:
-                cell.number_format = '0'
-        
-        return report_path
-    except Exception as e:
-        logger.error(f"Ошибка генерации отчета: {e}")
-        return None
-
-async def schedule_report():
-    while True:
-        now = datetime.now()
-        days_until_sunday = (6 - now.weekday()) % 7
-        next_sunday = now + timedelta(days=days_until_sunday)
-        next_sunday = next_sunday.replace(hour=23, minute=59, second=0, microsecond=0)
-        
-        if next_sunday < now:
-            next_sunday += timedelta(weeks=1)
-        
-        wait_seconds = (next_sunday - now).total_seconds()
-        await asyncio.sleep(wait_seconds)
-        
-        report_path = await generate_report()
-        if report_path:
-            try:
-                file = FSInputFile(report_path)
-                await bot.send_document(
-                    chat_id=REPORT_CHAT_ID,
-                    document=file,
-                    caption="Еженедельный отчет об оплаченных заказах"
-                )
-                os.remove(report_path)
-            except Exception as e:
-                logger.error(f"Ошибка отправки отчета: {e}")
-
-@dp.message(Command("xls"))
-async def handle_xls_command(message: Message):
-    if message.from_user.id not in ADMINS:
-        await message.answer("У вас нет доступа к этому!")
-    else:
-        try:
-            report_path = await generate_report()
-            if report_path:
-                file = FSInputFile(report_path)
-                await message.answer_document(
-                    document=file,
-                    caption="Отчет за последние 7 дней"
-                )
-                os.remove(report_path)
-            else:
-                await message.answer("❌ Не удалось сформировать отчет")
-        except Exception as e:
-            logger.error(f"Ошибка команды /xls: {e}")
-            await message.answer("⚠️ Произошла ошибка при формировании отчета")
-
-@dp.message(Command("today"))
-async def handle_today(message: Message):
-    if message.from_user.id not in ADMINS:
-        await message.answer("У вас нет доступа к этому!")
-        return
-    
-    try:
-        now = datetime.now()
-        if now.time() < dt_time(6, 0):
-            start_date = now - timedelta(days=1)
-        else:
-            start_date = now
-        
-        start = start_date.replace(hour=6, minute=0, second=0, microsecond=0)
-        end = start + timedelta(hours=20)
-        
-        async with aiosqlite.connect("/root/paybots/paid_orders.db") as db:
-            cursor = await db.execute(
-                "SELECT chat_id, amount, system FROM paid_orders "
-                "WHERE date BETWEEN ? AND ?",
-                (start.isoformat(), end.isoformat()))
-            
-            rows = await cursor.fetchall()
-            
-            # Группируем и считаем
-            report = {}
-            for chat_id, amount, system in rows:
-                if amount is None:
-                    logger.warning(f"Пропущена запись с пустой суммой для chat_id={chat_id}, system={system}")
-                    continue
-                amt = float(amount)
-                net_amount = calculate_net_amount(system, amt)
-
-                if chat_id not in report:
-                    report[chat_id] = {
-                        'total': 0.0,
-                        'count': 0,
-                        'net_total': 0.0
-                    }
-
-                report[chat_id]['total'] += amt
-                report[chat_id]['count'] += 1
-                report[chat_id]['net_total'] += net_amount
-            
-            response = "📊 Отчет за сегодня (чистые суммы):\n"
-            for chat_id, data in report.items():
-                response += (
-                    f"\n👤 Chat ID: {chat_id}\n"
-                    f"💳 Общая сумма: {int(data['total'])}₽\n"
-                    f"💵 Чистая сумма: {int(data['net_total'])}₽\n"
-                    f"🧾 Чеков: {data['count']}\n"
-                )
-            
-            await message.answer(response)
-            
-    except Exception as e:
-        logger.error(f"Ошибка команды /today: {e}")
-        await message.answer("⚠️ Ошибка формирования отчета")
-
 @dp.message(Command("ago"))
+@dp.message(Command("today"))
 async def handle_ago(message: Message):
     if message.from_user.id not in ADMINS:
         await message.answer("У вас нет доступа к этому!")
         return
     
     try:
-        now = datetime.now() - timedelta(days=1)
+        if message.text == "/ago":
+            now = datetime.now() - timedelta(days=1)
+        else:
+            now = datetime.now()
         if now.time() < dt_time(6, 0):
             start_date = now - timedelta(days=1)
         else:
@@ -431,7 +234,7 @@ async def handle_ago(message: Message):
             await message.answer(response)
             
     except Exception as e:
-        logger.error(f"Ошибка команды /ago: {e}")
+        logger.error(f"Ошибка команды: {e}")
         await message.answer("⚠️ Ошибка формирования отчета")
 
 async def create_paid_orders_table():
@@ -454,7 +257,7 @@ async def add_paid_order(amount: float, chat_id: int, system: str):
 
 async def main():
     logger.info("Запуск задач автоочистки и отчетов")
-    asyncio.gather(auto_cleanup(), schedule_report())
+    asyncio.gather(auto_cleanup())
     await create_paid_orders_table()
     try:
         logger.info("Удаление старого вебхука...")
