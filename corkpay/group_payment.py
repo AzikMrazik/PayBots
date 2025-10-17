@@ -25,5 +25,8 @@ async def cash_command(message: Message):
         order = await sendpost(amount, message.chat.id)
         await msg.delete()
         for i in order:
-            await message.answer(i)
+            if isinstance(i, dict) and 'photo' in i:
+                await message.answer_photo(i['photo'], caption=i.get('caption'), parse_mode="HTML")
+            else:
+                await message.answer(i)
         

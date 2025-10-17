@@ -5,9 +5,11 @@ from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.formatting import *
+from qr_utils import generate_qr
 from config import BASE_URL, MERCHANT_ID, MERCHANT_TOKEN, DOMAIN
 from datetime import datetime
 from urllib.parse import urljoin
+
 
 router = Router()
 
@@ -44,7 +46,10 @@ async def create_payment(message: Message,  state: FSMContext):
         order = await sendpost(amount, message.from_user.id)
         await msg.delete()
         for i in order:
-            await message.answer(i)
+            if isinstance(i, dict) and 'photo' in i:
+                await message.answer_photo(i['photo'], caption=i.get('caption'), parse_mode="HTML")
+            else:
+                await message.answer(i)
         await message.answer("Введите сумму для следующего платежа:", reply_markup=back_kb())
         await state.set_state(PaymentStates.WAITING_AMOUNT)
     
@@ -117,6 +122,8 @@ async def sendpost2(order_id, counter = 1):
                         return await sendpost2(order_id, counter)
                     else:
                         return ("⛔Нет реквизитов!")
+                elif status == "EXPIRED":
+                    return ("⛔Нет реквизитов!")
                 elif status != "WAIT":
                     return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
                 else:
@@ -126,8 +133,15 @@ async def sendpost2(order_id, counter = 1):
                     price = data['price']
                     amount = price['buyer_paid']
                     merchant = data['merchant']
+                    method = payment['method']
                     merchant_order_id = merchant['external_uui']
-                    return (f"📄 Создана заявка: №<code>{merchant_order_id}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}")
+                    if method == "P2P_CARD":
+                        return (f"📄 Создана заявка: №<code>{merchant_order_id}</code>\n\n💳 Номер для оплаты: <code>{details}</code>\n💰Сумма платежа: <code>{amount}</code> рублей\n\n🕑 Время на оплату: 10 мин.", F"🏦Банк: {bank}\n💳 Метод: {method}")
+                    elif method == "QR":
+                        photo, caption = await generate_qr(details, amount)
+                        return (f"🔗Ваша ссылка:", f"{details}", f"❓Номер заказа: №<code>{merchant_order_id}</code>", {"photo": photo, "caption": caption})
+                    else:
+                        return ("⚰️CorkPay отправил труп!", f"{data}", "Отправьте сообщение выше кодеру!")
                     
 
 

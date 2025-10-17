@@ -119,7 +119,7 @@ async def handle_crocopay(request: web.Request):
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
-    app.router.add_post('/corkpay', handle_corkpay)
+    app.router.add_post('/corkpay/{chat_id}', handle_corkpay)
     app.router.add_route('*', '/', handle_root)
     app.router.add_post('/epay/{chat_id}', handle_epay)
     app.router.add_post('/crocopay/{order_id}', handle_crocopay)
