@@ -79,6 +79,7 @@ async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
     chat_id = request.match_info.get('chat_id')
     data = await request.json()
+    logger.info(f"Получен вебхук для corkpay: {data}")
     order_id = data.get('external_uui')
     amount = data.get('amount')
     await bot.send_message(chat_id=chat_id, text=f"🟣CORKPAY:\n✅Заказ №{order_id} на сумму {amount}₽ успешно оплачен!")
@@ -87,9 +88,9 @@ async def handle_corkpay(request: web.Request):
 
 async def handle_cyber(request: web.Request):
     bot: Bot = request.app['bot']
+    data = await request.json()
     logger.info(f"Получен вебхук для cyber: {data}")
     chat_id = request.match_info.get('chat_id')
-    data = await request.json()
     status = data.get('status')
     order_id = data.get('request_id')
     amount = data.get('sum')
