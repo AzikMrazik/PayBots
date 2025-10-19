@@ -12,6 +12,7 @@ from aiogram.webhook.aiohttp_server import setup_application
 from datetime import datetime, timedelta
 import aiosqlite
 from datetime import time as dt_time
+from aiohttp.helpers import AccessLogger
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,9 +21,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+class FilteredAccessLogger(AccessLogger):
+    def __init__(self, logger, log_format):
+        super().__init__(logger, log_format)
+        self.allowed_endpoints = [
+            '/corkpay/',
+            '/epay/', 
+            '/crocopay/',
+            '/cyber/',
+            '/tg_webhook'
+        ]
+    
+    def log(self, request, response, time):
+        if any(request.path.startswith(endpoint) for endpoint in self.allowed_endpoints):
+            super().log(request, response, time)
+
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
+
 
 COMMISSION_RATES = {
     "epay": 0.30, 
@@ -77,6 +94,7 @@ async def process_webhook(request: web.Request, system: str, message_template: s
 
 async def handle_corkpay(request: web.Request):
     bot: Bot = request.app['bot']
+    logger.info(f"Получен вебхук для corkpay: {request.text()}")
     chat_id = request.match_info.get('chat_id')
     data = await request.json()
     logger.info(f"Получен вебхук для corkpay: {data}")
@@ -120,6 +138,13 @@ async def handle_crocopay(request: web.Request):
 async def start_web_app(dispatcher: Dispatcher, bot: Bot):
     app = web.Application()
     app['bot'] = bot
+    
+    # Настраиваем кастомный логгер доступа
+    app['access_logger'] = FilteredAccessLogger(
+        logger=logging.getLogger('aiohttp.access'),
+        log_format='%a %t "%r" %s %b "%{Referer}i" "%{User-Agent}i"'
+    )
+    
     app.router.add_post('/corkpay/{chat_id}', handle_corkpay)
     app.router.add_route('*', '/', handle_root)
     app.router.add_post('/epay/{chat_id}', handle_epay)
